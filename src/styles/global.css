@@ -1,0 +1,93 @@
+@tailwind utilities;
+@import "tailwindcss";
+
+/* Custom base styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom components */
+@layer components {
+  /* Any custom component styles */
+}
+
+/* Custom utilities */
+@layer utilities {
+  /* Any custom utility classes */
+}
+
+@layer base {
+  html {
+    font-size: 18px;
+  }
+
+  body {
+    /* Tailwind gray-700 */
+
+    font-family: 'Merriweather', serif;
+    line-height: 2.00;
+  }
+}
+
+
+.btn-main {
+  background-color: #005f5f;
+  color: white;
+  hover: #6B7280;
+}
+
+/* blog content */
+.blog-content p {
+  margin-bottom: 1.5em;
+  /* Adds space after paragraphs */
+}
+
+.blog-content h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+
+.blog-content h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.blog-content h3 {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+/* Social Share */
+.social-share a {
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: #6B7280;
+  margin: 0;
+  padding: 0;
+}
+
+.social-share svg {
+  width: 20px;
+  height: 20px;
+  background-color: #6B7280;
+}
+
+.social-share {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  /* This creates even spacing */
+}

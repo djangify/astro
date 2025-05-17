@@ -1,0 +1,162 @@
+---
+// src/pages/index.astro
+
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+// Data loaders
+import { fetchPage, fetchPosts } from "../lib/api";
+import type { Page, BlogPost } from "../types";
+
+// Fetch the "index" page record from Django
+const page: Page = await fetchPage("index");
+// Fetch all blog posts
+const posts: BlogPost[] = await fetchPosts();
+---
+
+<BaseLayout>
+	<Header slot="header" />
+	<title slot="title">{page.title} – Corrison</title>
+
+	{/* Hero Section */}
+	{
+		page.hero_title && (
+			<section class="bg-slate-50 py-12">
+				<div class="container mx-auto px-4">
+					<div class="flex flex-col md:flex-row items-center">
+						{page.hero_image && (
+							<div class="md:w-1/2 mb-8 md:mb-0">
+								<img
+									src={page.hero_image}
+									alt={page.hero_title}
+									class="rounded-lg "
+								/>
+							</div>
+						)}
+						<div class="md:w-1/2 md:pl-8">
+							<h1 class="text-4xl font-semibold mb-4">{page.hero_title}</h1>
+							{page.hero_subtitle && (
+								<p class="text-xl text-gray-700 mb-6">{page.hero_subtitle}</p>
+							)}
+							<div
+								class="max-w-none text-gray-700"
+								set:html={page.hero_content}
+							/>
+						</div>
+					</div>
+				</div>
+			</section>
+		)
+	}
+
+	{/* Main Content */}
+	<section class="bg-white py-12">
+		<div class="container bg-white mx-auto px-4 py-12">
+			{
+				!page.hero_title && (
+					<h1 class="text-4xl text-gray-700 mb-8">{page.title}</h1>
+				)
+			}
+			{
+				page.subtitle && (
+					<p class="text-4xl font-semibold text-gray-700 text-center mb-8">
+						{page.subtitle}
+					</p>
+				)
+			}
+			<div class="max-w-none" set:html={page.content} />
+		</div>
+	</section>
+	{/* Feature Section (only if enabled) */}
+	{
+		page.has_feature_section && (
+			<section class="py-20 bg-slate-50">
+				<div class="container mx-auto px-4">
+					<h2 class="text-3xl md:text-4xl font-semibold mb-12 text-center">
+						{page.feature_section_title}
+					</h2>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+						{page.features &&
+							page.features.map((feature) => (
+								<div class="bg-white p-8 rounded-lg shadow-sm text-center">
+									<div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+										{feature.icon ? (
+											<i
+												class={`text-2xl text-slate-500 ${feature.icon}`}
+												aria-hidden="true"
+											/>
+										) : (
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												class="h-8 w-8 text-slate-500"
+												fill="none"
+												viewBox="0 0 24 24"
+												stroke="currentColor"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+												/>
+											</svg>
+										)}
+									</div>
+									{feature.title && (
+										<h3 class="text-2xl font mb-8">{feature.title}</h3>
+									)}
+									<p class="text-gray-700">{feature.content}</p>
+								</div>
+							))}
+					</div>
+				</div>
+			</section>
+		)
+	}
+
+	{
+		/** Latest Blog Posts  :contentReference[oaicite:6]{index=6}:contentReference[oaicite:7]{index=7} */
+	}
+	<section class="bg-white py-16">
+		<div class="container mx-auto px-4">
+			<h2 class="text-3xl font-semibold mb-8 text-center">Latest Blog Posts</h2>
+			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+				{
+					posts.slice(0, 3).map((post) => (
+						<a
+							href={`/blog/${post.slug}`}
+							class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+						>
+							{post.featured_image && (
+								<img
+									src={post.featured_image}
+									alt={post.title}
+									class="w-full h-48 object-cover"
+								/>
+							)}
+							<div class="p-6">
+								<h3 class="text-xl font-semibold mb-2">{post.title}</h3>
+								<time class="text-sm block mb-4">
+									{new Date(post.created_at).toLocaleDateString()}
+								</time>
+								<div class="text-teal-700 font-medium text-sm">Read more →</div>
+							</div>
+						</a>
+					))
+				}
+			</div>
+			<div class="text-center mt-10">
+				<a
+					href="/blog"
+					class="bg-slate-50 uppercase p-2 border-2 border-accent self-start hover:text-accent transition-colors cursor-pointer text-xs rounded sm:text-lg mt-8 sm:px-4"
+				>
+					View all posts
+				</a>
+			</div>
+		</div>
+	</section>
+
+	<Footer slot="footer" />
+</BaseLayout>
