@@ -16,30 +16,37 @@ export interface BlogPost {
 
 /** Page model */
 export interface Page {
-  title: string;
+  id: number;
   slug: string;
+  title: string;
   subtitle?: string;
-  hero_image?: string;
   content: string;
   meta_description?: string;
   is_published: boolean;
-  published_at?: string;
   order: number;
   created_at: string;
   updated_at: string;
 
-  // New fields for hero section
+  // Hero
   hero_title?: string;
   hero_subtitle?: string;
+  hero_image?: string;
   hero_content?: string;
+  hero_button_text?: string;
+  hero_button_url?: string;
 
-  // Fields for feature section
-  has_feature_section: boolean;
+  // Middle & end sections 
+  middle_section_title?: string;
+  middle_section_content?: string;
+  end_section_title?: string;
+  end_section_content?: string;
+
+  // Feature section
+  has_feature_section?: boolean;
   feature_section_title?: string;
   features?: PageFeature[];
 }
 
-/** PageFeature model */
 export interface PageFeature {
   id: number;
   title?: string;
@@ -47,6 +54,7 @@ export interface PageFeature {
   icon?: string;
   order: number;
 }
+
 
 /** Link with media capabilities model */
 export interface Link {

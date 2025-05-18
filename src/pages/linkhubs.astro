@@ -5,7 +5,8 @@ import Footer from "../components/Footer.astro";
 import { fetchLinkHubs } from "../lib/api";
 import type { LinkHub, Link } from "../types";
 
-const hubs: LinkHub[] = await fetchLinkHubs();
+const allHubs: LinkHub[] = await fetchLinkHubs();
+const hubs: LinkHub[] = allHubs.filter((hub) => hub.slug === "linkhubs");
 
 // Helper function to render the appropriate media preview
 const renderMediaPreview = (link: Link) => {

@@ -30,7 +30,7 @@ const posts: BlogPost[] = await fetchPosts();
 								<img
 									src={page.hero_image}
 									alt={page.hero_title}
-									class="rounded-lg "
+									class="rounded-lg"
 								/>
 							</div>
 						)}
@@ -43,6 +43,14 @@ const posts: BlogPost[] = await fetchPosts();
 								class="max-w-none text-gray-700"
 								set:html={page.hero_content}
 							/>
+							{page.hero_button_text && page.hero_button_url && (
+								<a
+									href={page.hero_button_url}
+									class="inline-block text-accent border-2 border-accent uppercase px-6 py-3 rounded hover:bg-accent hover:text-teal-700 transition-colors mt-6"
+								>
+									{page.hero_button_text}
+								</a>
+							)}
 						</div>
 					</div>
 				</div>
@@ -77,10 +85,11 @@ const posts: BlogPost[] = await fetchPosts();
 						{page.feature_section_title}
 					</h2>
 
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+					{/* <div class="grid grid-cols-1 md:grid-cols-2 gap-8"> # two features in a row */}
+					<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
 						{page.features &&
 							page.features.map((feature) => (
-								<div class="bg-white p-8 rounded-lg shadow-sm text-center">
+								<div class="bg-white border-1 border-teal-700 p-8 rounded-lg text-center">
 									<div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
 										{feature.icon ? (
 											<i
@@ -115,11 +124,28 @@ const posts: BlogPost[] = await fetchPosts();
 			</section>
 		)
 	}
-
+	{/* Middle Section */}
+	{
+		page.middle_section_content && (
+			<section class="bg-white py-12">
+				<div class="container mx-auto px-4">
+					{page.middle_section_title && (
+						<h2 class="text-3xl font-semibold mb-4 text-center">
+							{page.middle_section_title}
+						</h2>
+					)}
+					<div
+						class="max-w-none text-gray-700"
+						set:html={page.middle_section_content}
+					/>
+				</div>
+			</section>
+		)
+	}
 	{
 		/** Latest Blog Posts  :contentReference[oaicite:6]{index=6}:contentReference[oaicite:7]{index=7} */
 	}
-	<section class="bg-white py-16">
+	<section class="bg-slate-50 py-16">
 		<div class="container mx-auto px-4">
 			<h2 class="text-3xl font-semibold mb-8 text-center">Latest Blog Posts</h2>
 			<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -157,6 +183,23 @@ const posts: BlogPost[] = await fetchPosts();
 			</div>
 		</div>
 	</section>
-
+	{/* End Section */}
+	{
+		page.end_section_content && (
+			<section class="bg-white py-12">
+				<div class="container mx-auto px-4">
+					{page.end_section_title && (
+						<h2 class="text-3xl font-semibold mb-4 text-center">
+							{page.end_section_title}
+						</h2>
+					)}
+					<div
+						class="max-w-none text-gray-700"
+						set:html={page.end_section_content}
+					/>
+				</div>
+			</section>
+		)
+	}
 	<Footer slot="footer" />
 </BaseLayout>
