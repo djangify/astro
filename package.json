@@ -4,10 +4,10 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
+    "build": "npm run build",
+    "preview": "astro preview --host 0.0.0.0 --port 3000",
     "astro": "astro",
-    "start": "node ./dist/server/entry.mjs"
+    "start": "astro preview --host 0.0.0.0 --port 3000"
   },
   "dependencies": {
     "astro": "^5.7.10"
