@@ -1,13 +1,13 @@
 {
-  "name": "todiane",
+  "name": "corrison-astro",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run build",
-    "preview": "astro preview --host 0.0.0.0 --port 3000",
+    "build": "astro build",
+    "preview": "astro preview",
     "astro": "astro",
-    "start": "astro preview --host 0.0.0.0 --port 3000"
+    "start": "node ./dist/server/entry.mjs"
   },
   "dependencies": {
     "astro": "^5.7.10"
