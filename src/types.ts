@@ -2,6 +2,7 @@
 
 /** BlogPost model */
 export interface BlogPost {
+  [x: string]: string;
   title: string;
   slug: string;
   content: string;
