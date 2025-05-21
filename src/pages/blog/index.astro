@@ -1,48 +1,124 @@
 ---
+// src/pages/index.astro
+
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
-import { fetchPosts } from "../../lib/api";
-import type { BlogPost } from "../../types";
+import { fetchPage, fetchPosts } from "../../lib/api";
+import type { Page, BlogPost } from "../../types";
 
+// Fetch the "index" page record from Django
+const page: Page = await fetchPage("index");
+// Fetch all blog posts
 const posts: BlogPost[] = await fetchPosts();
-const featuredPosts = posts.filter((post) => post.is_featured);
-const regularPosts = posts.filter((post) => !post.is_featured);
 ---
 
 <BaseLayout>
   <Header slot="header" />
+  <title slot="title">{page.title} – Corrison</title>
 
-  <div class="container mx-auto px-4 py-12">
-    <h1 class="text-4xl font-bold mb-2">Blog</h1>
-    <p class="text-gray-600 text-lg mb-12">
-      The latest news, updates, and insights from our team
-    </p>
+  {/* Hero Section */}
+  {
+    page.hero_title && (
+      <section class="bg-slate-50 py-12">
+        <div class="container mx-auto px-4">
+          <div class="flex flex-col md:flex-row items-center">
+            {/* Left Side - Text Content */}
+            <div class="md:w-1/2 md:pr-8 mb-8 md:mb-0">
+              <h1 class="text-4xl font-semibold mb-4">{page.hero_title}</h1>
+              {page.hero_subtitle && (
+                <p class="text-xl text-gray-700 mb-6">{page.hero_subtitle}</p>
+              )}
+              <div
+                class="max-w-none text-gray-700"
+                set:html={page.hero_content}
+              />
+              {page.hero_button_text && page.hero_button_url && (
+                <a
+                  href={page.hero_button_url}
+                  class="inline-block text-accent border-2 border-accent uppercase px-6 py-3 rounded hover:bg-accent hover:text-teal-700 transition-colors mt-6"
+                >
+                  {page.hero_button_text}
+                </a>
+              )}
+            </div>
 
-    {
-      featuredPosts.length > 0 && (
-        <div class="mb-16">
-          <h2 class="text-2xl font-semibold mb-8 pb-2 border-b border-gray-200">
-            Featured Posts
-          </h2>
-          <div class="grid lg:grid-cols-2 gap-8">
-            {featuredPosts.map((post) => (
-              <a
-                href={`/blog/${post.slug}`}
-                class="group flex flex-col h-full bg-white rounded-lg shadow-md hover:shadow-xl overflow-hidden transition duration-300 border border-gray-100"
-              >
-                <div class="relative">
-                  {post.featured_image ? (
+            {/* Right Side - Image or Text */}
+            <div class="md:w-1/2">
+              {page.hero_right_content ? (
+                <div class="bg-white p-6 rounded-lg">
+                  <div class="prose max-w-none">
+                    <div set:html={page.hero_right_content} />
+                  </div>
+                </div>
+              ) : page.hero_image_src ? (
+                <img
+                  src={page.hero_image_src}
+                  alt={page.hero_title}
+                  class="rounded-lg"
+                  onerror="this.onerror=null; this.src='/images/diane-com.webp';"
+                />
+              ) : (
+                <div class="bg-white p-6 rounded-lg">
+                  <div class="prose max-w-none">
+                    {/* If no hero image or text, use the fallback image */}
                     <img
-                      src={post.featured_image}
-                      alt={post.title}
-                      class="w-full h-64 object-cover transform group-hover:scale-105 transition duration-500"
+                      src="/images/diane-com.webp"
+                      alt="Default hero image"
+                      class="rounded-lg"
                     />
-                  ) : (
-                    <div class="w-full h-64 bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {/* Main Content */}
+  <section class="bg-white py-12">
+    <div class="container bg-white mx-auto px-4 py-12">
+      {
+        !page.hero_title && (
+          <h1 class="text-4xl text-gray-700 mb-8">{page.title}</h1>
+        )
+      }
+      {
+        page.subtitle && (
+          <p class="text-4xl font-semibold text-gray-700 text-center mb-8">
+            {page.subtitle}
+          </p>
+        )
+      }
+      <div class="max-w-none" set:html={page.content} />
+    </div>
+  </section>
+  {/* Feature Section (only if enabled) */}
+  {
+    page.has_feature_section && (
+      <section class="py-20 bg-slate-50">
+        <div class="container mx-auto px-4">
+          <h2 class="text-3xl md:text-4xl font-semibold mb-12 text-center">
+            {page.feature_section_title}
+          </h2>
+
+          {/* <div class="grid grid-cols-1 md:grid-cols-2 gap-8"> # two features in a row */}
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+            {page.features &&
+              page.features.map((feature) => (
+                <div class="bg-white border-1 border-teal-700 p-8 rounded-lg text-center">
+                  <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    {feature.icon ? (
+                      <i
+                        class={`text-2xl text-slate-500 ${feature.icon}`}
+                        aria-hidden="true"
+                      />
+                    ) : (
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        class="h-16 w-16 text-white opacity-75"
+                        class="h-8 w-8 text-slate-500"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -51,122 +127,96 @@ const regularPosts = posts.filter((post) => !post.is_featured);
                           stroke-linecap="round"
                           stroke-linejoin="round"
                           stroke-width="2"
-                          d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1M19 20a2 2 0 002-2V8a2 2 0 00-2-2h-5"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                         />
                       </svg>
-                    </div>
+                    )}
+                  </div>
+                  {feature.title && (
+                    <h3 class="text-2xl font mb-8">{feature.title}</h3>
                   )}
-                  <div class="absolute top-4 left-4 bg-yellow-400 text-xs font-bold px-3 py-1 rounded-full text-gray-900">
-                    Featured
-                  </div>
+                  <p class="text-gray-700">{feature.content}</p>
                 </div>
-                <div class="p-6 flex-grow flex flex-col">
-                  <h3 class="text-2xl font-bold mb-4 group-hover:text-teal-700 transition duration-300">
-                    {post.title}
-                  </h3>
-                  <p class="text-gray-500 text-sm mb-4">
-                    {post.published_at
-                      ? new Date(post.published_at).toLocaleDateString(
-                          "en-US",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          },
-                        )
-                      : new Date(post.created_at).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                  </p>
-                  <div class="mt-auto pt-4 flex items-center text-teal-700 font-medium">
-                    Read article
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition duration-300"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M14 5l7 7m0 0l-7 7m7-7H3"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </a>
-            ))}
+              ))}
           </div>
         </div>
-      )
-    }
-
-    <div>
-      <h2 class="text-2xl font-semibold mb-8 pb-2 border-b border-gray-200">
-        All Posts
-      </h2>
+      </section>
+    )
+  }
+  {/* Middle Section */}
+  {
+    page.middle_section_content && (
+      <section class="bg-white py-12">
+        <div class="container mx-auto px-4">
+          {page.middle_section_title && (
+            <h2 class="text-3xl font-semibold mb-4 text-center">
+              {page.middle_section_title}
+            </h2>
+          )}
+          <div
+            class="max-w-none text-gray-700"
+            set:html={page.middle_section_content}
+          />
+        </div>
+      </section>
+    )
+  }
+  {/** Latest Blog Posts */}
+  <section class="bg-slate-50 py-16">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-semibold mb-8 text-center">Latest Blog Posts</h2>
       <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {
-          regularPosts.map((post) => (
+          posts.slice(0, 3).map((post) => (
             <a
               href={`/blog/${post.slug}`}
-              class="group flex flex-col h-full bg-white rounded-lg shadow-md hover:shadow-xl overflow-hidden transition duration-300 border border-gray-100"
+              class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
             >
-              {post.featured_image ? (
+              {post.featured_image && (
                 <img
                   src={post.featured_image}
                   alt={post.title}
-                  class="w-full h-48 object-cover transform group-hover:scale-105 transition duration-500"
+                  class="w-full h-48 object-cover"
                 />
-              ) : (
-                <div class="w-full h-48 bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center text-gray-400">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-12 w-12"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                    />
-                  </svg>
-                </div>
               )}
-              <div class="p-6 flex-grow flex flex-col">
-                <h3 class="text-xl font-semibold mb-2 group-hover:text-teal-700 transition duration-300">
-                  {post.title}
-                </h3>
-                <p class="text-gray-500 text-sm mb-4">
-                  {post.published_at
-                    ? new Date(post.published_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })
-                    : new Date(post.created_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                </p>
-                <div class="mt-auto pt-3 text-teal-700 group-hover:translate-x-1 transition-transform duration-300">
-                  Read more →
-                </div>
+              <div class="p-6">
+                <h3 class="text-xl font-semibold mb-2">{post.title}</h3>
+                <time class="text-sm block mb-4">
+                  {new Date(post.created_at).toLocaleDateString()}
+                </time>
+                <div class="text-teal-700 font-medium text-sm">Read more →</div>
               </div>
             </a>
           ))
         }
       </div>
+      <div class="text-center mt-10">
+        <a
+          href="/blog"
+          class="bg-slate-50 uppercase p-2 border-2 border-accent self-start hover:text-accent transition-colors cursor-pointer text-xs rounded sm:text-lg mt-8 sm:px-4"
+        >
+          View all posts
+        </a>
+      </div>
     </div>
-  </div>
-
+  </section>
+  {/* End Section */}
+  {
+    page.end_section_content && (
+      <section class="bg-white py-12">
+        <div class="container mx-auto px-4">
+          {page.end_section_title && (
+            <h2 class="text-3xl font-semibold mb-4 text-center">
+              {page.end_section_title}
+            </h2>
+          )}
+          <div
+            class="max-w-none text-gray-700"
+            set:html={page.end_section_content}
+          />
+        </div>
+      </section>
+    )
+  }
   <Footer slot="footer" />
 </BaseLayout>

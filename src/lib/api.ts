@@ -1,6 +1,6 @@
 // src/lib/api.ts
 import type { BlogPost, Page, LinkHub } from "../types";
-const API = import.meta.env.PUBLIC_API_BASE_URL;
+const API = "https://corrison.corrisonapi.com";
 
 async function check<T>(res: Response, what: string): Promise<T> {
   if (!res.ok) throw new Error(`Failed to fetch ${what}`);
