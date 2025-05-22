@@ -4,129 +4,74 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import { fetchLinkHubs } from "../lib/api";
 import type { LinkHub, Link } from "../types";
+import { getHeroicon } from "../lib/heroicons";
 
 const allHubs: LinkHub[] = await fetchLinkHubs();
 const hubs: LinkHub[] = allHubs.filter((hub) => hub.slug === "linkhubs");
 
-// Helper function to render the appropriate media preview
-const renderMediaPreview = (link: Link) => {
-  switch (link.media_type) {
-    case "video":
-      return `
-        <div class="aspect-w-16 aspect-h-9 rounded-t-lg overflow-hidden">
-          ${
-            link.icon_url
-              ? `<img src="${link.icon_url}" alt="${link.title}" class="w-full h-full object-cover">
-             <div class="absolute inset-0 flex items-center justify-center">
-               <div class="bg-blue-600 bg-opacity-80 rounded-full p-3 text-white">
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                 </svg>
-               </div>
-             </div>`
-              : `<div class="w-full h-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-               </svg>
-             </div>`
-          }
-        </div>
-      `;
-
-    case "pdf":
-      return `
-        <div class="aspect-w-3 aspect-h-4 rounded-t-lg overflow-hidden">
-          ${
-            link.icon_url
-              ? `<img src="${link.icon_url}" alt="${link.title}" class="w-full h-full object-cover">`
-              : `<div class="w-full h-full bg-slate-400 flex items-center justify-center">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-               </svg>
-             </div>`
-          }
-        </div>
-      `;
-
-    case "audio":
-      return `
-        <div class="aspect-w-16 aspect-h-9 rounded-t-lg overflow-hidden">
-          ${
-            link.icon_url
-              ? `<img src="${link.icon_url}" alt="${link.title}" class="w-full h-full object-cover">`
-              : `<div class="w-full h-full bg-slate-100 flex items-center justify-center">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-               </svg>
-             </div>`
-          }
-        </div>
-      `;
-
-    case "image":
-      return `
-        <div class="aspect-w-4 aspect-h-3 rounded-t-lg overflow-hidden">
-          ${
-            link.icon_url || link.url
-              ? `<img src="${link.icon_url || link.url}" alt="${link.title}" class="w-full h-full object-cover">`
-              : `<div class="w-full h-full bg-green-100 flex items-center justify-center">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-               </svg>
-             </div>`
-          }
-        </div>
-      `;
-
-    default: // Standard link
-      return `
-        <div class="aspect-w-4 aspect-h-3 rounded-t-lg overflow-hidden">
-          ${
-            link.icon_url
-              ? `<img src="${link.icon_url}" alt="${link.title}" class="w-full h-full object-cover">`
-              : `<div class="w-full h-full bg-slate-400 flex items-center justify-center">
-               <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-               </svg>
-             </div>`
-          }
-        </div>
-      `;
+// Helper function to render custom icon or fallback to media type icon
+const renderIcon = (link: Link, className = "h-12 w-12"): string => {
+  // If custom icon is provided, use it
+  if (link.icon) {
+    return getHeroicon(link.icon, className);
   }
-};
 
-// Helper function to get the appropriate icon for a media type
-const getMediaTypeIcon = (mediaType: string) => {
-  switch (mediaType) {
+  // Fallback to media type icons
+  switch (link.media_type) {
+    case "donation":
+      return getHeroicon("dollar", `${className} text-green-500`);
     case "video":
-      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="${className} text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>`;
     case "pdf":
-      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      return `<svg xmlns="http://www.w3.org/2000/svg" class="${className} text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>`;
     case "audio":
-      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>`;
+      return getHeroicon("music", `${className} text-purple-500`);
     case "image":
-      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>`;
+      return getHeroicon("camera", `${className} text-green-500`);
     default: // Standard link
-      return `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>`;
+      return getHeroicon("globe", `${className} text-gray-500`);
   }
 };
 
+// Helper function to render the appropriate media preview
+const renderMediaPreview = (link: Link): string => {
+  const bgColor =
+    link.media_type === "donation"
+      ? "bg-gradient-to-r from-green-400 to-emerald-500"
+      : link.media_type === "video"
+        ? "bg-gradient-to-r from-blue-400 to-indigo-500"
+        : link.media_type === "pdf"
+          ? "bg-gradient-to-r from-red-400 to-pink-500"
+          : link.media_type === "audio"
+            ? "bg-gradient-to-r from-purple-400 to-violet-500"
+            : link.media_type === "image"
+              ? "bg-gradient-to-r from-green-400 to-teal-500"
+              : "bg-gradient-to-r from-slate-400 to-gray-500";
+
+  return `
+    <div class="aspect-w-16 aspect-h-9 rounded-t-lg overflow-hidden">
+      <div class="w-full h-full ${bgColor} flex items-center justify-center">
+        ${renderIcon(link, "h-16 w-16 text-white")}
+      </div>
+    </div>
+  `;
+};
+
+// Helper function to get the appropriate icon for a media type (small version)
+const getMediaTypeIcon = (link: Link): string => {
+  return renderIcon(link, "h-5 w-5");
+};
+
 // Helper function to get the appropriate action text for a media type
-const getActionText = (mediaType: string) => {
+const getActionText = (mediaType: string): string => {
   switch (mediaType) {
+    case "donation":
+      return "Support Me";
     case "video":
       return "Watch Video";
     case "pdf":
@@ -139,6 +84,24 @@ const getActionText = (mediaType: string) => {
       return "Visit Link";
   }
 };
+
+// Helper function to get button styling based on media type
+const getButtonStyle = (mediaType: string): string => {
+  switch (mediaType) {
+    case "donation":
+      return "text-green-700 group-hover:text-green-800";
+    case "video":
+      return "text-blue-700 group-hover:text-blue-800";
+    case "pdf":
+      return "text-red-700 group-hover:text-red-800";
+    case "audio":
+      return "text-purple-700 group-hover:text-purple-800";
+    case "image":
+      return "text-green-700 group-hover:text-green-800";
+    default:
+      return "text-teal-700 group-hover:text-teal-800";
+  }
+};
 ---
 
 <BaseLayout>
@@ -149,72 +112,100 @@ const getActionText = (mediaType: string) => {
     {
       hubs.map((hub) => (
         <section class="mb-16 mx-auto max-w-6xl">
-          <h1 class="text-2xl text-center font-bold mb-6 pb-2 border-b border-gray-200">
-            {hub.title}
-          </h1>
+          {/* Background image support */}
+          <div
+            class={
+              hub.background_image ? "relative rounded-lg overflow-hidden" : ""
+            }
+          >
+            {hub.background_image && (
+              <div class="absolute inset-0 z-0">
+                <img
+                  src={hub.background_image}
+                  alt={`${hub.title} background`}
+                  class="w-full h-full object-cover"
+                />
+                <div class="absolute inset-0 bg-black bg-opacity-40" />
+              </div>
+            )}
 
-          {hub.description && (
-            <p class="prose text-lg text-gray-700 mb-8 max-w-4xl mx-auto text-center">
-              {hub.description}
-            </p>
-          )}
-
-          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {hub.links.map((link) => (
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="bg-white rounded-lg shadow-sm hover:shadow-xl transition-shadow overflow-hidden flex flex-col h-full border border-gray-100 group"
+            <div class={hub.background_image ? "relative z-10 p-8" : ""}>
+              <h1
+                class={`text-2xl text-center font-bold mb-6 pb-2 border-b border-gray-200 ${hub.background_image ? "text-white border-white border-opacity-30" : ""}`}
               >
-                {/* Media Preview - Different for each media type */}
-                <Fragment set:html={renderMediaPreview(link)} />
+                {hub.title}
+              </h1>
 
-                <div class="p-6 flex-grow flex flex-col">
-                  <div class="flex items-center mb-3">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-purple-800">
-                      <Fragment set:html={getMediaTypeIcon(link.media_type)} />
-                      <span class="ml-1">{link.media_type_display}</span>
-                    </span>
+              {hub.description && (
+                <p
+                  class={`prose text-lg mb-8 max-w-4xl mx-auto text-center ${hub.background_image ? "text-white" : "text-gray-700"}`}
+                >
+                  {hub.description}
+                </p>
+              )}
 
-                    {link.author && (
-                      <span class="text-xs text-gray-500 ml-2">
-                        By {link.author}
-                      </span>
-                    )}
-                  </div>
+              <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {hub.links.map((link) => (
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="bg-white rounded-lg shadow-sm hover:shadow-xl transition-shadow overflow-hidden flex flex-col h-full border border-gray-100 group"
+                  >
+                    {/* Media Preview */}
+                    <Fragment set:html={renderMediaPreview(link)} />
 
-                  <h3 class="text-xl font-semibold mb-2 group-hover:text-teal-700 transition-colors">
-                    {link.title}
-                  </h3>
+                    <div class="p-6 flex-grow flex flex-col">
+                      <div class="flex items-center mb-3">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-purple-800">
+                          <Fragment set:html={getMediaTypeIcon(link)} />
+                          <span class="ml-1">{link.media_type_display}</span>
+                        </span>
 
-                  {link.description && (
-                    <p class="text-gray-600 mb-4 text-sm">{link.description}</p>
-                  )}
+                        {link.author && (
+                          <span class="text-xs text-gray-500 ml-2">
+                            By {link.author}
+                          </span>
+                        )}
+                      </div>
 
-                  <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
-                    <span class="text-teal-700 font-medium group-hover:translate-x-1 transition-transform duration-300 flex items-center">
-                      {getActionText(link.media_type)}
+                      <h3 class="text-xl font-semibold mb-2 group-hover:text-teal-700 transition-colors">
+                        {link.title}
+                      </h3>
 
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-5 w-5 ml-1"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M14 5l7 7m0 0l-7 7m7-7H3"
-                        />
-                      </svg>
-                    </span>
-                  </div>
-                </div>
-              </a>
-            ))}
+                      {link.description && (
+                        <p class="text-gray-600 mb-4 text-sm">
+                          {link.description}
+                        </p>
+                      )}
+
+                      <div class="mt-auto pt-4 border-t border-gray-100 flex justify-between items-center">
+                        <span
+                          class={`font-medium group-hover:translate-x-1 transition-transform duration-300 flex items-center ${getButtonStyle(link.media_type)}`}
+                        >
+                          {getActionText(link.media_type)}
+
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 ml-1"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M14 5l7 7m0 0l-7 7m7-7H3"
+                            />
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
 
           {hub.links.length === 0 && (
