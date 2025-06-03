@@ -1,0 +1,108 @@
+---
+// src/components/CountdownTimer.astro
+export interface Props {
+  targetDate: string;
+  title?: string;
+  className?: string;
+}
+
+const { targetDate, title, className = "" } = Astro.props;
+---
+
+<div class={`countdown-timer ${className}`} data-target={targetDate}>
+  {title && <h3 class="text-xl font-semibold mb-4 text-center">{title}</h3>}
+
+  <div class="flex justify-center space-x-6">
+    <div class="text-center">
+      <div
+        class="countdown-number days text-3xl md:text-5xl font-bold text-teal-700 bg-white rounded-lg p-4 shadow-lg min-w-[80px]"
+      >
+        00
+      </div>
+      <div class="text-sm md:text-base text-gray-600 mt-2">Days</div>
+    </div>
+
+    <div class="text-center">
+      <div
+        class="countdown-number hours text-3xl md:text-5xl font-bold text-teal-700 bg-white rounded-lg p-4 shadow-lg min-w-[80px]"
+      >
+        00
+      </div>
+      <div class="text-sm md:text-base text-gray-600 mt-2">Hours</div>
+    </div>
+
+    <div class="text-center">
+      <div
+        class="countdown-number minutes text-3xl md:text-5xl font-bold text-teal-700 bg-white rounded-lg p-4 shadow-lg min-w-[80px]"
+      >
+        00
+      </div>
+      <div class="text-sm md:text-base text-gray-600 mt-2">Minutes</div>
+    </div>
+
+    <div class="text-center">
+      <div
+        class="countdown-number seconds text-3xl md:text-5xl font-bold text-teal-700 bg-white rounded-lg p-4 shadow-lg min-w-[80px]"
+      >
+        00
+      </div>
+      <div class="text-sm md:text-base text-gray-600 mt-2">Seconds</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function initCountdown() {
+    const countdownElements = document.querySelectorAll(".countdown-timer");
+
+    countdownElements.forEach((element) => {
+      const targetDate = element.getAttribute("data-target");
+      if (!targetDate) return;
+
+      const target = new Date(targetDate).getTime();
+
+      function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = target - now;
+
+        if (distance < 0) {
+          // Countdown finished
+          element.innerHTML =
+            '<div class="text-center text-2xl font-bold text-teal-700">Event Started!</div>';
+          return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+        );
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        const daysEl = element.querySelector(".days");
+        const hoursEl = element.querySelector(".hours");
+        const minutesEl = element.querySelector(".minutes");
+        const secondsEl = element.querySelector(".seconds");
+
+        if (daysEl) daysEl.textContent = days.toString().padStart(2, "0");
+        if (hoursEl) hoursEl.textContent = hours.toString().padStart(2, "0");
+        if (minutesEl)
+          minutesEl.textContent = minutes.toString().padStart(2, "0");
+        if (secondsEl)
+          secondsEl.textContent = seconds.toString().padStart(2, "0");
+      }
+
+      // Update immediately
+      updateCountdown();
+
+      // Update every second
+      setInterval(updateCountdown, 1000);
+    });
+  }
+
+  // Initialize on page load
+  document.addEventListener("DOMContentLoaded", initCountdown);
+
+  // Re-initialize for Astro page transitions
+  document.addEventListener("astro:page-load", initCountdown);
+</script>

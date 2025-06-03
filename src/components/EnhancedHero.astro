@@ -1,0 +1,206 @@
+---
+// src/components/EnhancedHero.astro
+import type { Page } from "../types";
+import CountdownTimer from "./CountdownTimer.astro";
+import { getHeroicon } from "../lib/heroicons";
+
+export interface Props {
+  page: Page;
+}
+
+const { page } = Astro.props;
+
+// YouTube video ID extraction
+function getYouTubeVideoId(url: string): string | null {
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+  return match ? match[1] : null;
+}
+
+// Check if it's a YouTube URL for iframe embed
+function isYouTubeUrl(url: string): boolean {
+  return url.includes('youtube.com') || url.includes('youtu.be');
+}
+---
+
+<section class="relative bg-slate-50 py-12 overflow-hidden">
+  {/* Background Video */}
+  {page.hero_video_url && (
+    <div class="absolute inset-0 z-0">
+      {isYouTubeUrl(page.hero_video_url) ? (
+        <!-- YouTube iframe background -->
+        <div class="w-full h-full relative">
+          <iframe
+            src={`https://www.youtube.com/embed/${getYouTubeVideoId(page.hero_video_url)}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playlist=${getYouTubeVideoId(page.hero_video_url)}`}
+            class="absolute top-1/2 left-1/2 w-[300%] h-[300%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+            allow="autoplay; encrypted-media"
+            allowfullscreen="false"
+            frameborder="0"
+          ></iframe>
+          <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+        </div>
+      ) : (
+        <!-- Other video URLs -->
+        <video
+          autoplay
+          muted
+          loop
+          playsinline
+          class="absolute top-1/2 left-1/2 w-full h-full object-cover -translate-x-1/2 -translate-y-1/2"
+        >
+          <source src={page.hero_video_url} type="video/mp4" />
+        </video>
+        <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+      )}
+    </div>
+  )}
+
+  <div class="container mx-auto px-4 relative z-10">
+    <div class="flex flex-col md:flex-row items-center">
+      {/* Left Side - Text Content */}
+      <div class="md:w-1/2 md:pr-8 mb-8 md:mb-0 p-6">
+        {/* Prelaunch Badge */}
+        {page.show_prelaunch_badge && (
+          <div class="mb-4 text-center md:text-left">
+            <span class="inline-block bg-teal-100 text-teal-800 text-sm font-medium px-3 py-1 rounded-full border border-teal-200">
+              {page.prelaunch_badge_text || "Coming Soon"}
+            </span>
+          </div>
+        )}
+
+        {/* Title */}
+        <h1 class={`text-4xl text-center font-semibold mb-4 ${page.hero_video_url ? 'text-white' : ''}`}>
+          {page.hero_title}
+        </h1>
+
+        {/* Subtitle */}
+        {page.hero_subtitle && (
+          <p class={`text-xl text-center mb-6 ${page.hero_video_url ? 'text-white' : 'text-gray-700'}`}>
+            {page.hero_subtitle}
+          </p>
+        )}
+
+        {/* Hero Content */}
+        {page.hero_content && (
+          <div 
+            class={`max-w-none mb-6 ${page.hero_video_url ? 'text-white' : 'text-gray-700'}`}
+            set:html={page.hero_content}
+          />
+        )}
+
+        {/* Countdown Timer */}
+        {page.show_countdown && page.countdown_target_date && (
+          <div class="mb-8">
+            <CountdownTimer 
+              targetDate={page.countdown_target_date}
+              title={page.countdown_title}
+              className="text-center"
+            />
+          </div>
+        )}
+
+        {/* CTA Buttons */}
+        <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+          {/* Primary CTA */}
+          {page.hero_button_text && page.hero_button_url && (
+            <a
+              href={page.hero_button_url}
+              class="inline-block text-white bg-teal-700 hover:bg-teal-800 font-medium px-6 py-3 rounded-lg transition-colors text-center"
+              aria-label={`${page.hero_button_text} - ${page.hero_title}`}
+              role="button"
+            >
+              {page.hero_button_text}
+            </a>
+          )}
+
+          {/* Secondary CTA */}
+          {page.hero_button_2_text && page.hero_button_2_url && (
+            <a
+              href={page.hero_button_2_url}
+              class={`inline-block font-medium px-6 py-3 rounded-lg border-2 transition-colors text-center ${
+                page.hero_video_url 
+                  ? 'text-white border-white hover:bg-white hover:text-gray-900' 
+                  : 'text-teal-700 border-teal-700 hover:bg-teal-700 hover:text-white'
+              }`}
+              aria-label={`${page.hero_button_2_text} - ${page.hero_title}`}
+              role="button"
+            >
+              {page.hero_button_2_text}
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Right Side - Image or Text */}
+      <div class="md:w-1/2">
+        {page.hero_right_content && page.hero_right_content.trim() !== "" ? (
+          <div class={`p-6 rounded-lg ${page.hero_video_url ? 'bg-white bg-opacity-90' : 'bg-white'}`}>
+            <div class="prose max-w-none">
+              <div set:html={page.hero_right_content} />
+            </div>
+          </div>
+        ) : page.hero_image_src ? (
+          <img
+            src={page.hero_image_src}
+            alt={page.hero_title}
+            class="rounded-lg shadow-lg"
+            onerror="this.onerror=null; this.src='/images/diane-com.webp';"
+            loading="lazy"
+          />
+        ) : (
+          <div class={`p-6 rounded-lg ${page.hero_video_url ? 'bg-white bg-opacity-90' : 'bg-white'}`}>
+            <div class="prose max-w-none">
+              <img
+                src="/images/diane-com.webp"
+                alt="Default hero image"
+                class="rounded-lg"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+
+  {/* Scroll Indicator */}
+  {page.show_scroll_indicator && (
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+      <div class="animate-bounce">
+        <svg 
+          class={`w-6 h-6 ${page.hero_video_url ? 'text-white' : 'text-gray-600'}`}
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path 
+            stroke-linecap="round" 
+            stroke-linejoin="round" 
+            stroke-width="2" 
+            d="M19 14l-7 7m0 0l-7-7m7 7V3"
+          />
+        </svg>
+      </div>
+    </div>
+  )}
+</section>
+
+<style>
+  .animate-bounce {
+    animation: bounce 2s infinite;
+  }
+
+  @keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+      transform: translate3d(0,0,0);
+    }
+    40%, 43% {
+      transform: translate3d(0,-8px,0);
+    }
+    70% {
+      transform: translate3d(0,-4px,0);
+    }
+    90% {
+      transform: translate3d(0,-2px,0);
+    }
+  }
+</style>

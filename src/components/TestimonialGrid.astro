@@ -1,0 +1,128 @@
+---
+// src/components/TestimonialGrid.astro
+import type { PageTestimonial } from "../types";
+
+export interface Props {
+  testimonials: PageTestimonial[];
+  title?: string;
+  className?: string;
+  columns?: 1 | 2 | 3;
+}
+
+const { testimonials, title, className = "", columns = 3 } = Astro.props;
+
+// Generate star rating HTML
+function generateStars(rating: number): string {
+  const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    if (i <= rating) {
+      stars.push(
+        '<svg class="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>',
+      );
+    } else {
+      stars.push(
+        '<svg class="w-5 h-5 text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>',
+      );
+    }
+  }
+  return stars.join("");
+}
+
+const gridClasses = {
+  1: "grid-cols-1",
+  2: "grid-cols-1 md:grid-cols-2",
+  3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+};
+---
+
+{
+  testimonials.length > 0 && (
+    <section class={`testimonials-section ${className}`}>
+      {title && (
+        <h2 class="text-3xl md:text-4xl font-semibold mb-12 text-center">
+          {title}
+        </h2>
+      )}
+
+      <div class={`grid ${gridClasses[columns]} gap-8`}>
+        {testimonials.map((pageTestimonial) => {
+          const testimonial = pageTestimonial.testimonial;
+          return (
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              {/* Rating */}
+              <div
+                class="flex items-center mb-4"
+                set:html={generateStars(testimonial.rating)}
+              />
+
+              {/* Testimonial Content */}
+              <blockquote class="text-gray-700 mb-6 italic">
+                "{testimonial.content}"
+              </blockquote>
+
+              {/* Author Info */}
+              <div class="flex items-center">
+                {testimonial.image && (
+                  <img
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    class="w-12 h-12 rounded-full object-cover mr-4"
+                    loading="lazy"
+                  />
+                )}
+                <div>
+                  <div class="font-semibold text-gray-900">
+                    {testimonial.name}
+                  </div>
+                  {testimonial.title && (
+                    <div class="text-sm text-gray-600">{testimonial.title}</div>
+                  )}
+                  {testimonial.company && (
+                    <div class="text-sm text-teal-600 font-medium">
+                      {testimonial.company}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Category Badge */}
+              {testimonial.category && (
+                <div class="mt-4">
+                  <span class="inline-block bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">
+                    {testimonial.category}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {testimonials.length === 0 && (
+        <div class="text-center py-12">
+          <p class="text-gray-600">No testimonials available yet.</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
+<style>
+  .testimonials-section {
+    /* Custom styles for testimonials */
+  }
+
+  blockquote::before {
+    content: '"';
+    font-size: 4rem;
+    color: #0f766e;
+    position: absolute;
+    margin-left: -20px;
+    margin-top: -10px;
+    opacity: 0.1;
+  }
+
+  blockquote {
+    position: relative;
+  }
+</style>
