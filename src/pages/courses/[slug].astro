@@ -6,22 +6,65 @@ import Footer from "../../components/Footer.astro";
 import { fetchCourses, fetchCourse } from "../../lib/api";
 import type { Course } from "../../types";
 
-// Generate all course routes at build time
+// Generate all course routes at build time with error handling
 export async function getStaticPaths() {
-  const courses = await fetchCourses();
+  try {
+    const courses = await fetchCourses();
 
-  return courses.map((course) => ({
-    params: { slug: course.slug },
-    props: { course },
-  }));
+    if (!courses || courses.length === 0) {
+      console.warn("No courses found, returning empty paths array");
+      return [];
+    }
+
+    return courses.map((course) => ({
+      params: { slug: course.slug },
+      props: { course },
+    }));
+  } catch (error) {
+    console.error("Error fetching courses for static paths:", error);
+
+    // Return empty array to allow build to continue
+    // In production, you might want to return some default courses
+    return [];
+  }
 }
 
-// The course is now passed as a prop from getStaticPaths
-const { course }: { course: Course } = Astro.props;
+// Get the course from props, with fallback handling
+const { course } = Astro.props;
+
+// If no course data (build fallback), create a minimal course object
+const courseData: Course = course || {
+  id: 0,
+  title: "Course Not Found",
+  slug: "not-found",
+  description: "This course could not be loaded.",
+  content: "",
+  price: 0,
+  featured_image: "",
+  video_preview: "",
+  duration_weeks: 0,
+  difficulty_level: "beginner" as const,
+  is_published: false,
+  is_featured: false,
+  category: null,
+  instructor: {
+    id: 0,
+    name: "Unknown Instructor",
+    bio: "",
+    avatar: "",
+    expertise_areas: [],
+  },
+  lessons: [],
+  enrollments_count: 0,
+  average_rating: 0,
+  created_at: "",
+  updated_at: "",
+};
 
 // Helper functions
 const getDurationDisplay = (weeks: number): string => {
   if (weeks === 1) return "1 week";
+  if (weeks === 0) return "Self-paced";
   return `${weeks} weeks`;
 };
 
@@ -37,16 +80,21 @@ const getLevelColor = (level: string): string => {
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
 };
+
+// If course not found, return 404-like response
+if (!course) {
+  return Astro.redirect("/404");
+}
 ---
 
 <BaseLayout>
   <Header slot="header" />
-  <title slot="title">{course.title} – Corrison Courses</title>
+  <title slot="title">{courseData.title} – Corrison Courses</title>
   <meta
     slot="head"
     name="description"
-    content={course.description ||
-      `Learn ${course.title} with our comprehensive course. ${course.difficulty_level} level course by ${course.instructor?.name || "expert instructors"}.`}
+    content={courseData.description ||
+      `Learn ${courseData.title} with our comprehensive course. ${courseData.difficulty_level} level course by ${courseData.instructor?.name || "expert instructors"}.`}
   />
 
   <div class="min-h-screen bg-gray-50">
@@ -64,11 +112,11 @@ const getLevelColor = (level: string): string => {
                 </li>
                 <li><span class="mx-2">/</span></li>
                 {
-                  course.category && (
+                  courseData.category && (
                     <>
                       <li>
                         <span class="text-gray-400">
-                          {course.category.name}
+                          {courseData.category.name}
                         </span>
                       </li>
                       <li>
@@ -78,21 +126,23 @@ const getLevelColor = (level: string): string => {
                   )
                 }
                 <li>
-                  <span class="text-gray-900 font-medium">{course.title}</span>
+                  <span class="text-gray-900 font-medium"
+                    >{courseData.title}</span
+                  >
                 </li>
               </ol>
             </nav>
 
             <!-- Course Title -->
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              {course.title}
+              {courseData.title}
             </h1>
 
             <!-- Course Description -->
             {
-              course.description && (
+              courseData.description && (
                 <p class="text-xl text-gray-600 mb-6 leading-relaxed">
-                  {course.description}
+                  {courseData.description}
                 </p>
               )
             }
@@ -101,9 +151,9 @@ const getLevelColor = (level: string): string => {
             <div class="flex flex-wrap items-center gap-4 mb-8">
               <!-- Level Badge -->
               <span
-                class={`px-3 py-1 text-sm font-medium rounded-full border ${getLevelColor(course.difficulty_level)}`}
+                class={`px-3 py-1 text-sm font-medium rounded-full border ${getLevelColor(courseData.difficulty_level)}`}
               >
-                {course.difficulty_level}
+                {courseData.difficulty_level}
               </span>
 
               <!-- Duration -->
@@ -120,35 +170,36 @@ const getLevelColor = (level: string): string => {
                     stroke-width="2"
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                {getDurationDisplay(course.duration_weeks)}
+                {getDurationDisplay(courseData.duration_weeks)}
               </div>
 
               <!-- Enrollment Count -->
               {
-                course.enrollments_count !== undefined && (
-                  <div class="flex items-center text-gray-600">
-                    <svg
-                      class="h-5 w-5 mr-2"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                      />
-                    </svg>
-                    {course.enrollments_count} enrolled
-                  </div>
-                )
+                courseData.enrollments_count !== undefined &&
+                  courseData.enrollments_count > 0 && (
+                    <div class="flex items-center text-gray-600">
+                      <svg
+                        class="h-5 w-5 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                      </svg>
+                      {courseData.enrollments_count} enrolled
+                    </div>
+                  )
               }
 
               <!-- Rating -->
               {
-                course.average_rating !== undefined &&
-                  course.average_rating > 0 && (
+                courseData.average_rating !== undefined &&
+                  courseData.average_rating > 0 && (
                     <div class="flex items-center text-gray-600">
                       <svg
                         class="h-5 w-5 mr-2 text-yellow-400"
@@ -157,7 +208,7 @@ const getLevelColor = (level: string): string => {
                       >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
-                      {course.average_rating.toFixed(1)}
+                      {courseData.average_rating.toFixed(1)}
                     </div>
                   )
               }
@@ -165,16 +216,16 @@ const getLevelColor = (level: string): string => {
 
             <!-- Instructor Info -->
             {
-              course.instructor && (
+              courseData.instructor && (
                 <div class="bg-gray-50 rounded-lg p-6 mb-8">
                   <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     Your Instructor
                   </h3>
                   <div class="flex items-start space-x-4">
-                    {course.instructor.avatar ? (
+                    {courseData.instructor.avatar ? (
                       <img
-                        src={course.instructor.avatar}
-                        alt={course.instructor.name}
+                        src={courseData.instructor.avatar}
+                        alt={courseData.instructor.name}
                         class="w-16 h-16 rounded-full object-cover flex-shrink-0"
                         loading="lazy"
                       />
@@ -197,21 +248,23 @@ const getLevelColor = (level: string): string => {
                     )}
                     <div class="flex-1">
                       <h4 class="font-semibold text-gray-900">
-                        {course.instructor.name}
+                        {courseData.instructor.name}
                       </h4>
-                      {course.instructor.bio && (
+                      {courseData.instructor.bio && (
                         <p class="text-gray-600 text-sm mt-2">
-                          {course.instructor.bio}
+                          {courseData.instructor.bio}
                         </p>
                       )}
-                      {course.instructor.expertise_areas &&
-                        course.instructor.expertise_areas.length > 0 && (
+                      {courseData.instructor.expertise_areas &&
+                        courseData.instructor.expertise_areas.length > 0 && (
                           <div class="flex flex-wrap gap-1 mt-2">
-                            {course.instructor.expertise_areas.map((area) => (
-                              <span class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">
-                                {area}
-                              </span>
-                            ))}
+                            {courseData.instructor.expertise_areas.map(
+                              (area) => (
+                                <span class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full">
+                                  {area}
+                                </span>
+                              ),
+                            )}
                           </div>
                         )}
                     </div>
@@ -226,10 +279,10 @@ const getLevelColor = (level: string): string => {
             <!-- Course Image/Video -->
             <div class="relative mb-6">
               {
-                course.featured_image ? (
+                courseData.featured_image ? (
                   <img
-                    src={course.featured_image}
-                    alt={course.title}
+                    src={courseData.featured_image}
+                    alt={courseData.title}
                     class="w-full h-64 lg:h-80 object-cover rounded-lg shadow-lg"
                     loading="lazy"
                   />
@@ -254,7 +307,7 @@ const getLevelColor = (level: string): string => {
 
               <!-- Preview/Play Button Overlay -->
               {
-                course.video_preview && (
+                courseData.video_preview && (
                   <button
                     class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 hover:bg-opacity-40 transition-all rounded-lg"
                     onclick="playPreview()"
@@ -284,10 +337,10 @@ const getLevelColor = (level: string): string => {
               <!-- Price -->
               <div class="text-center mb-6">
                 {
-                  course.price > 0 ? (
+                  courseData.price > 0 ? (
                     <div>
                       <span class="text-4xl font-bold text-gray-900">
-                        ${course.price}
+                        ${courseData.price}
                       </span>
                     </div>
                   ) : (
@@ -323,7 +376,7 @@ const getLevelColor = (level: string): string => {
                         stroke-width="2"
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    {getDurationDisplay(course.duration_weeks)} of content
+                    {getDurationDisplay(courseData.duration_weeks)} of content
                   </li>
 
                   <li class="flex items-center">
@@ -385,7 +438,7 @@ const getLevelColor = (level: string): string => {
 
     <!-- Course Content/Description -->
     {
-      course.content && (
+      courseData.content && (
         <section class="py-12 bg-white">
           <div class="container mx-auto px-4">
             <div class="max-w-4xl mx-auto">
@@ -394,7 +447,7 @@ const getLevelColor = (level: string): string => {
               </h2>
               <div
                 class="prose prose-lg max-w-none"
-                set:html={course.content}
+                set:html={courseData.content}
               />
             </div>
           </div>
@@ -409,7 +462,29 @@ const getLevelColor = (level: string): string => {
 <!-- JavaScript for enrollment and preview functionality -->
 <script is:inline>
   document.addEventListener("DOMContentLoaded", function () {
-    const course = { course };
+    // Get course data from the page
+    const courseElement = document.querySelector("[data-course-id]");
+    const courseId = courseElement?.getAttribute("data-course-id");
+
+    if (!courseId) {
+      console.error("Course ID not found");
+      return;
+    }
+
+    const course = {
+      id: parseInt(courseId),
+      slug: window.location.pathname.split("/").pop(),
+      title: document.querySelector("h1")?.textContent || "Course",
+      price: parseFloat(
+        document
+          .querySelector("[data-course-price]")
+          ?.getAttribute("data-course-price") || "0",
+      ),
+      video_preview: document
+        .querySelector("[data-video-preview]")
+        ?.getAttribute("data-video-preview"),
+    };
+
     let userEnrollment = null;
 
     // Initialize enrollment section
@@ -421,22 +496,27 @@ const getLevelColor = (level: string): string => {
 
       try {
         // Check if user is authenticated
-        const authStore = await import("/src/stores/authStore.ts");
+        const authToken = localStorage.getItem("access_token");
 
-        if (!authStore.isAuthenticated()) {
+        if (!authToken) {
           // User not logged in
           showLoginPrompt();
         } else {
           // Check if user is already enrolled
-          const api = await import("/src/lib/api.ts");
-          const userCourses = await api.fetchUserCourses();
-          userEnrollment = userCourses.find(
-            (enrollment) => enrollment.course.id === course.id,
-          );
+          try {
+            const api = await import("/src/lib/api.ts");
+            const userCourses = await api.fetchUserCourses();
+            userEnrollment = userCourses.find(
+              (enrollment) => enrollment.course.id === course.id,
+            );
 
-          if (userEnrollment) {
-            showEnrolledState();
-          } else {
+            if (userEnrollment) {
+              showEnrolledState();
+            } else {
+              showEnrollmentButton();
+            }
+          } catch (apiError) {
+            console.error("Error fetching user courses:", apiError);
             showEnrollmentButton();
           }
         }
@@ -444,86 +524,97 @@ const getLevelColor = (level: string): string => {
         console.error("Error checking enrollment status:", error);
         showEnrollmentButton();
       } finally {
-        loadingDiv.style.display = "none";
+        if (loadingDiv) {
+          loadingDiv.style.display = "none";
+        }
       }
     }
 
     function showLoginPrompt() {
       const enrollmentSection = document.getElementById("enrollment-section");
-      enrollmentSection.innerHTML = `
-        <div class="text-center space-y-4">
-          <p class="text-gray-600">Sign in to enroll in this course</p>
-          <a 
-            href="/auth/login?redirect=${encodeURIComponent(window.location.pathname)}"
-            class="block w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-          >
-            Sign In to Enroll
-          </a>
-          <p class="text-sm text-gray-500">
-            Don't have an account? 
-            <a href="/auth/register" class="text-teal-700 hover:text-teal-800">Sign up here</a>
-          </p>
-        </div>
-      `;
+      if (enrollmentSection) {
+        enrollmentSection.innerHTML = `
+          <div class="text-center space-y-4">
+            <p class="text-gray-600">Sign in to enroll in this course</p>
+            <a 
+              href="/auth/login?redirect=${encodeURIComponent(window.location.pathname)}"
+              class="block w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            >
+              Sign In to Enroll
+            </a>
+            <p class="text-sm text-gray-500">
+              Don't have an account? 
+              <a href="/auth/register" class="text-teal-700 hover:text-teal-800">Sign up here</a>
+            </p>
+          </div>
+        `;
+      }
     }
 
     function showEnrollmentButton() {
       const enrollmentSection = document.getElementById("enrollment-section");
-      enrollmentSection.innerHTML = `
-        <button
-          id="enroll-btn"
-          class="w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-        >
-          ${course.price > 0 ? `Enroll Now - $${course.price}` : "Enroll for Free"}
-        </button>
-        <div class="text-center">
-          <p class="text-sm text-gray-500">30-day money-back guarantee</p>
-        </div>
-      `;
+      if (enrollmentSection) {
+        enrollmentSection.innerHTML = `
+          <button
+            id="enroll-btn"
+            class="w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+          >
+            ${course.price > 0 ? `Enroll Now - $${course.price}` : "Enroll for Free"}
+          </button>
+          <div class="text-center">
+            <p class="text-sm text-gray-500">30-day money-back guarantee</p>
+          </div>
+        `;
 
-      // Add enrollment click handler
-      document
-        .getElementById("enroll-btn")
-        .addEventListener("click", handleEnrollment);
+        // Add enrollment click handler
+        const enrollBtn = document.getElementById("enroll-btn");
+        if (enrollBtn) {
+          enrollBtn.addEventListener("click", handleEnrollment);
+        }
+      }
     }
 
     function showEnrolledState() {
       const enrollmentSection = document.getElementById("enrollment-section");
-      const progressPercentage = userEnrollment.progress_percentage || 0;
+      if (enrollmentSection && userEnrollment) {
+        const progressPercentage = userEnrollment.progress_percentage || 0;
 
-      enrollmentSection.innerHTML = `
-        <div class="space-y-4">
-          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div class="flex items-center">
-              <svg class="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-              <span class="text-green-800 font-medium">You're enrolled in this course</span>
+        enrollmentSection.innerHTML = `
+          <div class="space-y-4">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div class="flex items-center">
+                <svg class="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span class="text-green-800 font-medium">You're enrolled in this course</span>
+              </div>
             </div>
-          </div>
-          
-          <div class="space-y-2">
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-600">Course Progress</span>
-              <span class="text-gray-900 font-medium">${progressPercentage}%</span>
+            
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-600">Course Progress</span>
+                <span class="text-gray-900 font-medium">${progressPercentage}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-teal-700 h-2 rounded-full transition-all duration-300" style="width: ${progressPercentage}%"></div>
+              </div>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-              <div class="bg-teal-700 h-2 rounded-full transition-all duration-300" style="width: ${progressPercentage}%"></div>
-            </div>
-          </div>
 
-          <a
-            href="/courses/${course.slug}/dashboard"
-            class="block w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors text-center"
-          >
-            ${progressPercentage > 0 ? "Continue Learning" : "Start Course"}
-          </a>
-        </div>
-      `;
+            <a
+              href="/courses/${course.slug}/dashboard"
+              class="block w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors text-center"
+            >
+              ${progressPercentage > 0 ? "Continue Learning" : "Start Course"}
+            </a>
+          </div>
+        `;
+      }
     }
 
     async function handleEnrollment() {
       const enrollBtn = document.getElementById("enroll-btn");
+      if (!enrollBtn) return;
+
       const originalText = enrollBtn.textContent;
 
       // Disable button and show loading
@@ -591,3 +682,12 @@ const getLevelColor = (level: string): string => {
     };
   });
 </script>
+
+<!-- Hidden data attributes for JavaScript -->
+<div
+  data-course-id={courseData.id.toString()}
+  data-course-price={courseData.price.toString()}
+  data-video-preview={courseData.video_preview}
+  style="display: none;"
+>
+</div>
