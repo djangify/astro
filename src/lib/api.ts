@@ -1,5 +1,19 @@
 // src/lib/api.ts
-import type { BlogPost, Page, LinkHub, Testimonial, Course, CourseEnrollment, LessonProgress } from "../types";
+import type {
+  BlogPost,
+  Page,
+  LinkHub,
+  Testimonial,
+  Course,
+  CourseEnrollment,
+  LessonProgress,
+  AppointmentType,
+  BookingSettings,
+  AvailableSlot,
+  Appointment,
+  AvailabilitySlot,
+  CalendarUser
+} from "../types";
 const API = "https://corrison.corrisonapi.com";
 
 async function check<T>(res: Response, what: string): Promise<T> {
@@ -118,4 +132,267 @@ export function updateLessonProgress(lessonId: number, completed: boolean): Prom
     },
     body: JSON.stringify({ completed }),
   }).then(r => check<LessonProgress>(r, "lesson progress update"));
+}
+/** NEW: Appointments API - Public endpoints */
+export function fetchCalendarUser(username: string): Promise<{
+  username: string;
+  business_name: string;
+  display_name: string;
+  timezone: string;
+  booking_instructions: string;
+  appointment_types: AppointmentType[];
+  booking_settings: BookingSettings;
+}> {
+  return fetch(`${API}/api/v1/appointments-booking/api/public/${username}/`)
+    .then(r => check(r, "calendar user"));
+}
+
+export function fetchAvailableSlots(
+  username: string,
+  appointmentTypeId: number,
+  startDate?: string,
+  endDate?: string
+): Promise<AvailableSlot[]> {
+  const params = new URLSearchParams({
+    appointment_type_id: appointmentTypeId.toString(),
+    ...(startDate && { start_date: startDate }),
+    ...(endDate && { end_date: endDate })
+  });
+
+  return fetch(`${API}/api/v1/appointments-booking/api/public/${username}/slots/?${params}`)
+    .then(r => check<AvailableSlot[]>(r, "available slots"));
+}
+
+export function bookAppointment(bookingData: {
+  appointment_type_id: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string;
+  customer_notes?: string;
+  date: string;
+  start_time: string;
+}): Promise<{
+  id: number;
+  status: string;
+  payment_required: boolean;
+  payment_amount?: number;
+  customer_name: string;
+  customer_email: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+}> {
+  return fetch(`${API}/api/v1/appointments-booking/api/public/book/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(bookingData),
+  }).then(r => check(r, "appointment booking"));
+}
+
+export function fetchCustomerAppointment(appointmentId: number, email: string): Promise<{
+  id: number;
+  appointment_type_name: string;
+  calendar_user_name: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
+  status: string;
+  customer_notes?: string;
+  payment_status: string;
+  payment_amount?: number;
+  can_be_cancelled: boolean;
+  created_at: string;
+  confirmed_at?: string;
+}> {
+  return fetch(`${API}/api/v1/appointments-booking/api/public/appointment/${appointmentId}/?email=${encodeURIComponent(email)}`)
+    .then(r => check(r, "customer appointment"));
+}
+
+export function cancelCustomerAppointment(appointmentId: number, email: string): Promise<{
+  id: number;
+  status: string;
+  cancelled_at: string;
+}> {
+  return fetch(`${API}/api/v1/appointments-booking/api/public/appointment/${appointmentId}/cancel/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  }).then(r => check(r, "appointment cancellation"));
+}
+
+/** NEW: Appointments API - Authenticated endpoints */
+export function fetchUserAppointments(): Promise<Appointment[]> {
+  return fetch(`${API}/api/v1/appointments/appointments/`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<Appointment[]>(r, "user appointments"));
+}
+
+export function fetchUserAppointment(appointmentId: number): Promise<Appointment> {
+  return fetch(`${API}/api/v1/appointments/appointments/${appointmentId}/`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<Appointment>(r, "user appointment"));
+}
+
+export function cancelUserAppointment(appointmentId: number): Promise<Appointment> {
+  return fetch(`${API}/api/v1/appointments/appointments/${appointmentId}/cancel/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<Appointment>(r, "appointment cancellation"));
+}
+
+export function confirmAppointment(appointmentId: number): Promise<Appointment> {
+  return fetch(`${API}/api/v1/appointments/appointments/${appointmentId}/confirm/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<Appointment>(r, "appointment confirmation"));
+}
+
+/** NEW: Calendar User Management (authenticated) */
+export function fetchUserCalendarProfile(): Promise<{
+  id: number;
+  username: string;
+  business_name: string;
+  display_name: string;
+  timezone: string;
+  booking_window_days: number;
+  buffer_minutes: number;
+  is_calendar_active: boolean;
+  booking_instructions: string;
+}> {
+  return fetch(`${API}/api/v1/appointments/profiles/`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check(r, "calendar profile"));
+}
+
+export function updateCalendarProfile(profileData: {
+  business_name?: string;
+  timezone?: string;
+  booking_window_days?: number;
+  buffer_minutes?: number;
+  is_calendar_active?: boolean;
+  booking_instructions?: string;
+}): Promise<any> {
+  return fetch(`${API}/api/v1/appointments/profiles/`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+    body: JSON.stringify(profileData),
+  }).then(r => check(r, "calendar profile update"));
+}
+
+export function fetchAppointmentTypes(): Promise<AppointmentType[]> {
+  return fetch(`${API}/api/v1/appointments/appointment-types/`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<AppointmentType[]>(r, "appointment types"));
+}
+
+export function createAppointmentType(typeData: {
+  name: string;
+  description?: string;
+  duration_minutes: number;
+  price?: number;
+  color?: string;
+  requires_payment?: boolean;
+  order?: number;
+}): Promise<AppointmentType> {
+  return fetch(`${API}/api/v1/appointments/appointment-types/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+    body: JSON.stringify(typeData),
+  }).then(r => check<AppointmentType>(r, "appointment type creation"));
+}
+
+export function updateAppointmentType(typeId: number, typeData: Partial<AppointmentType>): Promise<AppointmentType> {
+  return fetch(`${API}/api/v1/appointments/appointment-types/${typeId}/`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+    body: JSON.stringify(typeData),
+  }).then(r => check<AppointmentType>(r, "appointment type update"));
+}
+
+export function deleteAppointmentType(typeId: number): Promise<void> {
+  return fetch(`${API}/api/v1/appointments/appointment-types/${typeId}/`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => {
+    if (!r.ok) throw new Error('Failed to delete appointment type');
+  });
+}
+
+export function fetchAvailability(): Promise<AvailabilitySlot[]> {
+  return fetch(`${API}/api/v1/appointments/availability/`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<AvailabilitySlot[]>(r, "availability slots"));
+}
+
+export function createAvailability(availabilityData: {
+  date: string;
+  start_time: string;
+  end_time: string;
+  is_available?: boolean;
+  recurring_pattern?: string;
+  recurring_until?: string;
+  notes?: string;
+}): Promise<AvailabilitySlot> {
+  return fetch(`${API}/api/v1/appointments/availability/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+    body: JSON.stringify(availabilityData),
+  }).then(r => check<AvailabilitySlot>(r, "availability creation"));
+}
+
+export function updateAvailability(availabilityId: number, availabilityData: Partial<AvailabilitySlot>): Promise<AvailabilitySlot> {
+  return fetch(`${API}/api/v1/appointments/availability/${availabilityId}/`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+    body: JSON.stringify(availabilityData),
+  }).then(r => check<AvailabilitySlot>(r, "availability update"));
+}
+
+export function deleteAvailability(availabilityId: number): Promise<void> {
+  return fetch(`${API}/api/v1/appointments/availability/${availabilityId}/`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => {
+    if (!r.ok) throw new Error('Failed to delete availability slot');
+  });
 }

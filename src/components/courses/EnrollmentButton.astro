@@ -1,0 +1,250 @@
+---
+// src/components/courses/EnrollmentButton.astro
+import type { Course } from "../../types";
+
+export interface Props {
+  course: Course;
+  isEnrolled?: boolean;
+  enrollmentProgress?: number;
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+  showPrice?: boolean;
+}
+
+const {
+  course,
+  isEnrolled = false,
+  enrollmentProgress = 0,
+  variant = 'primary',
+  size = 'md',
+  className = '',
+  showPrice = true,
+} = Astro.props;
+
+// Button styling variants
+const variants = {
+  primary: 'bg-teal-700 hover:bg-teal-800 text-white',
+  secondary: 'bg-gray-600 hover:bg-gray-700 text-white',
+  outline: 'border-2 border-teal-700 text-teal-700 hover:bg-teal-700 hover:text-white',
+};
+
+const sizes = {
+  sm: 'px-4 py-2 text-sm',
+  md: 'px-6 py-3 text-base',
+  lg: 'px-8 py-4 text-lg',
+};
+
+const baseClasses = 'font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2';
+const buttonClasses = `${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`;
+
+// Button text logic
+const getButtonText = () => {
+  if (isEnrolled) {
+    return enrollmentProgress > 0 ? 'Continue Learning' : 'Start Course';
+  }
+  
+  if (course.price > 0 && showPrice) {
+    return `Enroll Now - $${course.price}`;
+  }
+  
+  return course.price > 0 ? 'Enroll Now' : 'Enroll for Free';
+};
+
+const getButtonAction = () => {
+  if (isEnrolled) {
+    return `/courses/${course.slug}/dashboard`;
+  }
+  return null; // Will be handled by JavaScript
+};
+---
+
+<div class="enrollment-button-container">
+  {isEnrolled ? (
+    <!-- Enrolled State - Show progress and continue button -->
+    <div class="space-y-3">
+      <div class="flex justify-between text-sm text-gray-600">
+        <span>Course Progress</span>
+        <span class="font-medium text-gray-900">{enrollmentProgress}%</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2">
+        <div 
+          class="bg-teal-700 h-2 rounded-full transition-all duration-300" 
+          style={`width: ${enrollmentProgress}%`}
+        ></div>
+      </div>
+      <a
+        href={getButtonAction()}
+        class={`block w-full text-center ${buttonClasses}`}
+      >
+        {getButtonText()}
+      </a>
+    </div>
+  ) : (
+    <!-- Not Enrolled State - Show enrollment button -->
+    <div class="space-y-3">
+      {course.price > 0 && showPrice && (
+        <div class="text-center">
+          <span class="text-3xl font-bold text-gray-900">${course.price}</span>
+        </div>
+      )}
+      
+      <button
+        type="button"
+        class={`w-full ${buttonClasses} enrollment-btn`}
+        data-course-id={course.id}
+        data-course-slug={course.slug}
+        data-course-title={course.title}
+        data-course-price={course.price}
+      >
+        {getButtonText()}
+      </button>
+      
+      <div class="text-center">
+        <p class="text-sm text-gray-500">30-day money-back guarantee</p>
+      </div>
+    </div>
+  )}
+
+  <!-- Loading State (hidden by default) -->
+  <div class="enrollment-loading hidden space-y-3">
+    <div class="animate-pulse">
+      <div class="h-12 bg-gray-200 rounded-lg"></div>
+    </div>
+  </div>
+
+  <!-- Error State (hidden by default) -->
+  <div class="enrollment-error hidden">
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div class="flex">
+        <svg class="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
+        <div>
+          <h3 class="text-sm font-medium text-red-800">Enrollment Failed</h3>
+          <p class="text-sm text-red-700 mt-1">Please try again or contact support.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Handle enrollment button clicks
+    document.addEventListener("click", async function (e) {
+      const target = e.target as HTMLElement;
+      
+      if (target.classList.contains("enrollment-btn")) {
+        e.preventDefault();
+        
+        const button = target as HTMLButtonElement;
+        const container = button.closest(".enrollment-button-container");
+        if (!container) return;
+
+        const courseId = button.getAttribute("data-course-id");
+        const courseSlug = button.getAttribute("data-course-slug");
+        const courseTitle = button.getAttribute("data-course-title");
+        
+        if (!courseId || !courseSlug) return;
+
+        try {
+          // Check if user is authenticated
+          const authStoreModule = await import("../../stores/authStore");
+          if (!authStoreModule.authStore.getState().isAuthenticated) {
+            // Redirect to login with return URL
+            const returnUrl = encodeURIComponent(window.location.pathname);
+            window.location.href = `/auth/login?redirect=${returnUrl}`;
+            return;
+          }
+
+          // Show loading state
+          showLoadingState(container);
+
+          // Attempt enrollment
+          const api = await import("../../lib/api");
+          const enrollment = await api.enrollInCourse(parseInt(courseId));
+
+          // Show success state
+          showSuccessState(container, courseTitle);
+
+          // Redirect to course after short delay
+          setTimeout(() => {
+            window.location.href = `/courses/${courseSlug}`;
+          }, 1500);
+
+        } catch (error) {
+          console.error("Enrollment failed:", error);
+          showErrorState(container);
+          
+          // Reset to original state after 3 seconds
+          setTimeout(() => {
+            resetToOriginalState(container);
+          }, 3000);
+        }
+      }
+    });
+
+    function showLoadingState(container: Element) {
+      const originalContent = container.querySelector(".space-y-3:not(.enrollment-loading)");
+      const loadingContent = container.querySelector(".enrollment-loading");
+      
+      if (originalContent) originalContent.classList.add("hidden");
+      if (loadingContent) loadingContent.classList.remove("hidden");
+    }
+
+    function showSuccessState(container: Element, courseTitle: string | null) {
+      const loadingContent = container.querySelector(".enrollment-loading");
+      
+      if (loadingContent) {
+        loadingContent.innerHTML = `
+          <div class="text-center space-y-3">
+            <div class="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-medium text-gray-900">Successfully Enrolled!</h3>
+              <p class="text-sm text-gray-600">Welcome to ${courseTitle || 'the course'}. Redirecting...</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function showErrorState(container: Element) {
+      const loadingContent = container.querySelector(".enrollment-loading");
+      const errorContent = container.querySelector(".enrollment-error");
+      
+      if (loadingContent) loadingContent.classList.add("hidden");
+      if (errorContent) errorContent.classList.remove("hidden");
+    }
+
+    function resetToOriginalState(container: Element) {
+      const originalContent = container.querySelector(".space-y-3:not(.enrollment-loading):not(.enrollment-error)");
+      const loadingContent = container.querySelector(".enrollment-loading");
+      const errorContent = container.querySelector(".enrollment-error");
+      
+      if (loadingContent) loadingContent.classList.add("hidden");
+      if (errorContent) errorContent.classList.add("hidden");
+      if (originalContent) originalContent.classList.remove("hidden");
+    }
+  });
+</script>
+
+<style>
+  .enrollment-button-container {
+    /* Component-specific styles */
+  }
+  
+  .enrollment-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .enrollment-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+</style>

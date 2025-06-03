@@ -1,0 +1,323 @@
+---
+// src/pages/calendar/index.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import CalendarView from "../../components/calendar/CalendarView.astro";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">Calendar - Book an Appointment</title>
+  <meta
+    slot="head"
+    name="description"
+    content="Book an appointment with our calendar system. Select your preferred date and time."
+  />
+
+  <main class="min-h-screen bg-gray-50">
+    <!-- Page Header -->
+    <div class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="py-8">
+          <div class="md:flex md:items-center md:justify-between">
+            <div class="flex-1 min-w-0">
+              <h1 class="text-3xl font-bold text-gray-900">
+                Book an Appointment
+              </h1>
+              <p class="mt-2 text-lg text-gray-600">
+                Select a calendar owner to view their availability and book an
+                appointment.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Calendar Owner Selection -->
+      <div class="mb-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">
+            Select Calendar Owner
+          </h2>
+
+          <div class="space-y-4">
+            <!-- Demo Calendar Owner Input -->
+            <div>
+              <label
+                for="calendar-username"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Calendar Username
+              </label>
+              <div class="flex space-x-3">
+                <input
+                  type="text"
+                  id="calendar-username"
+                  class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  placeholder="Enter calendar username (e.g., johndoe)"
+                  value=""
+                />
+                <button
+                  id="load-calendar-btn"
+                  class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 py-2 rounded-lg transition-colors"
+                  onclick="loadCalendar()"
+                >
+                  Load Calendar
+                </button>
+              </div>
+              <p class="mt-2 text-sm text-gray-500">
+                Enter the username of the calendar owner you'd like to book
+                with.
+              </p>
+            </div>
+
+            <!-- Popular Calendar Owners (Demo) -->
+            <div>
+              <h3 class="text-sm font-medium text-gray-700 mb-3">
+                Popular Calendar Owners
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <button
+                  class="text-left p-3 border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-teal-50 transition-all"
+                  onclick="selectCalendarOwner('demo')"
+                >
+                  <div class="font-medium text-gray-900">Demo Calendar</div>
+                  <div class="text-sm text-gray-600">
+                    Sample appointment booking
+                  </div>
+                </button>
+
+                <button
+                  class="text-left p-3 border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-teal-50 transition-all"
+                  onclick="selectCalendarOwner('testuser')"
+                >
+                  <div class="font-medium text-gray-900">Test User</div>
+                  <div class="text-sm text-gray-600">Testing appointments</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar Container -->
+      <div id="calendar-container" class="hidden" data-calendar-username="">
+        <CalendarView username="" />
+      </div>
+
+      <!-- No Calendar Selected State -->
+      <div id="no-calendar-state" class="text-center py-12">
+        <svg
+          class="w-16 h-16 mx-auto mb-4 text-gray-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          ></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">
+          No Calendar Selected
+        </h3>
+        <p class="text-gray-600 mb-6">
+          Enter a calendar username above to view available appointment slots.
+        </p>
+      </div>
+
+      <!-- Error State -->
+      <div id="calendar-error-state" class="hidden text-center py-12">
+        <svg
+          class="w-16 h-16 mx-auto mb-4 text-red-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">
+          Calendar Not Found
+        </h3>
+        <p class="text-gray-600 mb-6" id="calendar-error-message">
+          The calendar user was not found or is not accepting bookings.
+        </p>
+        <button
+          onclick="resetCalendarSelection()"
+          class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          Try Another Calendar
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div id="calendar-loading-state" class="hidden text-center py-12">
+        <div
+          class="animate-spin rounded-full h-16 w-16 border-b-2 border-teal-600 mx-auto mb-4"
+        >
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">
+          Loading Calendar...
+        </h3>
+        <p class="text-gray-600">
+          Please wait while we load the appointment calendar.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script is:inline>
+  // Global functions for calendar management
+  window.loadCalendar = async function () {
+    const usernameInput = document.getElementById("calendar-username");
+    const username = usernameInput?.value.trim();
+
+    if (!username) {
+      alert("Please enter a calendar username");
+      return;
+    }
+
+    await selectCalendarOwner(username);
+  };
+
+  window.selectCalendarOwner = async function (username) {
+    const calendarContainer = document.getElementById("calendar-container");
+    const noCalendarState = document.getElementById("no-calendar-state");
+    const errorState = document.getElementById("calendar-error-state");
+    const loadingState = document.getElementById("calendar-loading-state");
+    const usernameInput = document.getElementById("calendar-username");
+
+    // Show loading state
+    showState("loading");
+
+    // Update input field
+    if (usernameInput) {
+      usernameInput.value = username;
+    }
+
+    try {
+      // Test if calendar user exists
+      const API_BASE = window.location.origin.includes("localhost")
+        ? "http://localhost:8000"
+        : "https://corrison.corrisonapi.com";
+
+      const response = await fetch(
+        `${API_BASE}/api/v1/appointments-booking/api/public/${username}/`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Calendar user not found or not accepting bookings");
+      }
+
+      const calendarUser = await response.json();
+
+      // Set calendar username attribute
+      if (calendarContainer) {
+        calendarContainer.setAttribute("data-calendar-username", username);
+      }
+
+      // Show calendar
+      showState("calendar");
+
+      // Update page URL without reload
+      const url = new URL(window.location);
+      url.searchParams.set("calendar", username);
+      window.history.pushState({}, "", url);
+    } catch (error) {
+      console.error("Error loading calendar:", error);
+
+      const errorMessage = document.getElementById("calendar-error-message");
+      if (errorMessage) {
+        errorMessage.textContent =
+          error.message || "Failed to load calendar. Please try again.";
+      }
+
+      showState("error");
+    }
+  };
+
+  window.resetCalendarSelection = function () {
+    const usernameInput = document.getElementById("calendar-username");
+    if (usernameInput) {
+      usernameInput.value = "";
+    }
+
+    // Clear URL parameter
+    const url = new URL(window.location);
+    url.searchParams.delete("calendar");
+    window.history.pushState({}, "", url);
+
+    showState("none");
+  };
+
+  function showState(state) {
+    const calendarContainer = document.getElementById("calendar-container");
+    const noCalendarState = document.getElementById("no-calendar-state");
+    const errorState = document.getElementById("calendar-error-state");
+    const loadingState = document.getElementById("calendar-loading-state");
+
+    // Hide all states
+    [calendarContainer, noCalendarState, errorState, loadingState].forEach(
+      (el) => {
+        if (el) el.classList.add("hidden");
+      },
+    );
+
+    // Show selected state
+    switch (state) {
+      case "calendar":
+        if (calendarContainer) calendarContainer.classList.remove("hidden");
+        break;
+      case "error":
+        if (errorState) errorState.classList.remove("hidden");
+        break;
+      case "loading":
+        if (loadingState) loadingState.classList.remove("hidden");
+        break;
+      default:
+        if (noCalendarState) noCalendarState.classList.remove("hidden");
+    }
+  }
+
+  // Check URL parameters on page load
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const calendarParam = urlParams.get("calendar");
+
+    if (calendarParam) {
+      selectCalendarOwner(calendarParam);
+    } else {
+      showState("none");
+    }
+
+    // Handle Enter key in username input
+    const usernameInput = document.getElementById("calendar-username");
+    if (usernameInput) {
+      usernameInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          loadCalendar();
+        }
+      });
+    }
+  });
+</script>
+
+<style>
+  /* Calendar page specific styles */
+  main {
+    min-height: calc(100vh - 64px);
+  }
+</style>

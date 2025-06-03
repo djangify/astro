@@ -1,0 +1,678 @@
+---
+// src/components/calendar/AppointmentList.astro
+export interface Props {
+  title?: string;
+  showFilters?: boolean;
+  showPagination?: boolean;
+  itemsPerPage?: number;
+  variant?: 'default' | 'compact' | 'detailed';
+  isPublic?: boolean;
+  emptyMessage?: string;
+  emptyDescription?: string;
+}
+
+const { 
+  title = 'Appointments',
+  showFilters = true,
+  showPagination = true,
+  itemsPerPage = 10,
+  variant = 'default',
+  isPublic = false,
+  emptyMessage = 'No appointments found',
+  emptyDescription = 'You don\'t have any appointments scheduled.'
+} = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200">
+  <!-- Header -->
+  <div class="px-6 py-4 border-b border-gray-200">
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold text-gray-900">{title}</h2>
+      
+      <div class="flex items-center space-x-3">
+        <!-- View Toggle -->
+        <div class="flex rounded-lg border border-gray-300">
+          <button
+            id="list-view-btn"
+            class="px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-l-lg border-r border-gray-300 transition-colors"
+            onclick="switchView('list')"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+            </svg>
+          </button>
+          <button
+            id="grid-view-btn"
+            class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-r-lg transition-colors"
+            onclick="switchView('grid')"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Refresh Button -->
+        <button
+          id="refresh-btn"
+          class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          onclick="refreshAppointments()"
+          title="Refresh"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  {showFilters && (
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Status Filter -->
+        <div class="flex items-center space-x-2">
+          <label for="status-filter" class="text-sm font-medium text-gray-700">Status:</label>
+          <select
+            id="status-filter"
+            class="text-sm border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
+            onchange="applyFilters()"
+          >
+            <option value="">All</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <!-- Date Range Filter -->
+        <div class="flex items-center space-x-2">
+          <label for="date-from" class="text-sm font-medium text-gray-700">From:</label>
+          <input
+            type="date"
+            id="date-from"
+            class="text-sm border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
+            onchange="applyFilters()"
+          />
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <label for="date-to" class="text-sm font-medium text-gray-700">To:</label>
+          <input
+            type="date"
+            id="date-to"
+            class="text-sm border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
+            onchange="applyFilters()"
+          />
+        </div>
+
+        <!-- Search -->
+        <div class="flex items-center space-x-2 flex-1 max-w-xs">
+          <label for="search-input" class="text-sm font-medium text-gray-700">Search:</label>
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Search appointments..."
+            class="flex-1 text-sm border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500"
+            oninput="applyFilters()"
+          />
+        </div>
+
+        <!-- Clear Filters -->
+        <button
+          onclick="clearFilters()"
+          class="text-sm text-teal-600 hover:text-teal-800 font-medium"
+        >
+          Clear Filters
+        </button>
+      </div>
+    </div>
+  )}
+
+  <!-- Loading State -->
+  <div id="appointments-loading" class="p-6">
+    <div class="space-y-4">
+      {Array.from({ length: 3 }).map(() => (
+        <div class="animate-pulse">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 bg-gray-200 rounded-lg"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div class="w-20 h-6 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Appointments List -->
+  <div id="appointments-content" class="hidden">
+    <!-- List View -->
+    <div id="list-view" class="divide-y divide-gray-200">
+      <!-- Appointments will be populated here -->
+    </div>
+
+    <!-- Grid View -->
+    <div id="grid-view" class="hidden p-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Appointments will be populated here -->
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="appointments-empty" class="hidden p-8 text-center">
+    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+    </svg>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">{emptyMessage}</h3>
+    <p class="text-gray-600 mb-6">{emptyDescription}</p>
+    {!isPublic && (
+      <a
+        href="/calendar"
+        class="inline-flex items-center px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-lg transition-colors"
+      >
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        Book Appointment
+      </a>
+    )}
+  </div>
+
+  <!-- Error State -->
+  <div id="appointments-error" class="hidden p-8 text-center">
+    <svg class="w-16 h-16 mx-auto mb-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">Error Loading Appointments</h3>
+    <p class="text-gray-600 mb-6" id="error-message">Unable to load appointments. Please try again.</p>
+    <button
+      onclick="loadAppointments()"
+      class="inline-flex items-center px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-medium rounded-lg transition-colors"
+    >
+      Try Again
+    </button>
+  </div>
+
+  <!-- Pagination -->
+  {showPagination && (
+    <div id="appointments-pagination" class="hidden px-6 py-4 border-t border-gray-200">
+      <div class="flex items-center justify-between">
+        <div class="text-sm text-gray-700">
+          Showing <span id="pagination-start">0</span> to <span id="pagination-end">0</span> of <span id="pagination-total">0</span> appointments
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <button
+            id="prev-page-btn"
+            class="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            onclick="changePage(-1)"
+            disabled
+          >
+            Previous
+          </button>
+          
+          <div id="page-numbers" class="flex space-x-1">
+            <!-- Page numbers will be populated here -->
+          </div>
+          
+          <button
+            id="next-page-btn"
+            class="px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            onclick="changePage(1)"
+            disabled
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
+<script is:inline define:vars={{ itemsPerPage, isPublic, variant }}>
+class AppointmentList {
+  constructor() {
+    this.appointments = [];
+    this.filteredAppointments = [];
+    this.currentPage = 1;
+    this.itemsPerPage = itemsPerPage;
+    this.currentView = 'list';
+    this.filters = {
+      status: '',
+      dateFrom: '',
+      dateTo: '',
+      search: ''
+    };
+    
+    this.init();
+  }
+
+  async init() {
+    try {
+      await this.loadAppointments();
+      this.setupEventListeners();
+    } catch (error) {
+      console.error('Failed to initialize appointment list:', error);
+      this.showError('Failed to initialize appointment list');
+    }
+  }
+
+  async loadAppointments() {
+    this.showLoading();
+    
+    try {
+      const API_BASE = window.location.origin.includes('localhost') 
+        ? 'http://localhost:8000' 
+        : 'https://corrison.corrisonapi.com';
+
+      let endpoint;
+      let headers = { 'Content-Type': 'application/json' };
+
+      if (isPublic) {
+        // For public view, we might need a different endpoint
+        // This would be for viewing specific appointments with email verification
+        endpoint = `${API_BASE}/api/v1/appointments-booking/api/public/appointment/`;
+        // Note: Public appointments typically require email verification
+        // This might need to be adapted based on your specific use case
+      } else {
+        // Private authenticated view
+        endpoint = `${API_BASE}/api/v1/appointments/appointments/`;
+        headers['Authorization'] = `Bearer ${localStorage.getItem('access_token')}`;
+      }
+
+      const response = await fetch(endpoint, { headers });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Redirect to login if unauthorized
+          window.location.href = '/auth/login';
+          return;
+        }
+        throw new Error(`Failed to load appointments: ${response.status}`);
+      }
+
+      this.appointments = await response.json();
+      this.applyFilters();
+      this.hideLoading();
+      
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+      this.showError(error.message || 'Failed to load appointments');
+    }
+  }
+
+  setupEventListeners() {
+    // Set default date range (current month)
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const dateFromInput = document.getElementById('date-from');
+    const dateToInput = document.getElementById('date-to');
+    
+    if (dateFromInput) {
+      dateFromInput.value = firstDay.toISOString().split('T')[0];
+    }
+    if (dateToInput) {
+      dateToInput.value = lastDay.toISOString().split('T')[0];
+    }
+  }
+
+  applyFilters() {
+    // Get filter values
+    this.filters.status = document.getElementById('status-filter')?.value || '';
+    this.filters.dateFrom = document.getElementById('date-from')?.value || '';
+    this.filters.dateTo = document.getElementById('date-to')?.value || '';
+    this.filters.search = document.getElementById('search-input')?.value.toLowerCase() || '';
+
+    // Apply filters
+    this.filteredAppointments = this.appointments.filter(appointment => {
+      // Status filter
+      if (this.filters.status && appointment.status !== this.filters.status) {
+        return false;
+      }
+
+      // Date range filter
+      if (this.filters.dateFrom && appointment.date < this.filters.dateFrom) {
+        return false;
+      }
+      if (this.filters.dateTo && appointment.date > this.filters.dateTo) {
+        return false;
+      }
+
+      // Search filter
+      if (this.filters.search) {
+        const searchText = `
+          ${appointment.appointment_type_name || ''} 
+          ${appointment.customer_name || ''} 
+          ${appointment.customer_notes || ''}
+        `.toLowerCase();
+        
+        if (!searchText.includes(this.filters.search)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // Reset to first page and render
+    this.currentPage = 1;
+    this.renderAppointments();
+    this.renderPagination();
+  }
+
+  clearFilters() {
+    document.getElementById('status-filter').value = '';
+    document.getElementById('date-from').value = '';
+    document.getElementById('date-to').value = '';
+    document.getElementById('search-input').value = '';
+    
+    this.applyFilters();
+  }
+
+  renderAppointments() {
+    const listView = document.getElementById('list-view');
+    const gridView = document.getElementById('grid-view');
+    const contentDiv = document.getElementById('appointments-content');
+    const emptyDiv = document.getElementById('appointments-empty');
+
+    if (this.filteredAppointments.length === 0) {
+      contentDiv.classList.add('hidden');
+      emptyDiv.classList.remove('hidden');
+      return;
+    }
+
+    emptyDiv.classList.add('hidden');
+    contentDiv.classList.remove('hidden');
+
+    // Calculate pagination
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const pageAppointments = this.filteredAppointments.slice(startIndex, endIndex);
+
+    // Render based on current view
+    if (this.currentView === 'list') {
+      this.renderListView(pageAppointments, listView);
+      listView.classList.remove('hidden');
+      gridView.classList.add('hidden');
+    } else {
+      this.renderGridView(pageAppointments, gridView);
+      gridView.classList.remove('hidden');
+      listView.classList.add('hidden');
+    }
+  }
+
+  renderListView(appointments, container) {
+    container.innerHTML = appointments.map(appointment => `
+      <div class="p-6 hover:bg-gray-50 transition-colors">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            
+            <div>
+              <h3 class="font-semibold text-gray-900">
+                ${appointment.appointment_type_name || 'Appointment'}
+              </h3>
+              <div class="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                <span>${this.formatDate(appointment.date)}</span>
+                <span>${this.formatTime(appointment.start_time)} - ${this.formatTime(appointment.end_time)}</span>
+                ${appointment.duration_minutes ? `<span>${appointment.duration_minutes} min</span>` : ''}
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex items-center space-x-4">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${this.getStatusClasses(appointment.status)}">
+              ${this.getStatusText(appointment.status)}
+            </span>
+            
+            <div class="flex space-x-2">
+              ${appointment.can_be_cancelled && appointment.status !== 'cancelled' ? `
+                <button
+                  onclick="cancelAppointment(${appointment.id})"
+                  class="text-sm text-red-600 hover:text-red-800 font-medium"
+                >
+                  Cancel
+                </button>
+              ` : ''}
+              <button
+                onclick="viewAppointmentDetails(${appointment.id})"
+                class="text-sm text-teal-600 hover:text-teal-800 font-medium"
+              >
+                Details
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderGridView(appointments, container) {
+    container.innerHTML = appointments.map(appointment => `
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        ${this.renderAppointmentCard(appointment)}
+      </div>
+    `).join('');
+  }
+
+  renderAppointmentCard(appointment) {
+    // This would use the AppointmentCard component logic
+    // For now, simplified version
+    return `
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-gray-900">${appointment.appointment_type_name || 'Appointment'}</h3>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${this.getStatusClasses(appointment.status)}">
+            ${this.getStatusText(appointment.status)}
+          </span>
+        </div>
+        
+        <div class="text-sm text-gray-600 space-y-1">
+          <div class="flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            ${this.formatDate(appointment.date)}
+          </div>
+          <div class="flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            ${this.formatTime(appointment.start_time)} - ${this.formatTime(appointment.end_time)}
+          </div>
+        </div>
+        
+        <div class="flex justify-between items-center pt-3 border-t border-gray-200">
+          ${appointment.can_be_cancelled && appointment.status !== 'cancelled' ? `
+            <button
+              onclick="cancelAppointment(${appointment.id})"
+              class="text-sm text-red-600 hover:text-red-800 font-medium"
+            >
+              Cancel
+            </button>
+          ` : '<div></div>'}
+          <button
+            onclick="viewAppointmentDetails(${appointment.id})"
+            class="text-sm text-teal-600 hover:text-teal-800 font-medium"
+          >
+            Details
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  renderPagination() {
+    const paginationDiv = document.getElementById('appointments-pagination');
+    if (!paginationDiv) return;
+
+    const totalItems = this.filteredAppointments.length;
+    const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+
+    if (totalPages <= 1) {
+      paginationDiv.classList.add('hidden');
+      return;
+    }
+
+    paginationDiv.classList.remove('hidden');
+
+    // Update pagination info
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endIndex = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+
+    document.getElementById('pagination-start').textContent = startIndex;
+    document.getElementById('pagination-end').textContent = endIndex;
+    document.getElementById('pagination-total').textContent = totalItems;
+
+    // Update button states
+    const prevBtn = document.getElementById('prev-page-btn');
+    const nextBtn = document.getElementById('next-page-btn');
+
+    prevBtn.disabled = this.currentPage === 1;
+    nextBtn.disabled = this.currentPage === totalPages;
+  }
+
+  changePage(direction) {
+    const totalPages = Math.ceil(this.filteredAppointments.length / this.itemsPerPage);
+    const newPage = this.currentPage + direction;
+
+    if (newPage >= 1 && newPage <= totalPages) {
+      this.currentPage = newPage;
+      this.renderAppointments();
+      this.renderPagination();
+    }
+  }
+
+  switchView(view) {
+    this.currentView = view;
+    
+    // Update button states
+    const listBtn = document.getElementById('list-view-btn');
+    const gridBtn = document.getElementById('grid-view-btn');
+
+    if (view === 'list') {
+      listBtn.className = 'px-3 py-2 text-sm font-medium text-white bg-teal-600 rounded-l-lg border-r border-teal-600 transition-colors';
+      gridBtn.className = 'px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-r-lg transition-colors';
+    } else {
+      listBtn.className = 'px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-l-lg border-r border-gray-300 transition-colors';
+      gridBtn.className = 'px-3 py-2 text-sm font-medium text-white bg-teal-600 rounded-r-lg transition-colors';
+    }
+
+    this.renderAppointments();
+  }
+
+  // Utility methods
+  formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  formatTime(timeString) {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
+  getStatusClasses(status) {
+    const classes = {
+      'confirmed': 'bg-green-100 text-green-800',
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'cancelled': 'bg-red-100 text-red-800',
+      'completed': 'bg-blue-100 text-blue-800'
+    };
+    return classes[status] || 'bg-gray-100 text-gray-800';
+  }
+
+  getStatusText(status) {
+    const texts = {
+      'confirmed': 'Confirmed',
+      'pending': 'Pending',
+      'cancelled': 'Cancelled',
+      'completed': 'Completed'
+    };
+    return texts[status] || status || 'Unknown';
+  }
+
+  showLoading() {
+    document.getElementById('appointments-loading').classList.remove('hidden');
+    document.getElementById('appointments-content').classList.add('hidden');
+    document.getElementById('appointments-empty').classList.add('hidden');
+    document.getElementById('appointments-error').classList.add('hidden');
+  }
+
+  hideLoading() {
+    document.getElementById('appointments-loading').classList.add('hidden');
+  }
+
+  showError(message) {
+    document.getElementById('appointments-loading').classList.add('hidden');
+    document.getElementById('appointments-content').classList.add('hidden');
+    document.getElementById('appointments-empty').classList.add('hidden');
+    document.getElementById('appointments-error').classList.remove('hidden');
+    document.getElementById('error-message').textContent = message;
+  }
+}
+
+// Global functions
+window.switchView = function(view) {
+  if (window.appointmentListInstance) {
+    window.appointmentListInstance.switchView(view);
+  }
+};
+
+window.applyFilters = function() {
+  if (window.appointmentListInstance) {
+    window.appointmentListInstance.applyFilters();
+  }
+};
+
+window.clearFilters = function() {
+  if (window.appointmentListInstance) {
+    window.appointmentListInstance.clearFilters();
+  }
+};
+
+window.changePage = function(direction) {
+  if (window.appointmentListInstance) {
+    window.appointmentListInstance.changePage(direction);
+  }
+};
+
+window.refreshAppointments = function() {
+  if (window.appointmentListInstance) {
+    window.appointmentListInstance.loadAppointments();
+  }
+};
+
+window.loadAppointments = function() {
+  if (window.appointmentListInstance) {
+    window.appointmentListInstance.loadAppointments();
+  }
+};
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  window.appointmentListInstance = new AppointmentList();
+});
+</script>

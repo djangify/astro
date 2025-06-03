@@ -1,0 +1,482 @@
+---
+// src/pages/courses/my-courses.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+
+// This page requires authentication, so we'll handle data loading client-side
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">My Courses – Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content="Track your learning progress and continue your courses. Access all your enrolled courses in one place."
+  />
+
+  <div class="min-h-screen bg-gray-50">
+    <!-- Page Header -->
+    <section class="bg-white border-b border-gray-200">
+      <div class="container mx-auto px-4 py-12">
+        <div class="max-w-4xl mx-auto text-center">
+          <h1 class="text-4xl font-bold text-gray-900 mb-4">My Courses</h1>
+          <p class="text-xl text-gray-600">
+            Track your learning progress and continue where you left off
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12">
+      <!-- Loading State -->
+      <div id="loading-state" class="text-center py-16">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
+        >
+        </div>
+        <p class="text-gray-600">Loading your courses...</p>
+      </div>
+
+      <!-- Not Authenticated State -->
+      <div id="not-authenticated" class="text-center py-16 hidden">
+        <svg
+          class="h-16 w-16 mx-auto text-gray-300 mb-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          ></path>
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h2>
+        <p class="text-gray-600 mb-6">
+          You need to be signed in to view your courses.
+        </p>
+        <div class="space-x-4">
+          <a
+            href="/auth/login"
+            class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Sign In
+          </a>
+          <a
+            href="/auth/register"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Create Account
+          </a>
+        </div>
+      </div>
+
+      <!-- Course Statistics -->
+      <div id="course-stats" class="hidden mb-12">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div class="text-3xl font-bold text-teal-700" id="total-courses">
+              0
+            </div>
+            <div class="text-sm text-gray-600">Total Courses</div>
+          </div>
+          <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div
+              class="text-3xl font-bold text-green-600"
+              id="completed-courses"
+            >
+              0
+            </div>
+            <div class="text-sm text-gray-600">Completed</div>
+          </div>
+          <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div
+              class="text-3xl font-bold text-blue-600"
+              id="in-progress-courses"
+            >
+              0
+            </div>
+            <div class="text-sm text-gray-600">In Progress</div>
+          </div>
+          <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+            <div class="text-3xl font-bold text-gray-600" id="avg-progress">
+              0%
+            </div>
+            <div class="text-sm text-gray-600">Avg Progress</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter/Sort Controls -->
+      <div id="course-controls" class="hidden mb-8">
+        <div
+          class="flex flex-col md:flex-row gap-4 items-center justify-between"
+        >
+          <div class="flex flex-wrap gap-4">
+            <!-- Status Filter -->
+            <select
+              id="status-filter"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="all">All Courses</option>
+              <option value="not-started">Not Started</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+
+            <!-- Sort Options -->
+            <select
+              id="sort-filter"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="recent">Recently Accessed</option>
+              <option value="progress">Progress</option>
+              <option value="enrollment-date">Enrollment Date</option>
+              <option value="alphabetical">Alphabetical</option>
+            </select>
+          </div>
+
+          <!-- View Toggle -->
+          <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+            <button
+              id="grid-view"
+              class="px-3 py-2 bg-teal-700 text-white text-sm hover:bg-teal-800"
+              data-view="grid"
+            >
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                ></path>
+              </svg>
+            </button>
+            <button
+              id="list-view"
+              class="px-3 py-2 bg-gray-100 text-gray-700 text-sm hover:bg-gray-200"
+              data-view="list"
+            >
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Courses Grid -->
+      <div id="courses-container" class="hidden">
+        <div
+          id="courses-grid"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
+          <!-- Courses will be populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="text-center py-16 hidden">
+        <svg
+          class="h-16 w-16 mx-auto text-gray-300 mb-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+          ></path>
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">No Courses Yet</h2>
+        <p class="text-gray-600 mb-6">
+          You haven't enrolled in any courses yet. Start learning today!
+        </p>
+        <a
+          href="/courses"
+          class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+        >
+          Browse Courses
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<!-- JavaScript for loading and displaying user courses -->
+<script is:inline>
+  document.addEventListener("DOMContentLoaded", function () {
+    let userCourses = [];
+    let filteredCourses = [];
+
+    // Initialize the page
+    initializePage();
+
+    async function initializePage() {
+      try {
+        // Check authentication
+        const authStore = await import("/src/stores/authStore.ts");
+
+        if (!authStore.isAuthenticated()) {
+          showNotAuthenticatedState();
+          return;
+        }
+
+        // Load user courses
+        const api = await import("/src/lib/api.ts");
+        userCourses = await api.fetchUserCourses();
+
+        if (userCourses.length === 0) {
+          showEmptyState();
+        } else {
+          showCoursesState();
+          updateStatistics();
+          renderCourses();
+        }
+      } catch (error) {
+        console.error("Error loading courses:", error);
+        showNotAuthenticatedState();
+      } finally {
+        hideLoadingState();
+      }
+    }
+
+    function hideLoadingState() {
+      document.getElementById("loading-state").classList.add("hidden");
+    }
+
+    function showNotAuthenticatedState() {
+      document.getElementById("not-authenticated").classList.remove("hidden");
+    }
+
+    function showEmptyState() {
+      document.getElementById("empty-state").classList.remove("hidden");
+    }
+
+    function showCoursesState() {
+      document.getElementById("course-stats").classList.remove("hidden");
+      document.getElementById("course-controls").classList.remove("hidden");
+      document.getElementById("courses-container").classList.remove("hidden");
+    }
+
+    function updateStatistics() {
+      const totalCourses = userCourses.length;
+      const completedCourses = userCourses.filter(
+        (enrollment) => enrollment.progress_percentage === 100,
+      ).length;
+      const inProgressCourses = userCourses.filter(
+        (enrollment) =>
+          enrollment.progress_percentage > 0 &&
+          enrollment.progress_percentage < 100,
+      ).length;
+      const avgProgress =
+        totalCourses > 0
+          ? Math.round(
+              userCourses.reduce(
+                (sum, enrollment) =>
+                  sum + (enrollment.progress_percentage || 0),
+                0,
+              ) / totalCourses,
+            )
+          : 0;
+
+      document.getElementById("total-courses").textContent = totalCourses;
+      document.getElementById("completed-courses").textContent =
+        completedCourses;
+      document.getElementById("in-progress-courses").textContent =
+        inProgressCourses;
+      document.getElementById("avg-progress").textContent = avgProgress + "%";
+    }
+
+    function renderCourses() {
+      filteredCourses = [...userCourses];
+      applyFilters();
+
+      const coursesGrid = document.getElementById("courses-grid");
+      coursesGrid.innerHTML = filteredCourses
+        .map((enrollment) => createCourseCard(enrollment))
+        .join("");
+    }
+
+    function createCourseCard(enrollment) {
+      const course = enrollment.course;
+      const progress = enrollment.progress_percentage || 0;
+      const isCompleted = progress === 100;
+      const isStarted = progress > 0;
+
+      return `
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+          <div class="relative">
+            ${
+              course.featured_image
+                ? `<img src="${course.featured_image}" alt="${course.title}" class="w-full h-48 object-cover" loading="lazy" />`
+                : `<div class="w-full h-48 bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+                <svg class="h-16 w-16 text-white opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>`
+            }
+            
+            ${
+              isCompleted
+                ? `<div class="absolute top-3 right-3">
+                <span class="bg-green-500 text-white px-2 py-1 text-sm font-bold rounded-full shadow flex items-center">
+                  <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  Completed
+                </span>
+              </div>`
+                : ""
+            }
+          </div>
+
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-teal-600 text-sm font-medium">${course.category ? course.category.name : "Course"}</span>
+              <span class="text-xs text-gray-500">Enrolled ${new Date(enrollment.enrollment_date).toLocaleDateString()}</span>
+            </div>
+
+            <h3 class="text-xl font-bold text-gray-900 mb-3">${course.title}</h3>
+
+            <div class="mb-4">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-gray-600">Progress</span>
+                <span class="text-gray-900 font-medium">${progress}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-teal-700 h-2 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+              </div>
+            </div>
+
+            ${
+              enrollment.last_accessed
+                ? `<p class="text-sm text-gray-500 mb-4">Last accessed ${new Date(enrollment.last_accessed).toLocaleDateString()}</p>`
+                : ""
+            }
+
+            <div class="flex space-x-3">
+              <a
+                href="/courses/${course.slug}"
+                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors text-center text-sm"
+              >
+                Course Details
+              </a>
+              <a
+                href="/courses/${course.slug}/lessons"
+                class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center text-sm"
+              >
+                ${isStarted ? "Continue" : "Start Course"}
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function applyFilters() {
+      const statusFilter = document.getElementById("status-filter").value;
+      const sortFilter = document.getElementById("sort-filter").value;
+
+      // Filter by status
+      filteredCourses = userCourses.filter((enrollment) => {
+        const progress = enrollment.progress_percentage || 0;
+
+        switch (statusFilter) {
+          case "not-started":
+            return progress === 0;
+          case "in-progress":
+            return progress > 0 && progress < 100;
+          case "completed":
+            return progress === 100;
+          default:
+            return true;
+        }
+      });
+
+      // Sort courses
+      filteredCourses.sort((a, b) => {
+        switch (sortFilter) {
+          case "progress":
+            return (b.progress_percentage || 0) - (a.progress_percentage || 0);
+          case "enrollment-date":
+            return (
+              new Date(b.enrollment_date).getTime() -
+              new Date(a.enrollment_date).getTime()
+            );
+          case "alphabetical":
+            return a.course.title.localeCompare(b.course.title);
+          case "recent":
+          default:
+            const aAccessed = a.last_accessed
+              ? new Date(a.last_accessed).getTime()
+              : 0;
+            const bAccessed = b.last_accessed
+              ? new Date(b.last_accessed).getTime()
+              : 0;
+            return bAccessed - aAccessed;
+        }
+      });
+
+      // Re-render courses
+      const coursesGrid = document.getElementById("courses-grid");
+      coursesGrid.innerHTML = filteredCourses
+        .map((enrollment) => createCourseCard(enrollment))
+        .join("");
+    }
+
+    // Event listeners for filters
+    document
+      .getElementById("status-filter")
+      .addEventListener("change", applyFilters);
+    document
+      .getElementById("sort-filter")
+      .addEventListener("change", applyFilters);
+
+    // View toggle functionality
+    const gridViewBtn = document.getElementById("grid-view");
+    const listViewBtn = document.getElementById("list-view");
+    const coursesGrid = document.getElementById("courses-grid");
+
+    gridViewBtn.addEventListener("click", () => {
+      gridViewBtn.classList.add("bg-teal-700", "text-white");
+      gridViewBtn.classList.remove("bg-gray-100", "text-gray-700");
+      listViewBtn.classList.add("bg-gray-100", "text-gray-700");
+      listViewBtn.classList.remove("bg-teal-700", "text-white");
+
+      coursesGrid.className =
+        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+    });
+
+    listViewBtn.addEventListener("click", () => {
+      listViewBtn.classList.add("bg-teal-700", "text-white");
+      listViewBtn.classList.remove("bg-gray-100", "text-gray-700");
+      gridViewBtn.classList.add("bg-gray-100", "text-gray-700");
+      gridViewBtn.classList.remove("bg-teal-700", "text-white");
+
+      coursesGrid.className = "grid grid-cols-1 gap-6";
+    });
+  });
+</script>

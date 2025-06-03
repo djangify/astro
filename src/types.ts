@@ -270,44 +270,125 @@ export interface LessonProgress {
   time_spent_minutes: number;
 }
 
-// NEW: Calendar/Event Types
+// Add these types to your existing types.ts file
 
-/** Event model */
-export interface Event {
+// NEW: Appointment Types
+
+/** Calendar User model */
+export interface CalendarUser {
   id: number;
-  title: string;
-  slug: string;
-  description: string;
-  start_datetime: string;
-  end_datetime: string;
-  location?: string;
-  virtual_link?: string;
-  event_type: 'meeting' | 'workshop' | 'webinar' | 'consultation' | 'other';
-  is_public: boolean;
-  max_attendees?: number;
-  registration_required: boolean;
-  registration_deadline?: string;
-  price: number;
-  featured_image?: string;
-  organizer: User;
-  attendees: EventAttendee[];
+  username: string;
+  business_name: string;
+  display_name: string;
+  timezone: string;
+  booking_window_days: number;
+  buffer_minutes: number;
+  is_calendar_active: boolean;
+  booking_instructions: string;
   created_at: string;
   updated_at: string;
 }
 
-/** Event Attendee model */
-export interface EventAttendee {
+/** Appointment Type model */
+export interface AppointmentType {
   id: number;
-  event: Event;
-  user: User;
-  registered_at: string;
-  attended: boolean;
-  notes?: string;
+  name: string;
+  description?: string;
+  duration_minutes: number;
+  price?: number;
+  color: string;
+  is_active: boolean;
+  requires_payment: boolean;
+  order: number;
+  created_at: string;
+  updated_at: string;
 }
 
-/** Calendar view data */
-export interface CalendarData {
-  events: Event[];
-  month: number;
-  year: number;
+/** Availability Slot model */
+export interface AvailabilitySlot {
+  id: number;
+  date: string;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+  recurring_pattern: 'none' | 'daily' | 'weekly' | 'monthly';
+  recurring_until?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Available Slot for booking */
+export interface AvailableSlot {
+  date: string;
+  start_time: string;
+  end_time: string;
+  appointment_type_id: number;
+}
+
+/** Appointment model */
+export interface Appointment {
+  id: number;
+  appointment_type: AppointmentType;
+  appointment_type_name: string;
+  calendar_user: string;
+  calendar_user_name?: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+  customer_notes?: string;
+  admin_notes?: string;
+  payment_required: boolean;
+  payment_status: 'not_required' | 'pending' | 'paid' | 'refunded';
+  payment_amount?: number;
+  stripe_payment_intent_id?: string;
+  can_be_cancelled: boolean;
+  created_at: string;
+  updated_at: string;
+  confirmed_at?: string;
+  cancelled_at?: string;
+}
+
+/** Booking Settings model */
+export interface BookingSettings {
+  min_notice_hours: number;
+  max_bookings_per_day: number;
+  booking_page_title: string;
+  booking_page_description: string;
+  success_message: string;
+}
+
+/** Appointment booking request data */
+export interface AppointmentBookingData {
+  appointment_type_id: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string;
+  customer_notes?: string;
+  date: string;
+  start_time: string;
+}
+
+/** Calendar statistics */
+export interface CalendarStats {
+  total_appointments: number;
+  confirmed_appointments: number;
+  pending_appointments: number;
+  this_week_appointments: number;
+}
+
+/** Calendar user public view */
+export interface CalendarUserPublic {
+  username: string;
+  business_name: string;
+  display_name: string;
+  timezone: string;
+  booking_instructions: string;
+  appointment_types: AppointmentType[];
+  booking_settings: BookingSettings;
 }

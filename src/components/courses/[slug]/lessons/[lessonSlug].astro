@@ -1,0 +1,677 @@
+---
+// src/pages/courses/[slug]/lessons/[lessonSlug].astro
+import BaseLayout from "../../../../layouts/BaseLayout.astro";
+import Header from "../../../../components/Header.astro";
+import Footer from "../../../../components/Footer.astro";
+import { fetchCourses, fetchCourse } from "../../../../lib/api";
+import type { Course, CourseLesson } from "../../../../types";
+
+// Generate all lesson routes at build time
+export async function getStaticPaths() {
+  const courses = await fetchCourses();
+  const paths = [];
+
+  for (const course of courses) {
+    if (course.lessons && course.lessons.length > 0) {
+      for (const lesson of course.lessons) {
+        paths.push({
+          params: {
+            slug: course.slug,
+            lessonSlug: lesson.slug,
+          },
+          props: {
+            course,
+            lesson,
+            allLessons: course.lessons,
+          },
+        });
+      }
+    }
+  }
+
+  return paths;
+}
+
+// Props passed from getStaticPaths
+const {
+  course,
+  lesson,
+  allLessons,
+}: {
+  course: Course;
+  lesson: CourseLesson;
+  allLessons: CourseLesson[];
+} = Astro.props;
+
+// Helper functions
+const formatDuration = (minutes: number): string => {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+};
+
+// Find current lesson index for navigation
+const currentLessonIndex = allLessons.findIndex((l) => l.slug === lesson.slug);
+const previousLesson =
+  currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
+const nextLesson =
+  currentLessonIndex < allLessons.length - 1
+    ? allLessons[currentLessonIndex + 1]
+    : null;
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">{lesson.title} – {course.title} – Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content={`Learn ${lesson.title} in the ${course.title} course. ${lesson.content ? lesson.content.substring(0, 150) : ""}`}
+  />
+
+  <!-- Authentication Check -->
+  <div id="auth-check" class="hidden">
+    <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">
+          Authentication Required
+        </h1>
+        <p class="text-gray-600 mb-6">Please sign in to access this lesson.</p>
+        <a
+          href="/auth/login"
+          class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+        >
+          Sign In
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enrollment Check -->
+  <div id="enrollment-check" class="hidden">
+    <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">
+          Enrollment Required
+        </h1>
+        <p class="text-gray-600 mb-6">
+          You need to be enrolled in this course to access lessons.
+        </p>
+        <a
+          href={`/courses/${course.slug}`}
+          class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+        >
+          View Course Details
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Lesson Content -->
+  <div id="lesson-content" class="hidden min-h-screen bg-gray-50">
+    <div class="flex">
+      <!-- Lesson Sidebar -->
+      <div
+        class="hidden lg:block w-80 bg-white border-r border-gray-200 h-screen overflow-y-auto"
+      >
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="font-semibold text-gray-900 truncate">{course.title}</h2>
+          <div class="mt-2">
+            <div class="flex justify-between text-sm text-gray-600 mb-1">
+              <span>Course Progress</span>
+              <span id="course-progress-text">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div
+                id="course-progress-bar"
+                class="bg-teal-700 h-2 rounded-full transition-all duration-300"
+                style="width: 0%"
+              >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lessons List -->
+        <div class="p-4">
+          <h3 class="font-medium text-gray-900 mb-4">Lessons</h3>
+          <div class="space-y-2">
+            {
+              allLessons.map((l, index) => (
+                <a
+                  href={`/courses/${course.slug}/lessons/${l.slug}`}
+                  class={`block p-3 rounded-lg transition-colors ${
+                    l.slug === lesson.slug
+                      ? "bg-teal-50 border border-teal-200"
+                      : "hover:bg-gray-50"
+                  }`}
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div
+                        class="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center mr-3 lesson-status"
+                        data-lesson-id={l.id}
+                      >
+                        <span class="text-xs font-medium text-gray-500">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p
+                          class={`text-sm font-medium truncate ${
+                            l.slug === lesson.slug
+                              ? "text-teal-700"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          {l.title}
+                        </p>
+                        {l.duration_minutes && (
+                          <p class="text-xs text-gray-500">
+                            {formatDuration(l.duration_minutes)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {l.is_free && (
+                      <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                        Free
+                      </span>
+                    )}
+                  </div>
+                </a>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="flex-1 flex flex-col">
+        <!-- Lesson Header -->
+        <div class="bg-white border-b border-gray-200 px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <!-- Mobile Menu Button -->
+              <button
+                id="mobile-menu-toggle"
+                class="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-700"
+              >
+                <svg
+                  class="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+              </button>
+
+              <div>
+                <h1 class="text-xl font-bold text-gray-900">{lesson.title}</h1>
+                <div
+                  class="flex items-center space-x-4 text-sm text-gray-600 mt-1"
+                >
+                  <span
+                    >Lesson {currentLessonIndex + 1} of {
+                      allLessons.length
+                    }</span
+                  >
+                  {
+                    lesson.duration_minutes && (
+                      <span>{formatDuration(lesson.duration_minutes)}</span>
+                    )
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Lesson Actions -->
+            <div class="flex items-center space-x-3">
+              <button
+                id="mark-complete-btn"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Mark Complete
+              </button>
+
+              <a
+                href={`/courses/${course.slug}`}
+                class="text-gray-600 hover:text-gray-900 text-sm font-medium"
+              >
+                Course Overview
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Player -->
+        {
+          lesson.video_url && (
+            <div class="bg-black">
+              <div class="aspect-video">
+                <video
+                  id="lesson-video"
+                  class="w-full h-full"
+                  controls
+                  preload="metadata"
+                  poster={course.featured_image}
+                >
+                  <source src={lesson.video_url} type="video/mp4" />
+                  <p class="text-white text-center p-8">
+                    Your browser doesn't support video playback.
+                    <a href={lesson.video_url} class="underline">
+                      Download the video
+                    </a>
+                  </p>
+                </video>
+              </div>
+            </div>
+          )
+        }
+
+        <!-- Lesson Content -->
+        <div class="flex-1 p-6 overflow-y-auto">
+          <div class="max-w-4xl mx-auto">
+            {
+              lesson.content && (
+                <div class="prose max-w-none mb-8">
+                  <div set:html={lesson.content} />
+                </div>
+              )
+            }
+
+            <!-- Lesson Navigation -->
+            <div
+              class="flex justify-between items-center pt-8 border-t border-gray-200"
+            >
+              <div>
+                {
+                  previousLesson ? (
+                    <a
+                      href={`/courses/${course.slug}/lessons/${previousLesson.slug}`}
+                      class="flex items-center text-teal-700 hover:text-teal-800 font-medium"
+                    >
+                      <svg
+                        class="h-5 w-5 mr-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                      Previous: {previousLesson.title}
+                    </a>
+                  ) : (
+                    <div />
+                  )
+                }
+              </div>
+
+              <div>
+                {
+                  nextLesson ? (
+                    <a
+                      href={`/courses/${course.slug}/lessons/${nextLesson.slug}`}
+                      class="flex items-center text-teal-700 hover:text-teal-800 font-medium"
+                    >
+                      Next: {nextLesson.title}
+                      <svg
+                        class="h-5 w-5 ml-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </a>
+                  ) : (
+                    <a
+                      href={`/courses/${course.slug}`}
+                      class="flex items-center text-teal-700 hover:text-teal-800 font-medium"
+                    >
+                      Course Complete!
+                      <svg
+                        class="h-5 w-5 ml-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </a>
+                  )
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<!-- Mobile Sidebar Overlay -->
+<div
+  id="mobile-sidebar-overlay"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
+>
+  <div class="fixed inset-y-0 left-0 w-80 bg-white">
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <h2 class="font-semibold text-gray-900">{course.title}</h2>
+        <button
+          id="close-mobile-sidebar"
+          class="p-2 rounded-md text-gray-500 hover:text-gray-700"
+        >
+          <svg
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="mt-2">
+        <div class="flex justify-between text-sm text-gray-600 mb-1">
+          <span>Course Progress</span>
+          <span id="mobile-course-progress-text">0%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div
+            id="mobile-course-progress-bar"
+            class="bg-teal-700 h-2 rounded-full transition-all duration-300"
+            style="width: 0%"
+          >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-4 overflow-y-auto">
+      <h3 class="font-medium text-gray-900 mb-4">Lessons</h3>
+      <div class="space-y-2">
+        {
+          allLessons.map((l, index) => (
+            <a
+              href={`/courses/${course.slug}/lessons/${l.slug}`}
+              class={`block p-3 rounded-lg transition-colors ${
+                l.slug === lesson.slug
+                  ? "bg-teal-50 border border-teal-200"
+                  : "hover:bg-gray-50"
+              }`}
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <div
+                    class="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center mr-3 lesson-status-mobile"
+                    data-lesson-id={l.id}
+                  >
+                    <span class="text-xs font-medium text-gray-500">
+                      {index + 1}
+                    </span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class={`text-sm font-medium truncate ${
+                        l.slug === lesson.slug
+                          ? "text-teal-700"
+                          : "text-gray-900"
+                      }`}
+                    >
+                      {l.title}
+                    </p>
+                    {l.duration_minutes && (
+                      <p class="text-xs text-gray-500">
+                        {formatDuration(l.duration_minutes)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {l.is_free && (
+                  <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                    Free
+                  </span>
+                )}
+              </div>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  document.addEventListener("DOMContentLoaded", function () {
+    const course = { course };
+    const lesson = { lesson };
+    let userEnrollment = null;
+    let lessonProgress = null;
+
+    // Initialize the page
+    initializePage();
+
+    async function initializePage() {
+      try {
+        // Check authentication
+        const authStore = await import("../../../../stores/authStore");
+
+        if (!authStore.isAuthenticated()) {
+          showAuthCheck();
+          return;
+        }
+
+        // Check enrollment
+        const api = await import("../../../../lib/api");
+        const userCourses = await api.fetchUserCourses();
+        userEnrollment = userCourses.find(
+          (enrollment) => enrollment.course.id === course.id,
+        );
+
+        if (!userEnrollment) {
+          showEnrollmentCheck();
+          return;
+        }
+
+        // Load lesson progress
+        await loadLessonProgress();
+
+        // Show main content
+        showLessonContent();
+
+        // Set up event listeners
+        setupEventListeners();
+      } catch (error) {
+        console.error("Error initializing lesson:", error);
+        showAuthCheck();
+      }
+    }
+
+    function showAuthCheck() {
+      document.getElementById("auth-check").classList.remove("hidden");
+    }
+
+    function showEnrollmentCheck() {
+      document.getElementById("enrollment-check").classList.remove("hidden");
+    }
+
+    function showLessonContent() {
+      document.getElementById("lesson-content").classList.remove("hidden");
+    }
+
+    async function loadLessonProgress() {
+      try {
+        const api = await import("../../../../lib/api");
+        const progressList = await api.fetchLessonProgress(userEnrollment.id);
+
+        // Update course progress
+        const courseProgress = userEnrollment.progress_percentage || 0;
+        document.getElementById("course-progress-text").textContent =
+          `${courseProgress}%`;
+        document.getElementById("course-progress-bar").style.width =
+          `${courseProgress}%`;
+        document.getElementById("mobile-course-progress-text").textContent =
+          `${courseProgress}%`;
+        document.getElementById("mobile-course-progress-bar").style.width =
+          `${courseProgress}%`;
+
+        // Update lesson status indicators
+        progressList.forEach((progress) => {
+          if (progress.completed) {
+            updateLessonStatus(progress.lesson.id, true);
+          }
+        });
+
+        // Check if current lesson is completed
+        lessonProgress = progressList.find((p) => p.lesson.id === lesson.id);
+        if (lessonProgress && lessonProgress.completed) {
+          updateMarkCompleteButton(true);
+        }
+      } catch (error) {
+        console.error("Error loading lesson progress:", error);
+      }
+    }
+
+    function updateLessonStatus(lessonId, completed) {
+      const statusElements = document.querySelectorAll(
+        `[data-lesson-id="${lessonId}"]`,
+      );
+      statusElements.forEach((element) => {
+        if (completed) {
+          element.innerHTML =
+            '<svg class="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>';
+          element.classList.add("bg-green-100", "border-green-300");
+          element.classList.remove("border-gray-300");
+        }
+      });
+    }
+
+    function updateMarkCompleteButton(completed) {
+      const button = document.getElementById("mark-complete-btn");
+      if (completed) {
+        button.textContent = "Completed";
+        button.classList.remove("bg-green-600", "hover:bg-green-700");
+        button.classList.add("bg-gray-400", "cursor-not-allowed");
+        button.disabled = true;
+      }
+    }
+
+    function setupEventListeners() {
+      // Mark complete button
+      document
+        .getElementById("mark-complete-btn")
+        .addEventListener("click", markLessonComplete);
+
+      // Mobile sidebar toggle
+      document
+        .getElementById("mobile-menu-toggle")
+        .addEventListener("click", () => {
+          document
+            .getElementById("mobile-sidebar-overlay")
+            .classList.remove("hidden");
+        });
+
+      document
+        .getElementById("close-mobile-sidebar")
+        .addEventListener("click", () => {
+          document
+            .getElementById("mobile-sidebar-overlay")
+            .classList.add("hidden");
+        });
+
+      // Video progress tracking
+      const video = document.getElementById("lesson-video");
+      if (video) {
+        video.addEventListener("timeupdate", trackVideoProgress);
+        video.addEventListener("ended", () => {
+          // Auto-mark complete when video ends
+          if (!lessonProgress || !lessonProgress.completed) {
+            markLessonComplete();
+          }
+        });
+      }
+    }
+
+    async function markLessonComplete() {
+      try {
+        const api = await import("../../../../lib/api");
+        await api.updateLessonProgress(lesson.id, true);
+
+        // Update UI
+        updateLessonStatus(lesson.id, true);
+        updateMarkCompleteButton(true);
+
+        // Refresh enrollment data to get updated course progress
+        const userCourses = await api.fetchUserCourses();
+        const updatedEnrollment = userCourses.find(
+          (enrollment) => enrollment.course.id === course.id,
+        );
+        if (updatedEnrollment) {
+          const newProgress = updatedEnrollment.progress_percentage || 0;
+          document.getElementById("course-progress-text").textContent =
+            `${newProgress}%`;
+          document.getElementById("course-progress-bar").style.width =
+            `${newProgress}%`;
+          document.getElementById("mobile-course-progress-text").textContent =
+            `${newProgress}%`;
+          document.getElementById("mobile-course-progress-bar").style.width =
+            `${newProgress}%`;
+        }
+      } catch (error) {
+        console.error("Error marking lesson complete:", error);
+        alert("Failed to mark lesson as complete. Please try again.");
+      }
+    }
+
+    function trackVideoProgress() {
+      // Optional: Track video watch time
+      // This could be enhanced to update lesson progress based on watch percentage
+    }
+  });
+</script>
+
+<style>
+  .prose {
+    max-width: none;
+  }
+
+  .prose p {
+    margin-bottom: 1.25em;
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3 {
+    margin-top: 1.6em;
+    margin-bottom: 0.6em;
+  }
+</style>

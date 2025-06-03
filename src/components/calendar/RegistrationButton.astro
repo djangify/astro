@@ -1,0 +1,659 @@
+---
+// src/components/calendar/RegistrationButton.astro
+export interface Props {
+  appointmentTypeId: number;
+  username: string;
+  selectedDate?: string;
+  selectedTime?: string;
+  variant?: "default" | "compact" | "large";
+  disabled?: boolean;
+  requiresPayment?: boolean;
+  price?: number;
+  buttonText?: string;
+}
+
+const {
+  appointmentTypeId,
+  username,
+  selectedDate,
+  selectedTime,
+  variant = "default",
+  disabled = false,
+  requiresPayment = false,
+  price,
+  buttonText,
+} = Astro.props;
+
+const defaultButtonText = requiresPayment
+  ? `Book Appointment ${price ? `- $${price}` : ""}`
+  : "Book Appointment";
+
+const finalButtonText = buttonText || defaultButtonText;
+---
+
+<!-- Registration Button -->
+<button
+  id={`registration-btn-${appointmentTypeId}`}
+  class={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 ${
+    variant === "compact"
+      ? "px-3 py-2 text-sm"
+      : variant === "large"
+        ? "px-8 py-4 text-lg"
+        : "px-6 py-3 text-base"
+  } ${
+    disabled
+      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+      : requiresPayment
+        ? "bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md"
+        : "bg-teal-600 hover:bg-teal-700 text-white shadow-sm hover:shadow-md"
+  }`}
+  onclick={`openBookingModal(${appointmentTypeId}, '${username}', '${selectedDate || ""}', '${selectedTime || ""}')`}
+  disabled={disabled}
+>
+  <svg
+    class={`${variant === "compact" ? "w-4 h-4" : "w-5 h-5"} mr-2`}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+    ></path>
+  </svg>
+  <span id={`btn-text-${appointmentTypeId}`}>{finalButtonText}</span>
+</button>
+
+<!-- Booking Modal -->
+<div
+  id={`booking-modal-${appointmentTypeId}`}
+  class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4"
+  onclick="closeBookingModal(event)"
+>
+  <div
+    class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+    onclick="event.stopPropagation()"
+  >
+    <!-- Modal Header -->
+    <div class="px-6 py-4 border-b border-gray-200">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">Book Appointment</h3>
+        <button
+          onclick={`closeBookingModal()`}
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="px-6 py-4">
+      <!-- Appointment Details -->
+      <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+        <h4
+          class="font-medium text-gray-900 mb-2"
+          id={`modal-appointment-type-${appointmentTypeId}`}
+        >
+          Loading...
+        </h4>
+        <div class="space-y-1 text-sm text-gray-600">
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              ></path>
+            </svg>
+            <span id={`modal-date-${appointmentTypeId}`}>Select date</span>
+          </div>
+          <div class="flex items-center">
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span id={`modal-time-${appointmentTypeId}`}>Select time</span>
+          </div>
+          <div
+            class="flex items-center"
+            id={`modal-duration-${appointmentTypeId}`}
+          >
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+            <span>Duration will be shown here</span>
+          </div>
+          <div
+            class="flex items-center"
+            id={`modal-price-${appointmentTypeId}`}
+            style="display: none;"
+          >
+            <svg
+              class="w-4 h-4 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2"
+              ></path>
+            </svg>
+            <span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking Form -->
+      <form
+        id={`booking-form-${appointmentTypeId}`}
+        onsubmit="submitBooking(event)"
+      >
+        <div class="space-y-4">
+          <!-- Customer Name -->
+          <div>
+            <label
+              for={`customer-name-${appointmentTypeId}`}
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Full Name *
+            </label>
+            <input
+              type="text"
+              id={`customer-name-${appointmentTypeId}`}
+              name="customer_name"
+              required
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              placeholder="Enter your full name"
+            />
+          </div>
+
+          <!-- Customer Email -->
+          <div>
+            <label
+              for={`customer-email-${appointmentTypeId}`}
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Email Address *
+            </label>
+            <input
+              type="email"
+              id={`customer-email-${appointmentTypeId}`}
+              name="customer_email"
+              required
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              placeholder="Enter your email address"
+            />
+          </div>
+
+          <!-- Customer Phone -->
+          <div>
+            <label
+              for={`customer-phone-${appointmentTypeId}`}
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              id={`customer-phone-${appointmentTypeId}`}
+              name="customer_phone"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              placeholder="Enter your phone number"
+            />
+          </div>
+
+          <!-- Customer Notes -->
+          <div>
+            <label
+              for={`customer-notes-${appointmentTypeId}`}
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Additional Notes
+            </label>
+            <textarea
+              id={`customer-notes-${appointmentTypeId}`}
+              name="customer_notes"
+              rows="3"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              placeholder="Any additional information or special requests"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Hidden Fields -->
+        <input
+          type="hidden"
+          name="appointment_type_id"
+          value={appointmentTypeId}
+        />
+        <input
+          type="hidden"
+          name="date"
+          id={`hidden-date-${appointmentTypeId}`}
+        />
+        <input
+          type="hidden"
+          name="start_time"
+          id={`hidden-time-${appointmentTypeId}`}
+        />
+
+        <!-- Error Message -->
+        <div
+          id={`booking-error-${appointmentTypeId}`}
+          class="hidden mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm"
+        >
+          <!-- Error message will be displayed here -->
+        </div>
+
+        <!-- Success Message -->
+        <div
+          id={`booking-success-${appointmentTypeId}`}
+          class="hidden mt-4 p-3 bg-green-100 text-green-700 rounded-lg text-sm"
+        >
+          <div class="flex items-center">
+            <svg
+              class="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span>Appointment booked successfully!</span>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div
+          class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200"
+        >
+          <button
+            type="button"
+            onclick={`closeBookingModal()`}
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            id={`submit-btn-${appointmentTypeId}`}
+            class={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors ${
+              requiresPayment
+                ? "bg-green-600 hover:bg-green-700"
+                : "bg-teal-600 hover:bg-teal-700"
+            }`}
+          >
+            <span id={`submit-text-${appointmentTypeId}`}>
+              {requiresPayment ? "Book & Pay" : "Book Appointment"}
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script
+  is:inline
+  define:vars={{
+    appointmentTypeId,
+    username,
+    selectedDate,
+    selectedTime,
+    requiresPayment,
+    price,
+  }}
+>
+  // Global variables for this instance
+  window.currentBookingData = window.currentBookingData || {};
+
+  // Open booking modal
+  window.openBookingModal = function (typeId, user, date, time) {
+    const modal = document.getElementById(`booking-modal-${typeId}`);
+    if (!modal) return;
+
+    // Store booking data
+    window.currentBookingData[typeId] = {
+      appointmentTypeId: typeId,
+      username: user,
+      selectedDate: date,
+      selectedTime: time,
+    };
+
+    // Load appointment type details
+    loadAppointmentTypeDetails(typeId, user);
+
+    // Pre-fill date and time if provided
+    if (date) {
+      const hiddenDate = document.getElementById(`hidden-date-${typeId}`);
+      const modalDate = document.getElementById(`modal-date-${typeId}`);
+
+      if (hiddenDate) hiddenDate.value = date;
+      if (modalDate) {
+        const dateObj = new Date(date);
+        modalDate.textContent = dateObj.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+      }
+    }
+
+    if (time) {
+      const hiddenTime = document.getElementById(`hidden-time-${typeId}`);
+      const modalTime = document.getElementById(`modal-time-${typeId}`);
+
+      if (hiddenTime) hiddenTime.value = time;
+      if (modalTime) {
+        const [hours, minutes] = time.split(":");
+        const timeObj = new Date();
+        timeObj.setHours(parseInt(hours), parseInt(minutes));
+        modalTime.textContent = timeObj.toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+    }
+
+    // Show modal
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+
+    // Focus on first input
+    const firstInput = modal.querySelector(
+      'input[type="text"], input[type="email"]',
+    );
+    if (firstInput) {
+      setTimeout(() => firstInput.focus(), 100);
+    }
+  };
+
+  // Close booking modal
+  window.closeBookingModal = function (event) {
+    const typeId = appointmentTypeId;
+    const modal = document.getElementById(`booking-modal-${typeId}`);
+
+    if (!modal) return;
+
+    // If event is provided and target is not the modal background, don't close
+    if (event && event.target !== event.currentTarget) return;
+
+    modal.classList.add("hidden");
+    document.body.style.overflow = "";
+
+    // Reset form
+    const form = document.getElementById(`booking-form-${typeId}`);
+    if (form) form.reset();
+
+    // Hide messages
+    const errorDiv = document.getElementById(`booking-error-${typeId}`);
+    const successDiv = document.getElementById(`booking-success-${typeId}`);
+
+    if (errorDiv) errorDiv.classList.add("hidden");
+    if (successDiv) successDiv.classList.add("hidden");
+
+    // Reset submit button
+    const submitBtn = document.getElementById(`submit-btn-${typeId}`);
+    const submitText = document.getElementById(`submit-text-${typeId}`);
+
+    if (submitBtn) submitBtn.disabled = false;
+    if (submitText) {
+      submitText.textContent = requiresPayment
+        ? "Book & Pay"
+        : "Book Appointment";
+    }
+  };
+
+  // Load appointment type details
+  async function loadAppointmentTypeDetails(typeId, user) {
+    try {
+      const API_BASE = window.location.origin.includes("localhost")
+        ? "http://localhost:8000"
+        : "https://corrison.corrisonapi.com";
+
+      const response = await fetch(
+        `${API_BASE}/api/v1/appointments-booking/api/public/${user}/`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load appointment details");
+      }
+
+      const calendarUser = await response.json();
+      const appointmentType = calendarUser.appointment_types?.find(
+        (type) => type.id === typeId,
+      );
+
+      if (!appointmentType) {
+        throw new Error("Appointment type not found");
+      }
+
+      // Update modal with appointment type details
+      const modalTypeElement = document.getElementById(
+        `modal-appointment-type-${typeId}`,
+      );
+      const modalDurationElement = document.getElementById(
+        `modal-duration-${typeId}`,
+      );
+      const modalPriceElement = document.getElementById(
+        `modal-price-${typeId}`,
+      );
+
+      if (modalTypeElement) {
+        modalTypeElement.textContent = appointmentType.name;
+      }
+
+      if (modalDurationElement) {
+        modalDurationElement.querySelector("span").textContent =
+          `${appointmentType.duration_minutes} minutes`;
+      }
+
+      if (modalPriceElement && appointmentType.price) {
+        modalPriceElement.style.display = "flex";
+        modalPriceElement.querySelector("span").textContent =
+          `$${appointmentType.price}`;
+      }
+    } catch (error) {
+      console.error("Error loading appointment type details:", error);
+      showBookingError(typeId, "Failed to load appointment details");
+    }
+  }
+
+  // Submit booking
+  window.submitBooking = async function (event) {
+    event.preventDefault();
+
+    const typeId = appointmentTypeId;
+    const form = event.target;
+    const formData = new FormData(form);
+
+    // Show loading state
+    const submitBtn = document.getElementById(`submit-btn-${typeId}`);
+    const submitText = document.getElementById(`submit-text-${typeId}`);
+
+    if (submitBtn) submitBtn.disabled = true;
+    if (submitText) submitText.textContent = "Booking...";
+
+    // Hide previous messages
+    hideBookingMessages(typeId);
+
+    try {
+      // Validate required fields
+      const requiredFields = [
+        "customer_name",
+        "customer_email",
+        "date",
+        "start_time",
+      ];
+      for (const field of requiredFields) {
+        if (!formData.get(field)) {
+          throw new Error(`${field.replace("_", " ")} is required`);
+        }
+      }
+
+      const API_BASE = window.location.origin.includes("localhost")
+        ? "http://localhost:8000"
+        : "https://corrison.corrisonapi.com";
+
+      // Prepare booking data
+      const bookingData = {
+        appointment_type_id: parseInt(formData.get("appointment_type_id")),
+        customer_name: formData.get("customer_name"),
+        customer_email: formData.get("customer_email"),
+        customer_phone: formData.get("customer_phone") || "",
+        customer_notes: formData.get("customer_notes") || "",
+        date: formData.get("date"),
+        start_time: formData.get("start_time"),
+      };
+
+      const response = await fetch(
+        `${API_BASE}/api/v1/appointments-booking/api/public/book/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bookingData),
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `Booking failed: ${response.status}`,
+        );
+      }
+
+      const result = await response.json();
+
+      // Show success message
+      showBookingSuccess(typeId, result);
+
+      // If payment is required, handle payment flow
+      if (requiresPayment && result.payment_required) {
+        // This would integrate with payment processing
+        // For now, just show a message
+        setTimeout(() => {
+          showBookingError(
+            typeId,
+            "Payment processing will be implemented in the next update",
+          );
+        }, 2000);
+      } else {
+        // Close modal after delay
+        setTimeout(() => {
+          closeBookingModal();
+
+          // Optionally refresh the page or update the calendar
+          if (typeof window.refreshAppointments === "function") {
+            window.refreshAppointments();
+          }
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Booking error:", error);
+      showBookingError(
+        typeId,
+        error.message || "Failed to book appointment. Please try again.",
+      );
+
+      // Reset submit button
+      if (submitBtn) submitBtn.disabled = false;
+      if (submitText) {
+        submitText.textContent = requiresPayment
+          ? "Book & Pay"
+          : "Book Appointment";
+      }
+    }
+  };
+
+  // Show booking error
+  function showBookingError(typeId, message) {
+    const errorDiv = document.getElementById(`booking-error-${typeId}`);
+    if (errorDiv) {
+      errorDiv.textContent = message;
+      errorDiv.classList.remove("hidden");
+    }
+  }
+
+  // Show booking success
+  function showBookingSuccess(typeId, result) {
+    const successDiv = document.getElementById(`booking-success-${typeId}`);
+    if (successDiv) {
+      const message =
+        result.status === "pending"
+          ? "Appointment booked successfully! You will receive a confirmation email shortly."
+          : "Appointment confirmed! You will receive a confirmation email shortly.";
+
+      successDiv.querySelector("span").textContent = message;
+      successDiv.classList.remove("hidden");
+    }
+  }
+
+  // Hide booking messages
+  function hideBookingMessages(typeId) {
+    const errorDiv = document.getElementById(`booking-error-${typeId}`);
+    const successDiv = document.getElementById(`booking-success-${typeId}`);
+
+    if (errorDiv) errorDiv.classList.add("hidden");
+    if (successDiv) successDiv.classList.add("hidden");
+  }
+
+  // Close modal on Escape key
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      const modal = document.getElementById(
+        `booking-modal-${appointmentTypeId}`,
+      );
+      if (modal && !modal.classList.contains("hidden")) {
+        closeBookingModal();
+      }
+    }
+  });
+</script>

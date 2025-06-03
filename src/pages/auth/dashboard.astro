@@ -190,78 +190,9 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
           </div>
         </div>
 
-        <!-- Recent Activity Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Recent Courses -->
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h3 class="text-lg font-medium text-gray-900">Recent Courses</h3>
-            </div>
-            <div class="p-6">
-              <div id="recent-courses-list" class="space-y-4">
-                <div class="text-center py-8 text-gray-500">
-                  <svg
-                    class="w-12 h-12 mx-auto mb-4 text-gray-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                    ></path>
-                  </svg>
-                  <p>No courses enrolled yet</p>
-                  <a
-                    href="/courses"
-                    class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
-                  >
-                    Browse Available Courses →
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Upcoming Events -->
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h3 class="text-lg font-medium text-gray-900">Upcoming Events</h3>
-            </div>
-            <div class="p-6">
-              <div id="upcoming-events-list" class="space-y-4">
-                <div class="text-center py-8 text-gray-500">
-                  <svg
-                    class="w-12 h-12 mx-auto mb-4 text-gray-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    ></path>
-                  </svg>
-                  <p>No upcoming events</p>
-                  <a
-                    href="/calendar"
-                    class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
-                  >
-                    View Calendar →
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Quick Actions -->
         <div
-          class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+          class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
         >
           <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -364,6 +295,132 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
             </a>
           </div>
         </div>
+
+        <!-- My Courses Section -->
+        <section class="mb-8">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">My Courses</h2>
+            <a
+              href="/courses/my-courses"
+              class="text-teal-700 hover:text-teal-800 font-medium text-sm"
+            >
+              View All →
+            </a>
+          </div>
+
+          <div
+            id="dashboard-courses"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            <!-- Loading state -->
+            <div class="dashboard-courses-loading">
+              <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="animate-pulse">
+                  <div class="h-4 bg-gray-200 rounded mb-3"></div>
+                  <div class="h-6 bg-gray-200 rounded mb-4"></div>
+                  <div class="h-2 bg-gray-200 rounded mb-2"></div>
+                  <div class="h-8 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty state for courses -->
+          <div id="no-courses" class="hidden text-center py-12">
+            <svg
+              class="h-12 w-12 mx-auto text-gray-300 mb-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              ></path>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">
+              No Courses Yet
+            </h3>
+            <p class="text-gray-500 mb-4">Start learning with our courses</p>
+            <a
+              href="/courses"
+              class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              Browse Courses
+            </a>
+          </div>
+        </section>
+
+        <!-- Recent Activity Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Recent Courses -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
+            </div>
+            <div class="p-6">
+              <div id="recent-courses-list" class="space-y-4">
+                <div class="text-center py-8 text-gray-500">
+                  <svg
+                    class="w-12 h-12 mx-auto mb-4 text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    ></path>
+                  </svg>
+                  <p>No recent activity yet</p>
+                  <a
+                    href="/courses"
+                    class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
+                  >
+                    Start Learning →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Events -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Upcoming Events</h3>
+            </div>
+            <div class="p-6">
+              <div id="upcoming-events-list" class="space-y-4">
+                <div class="text-center py-8 text-gray-500">
+                  <svg
+                    class="w-12 h-12 mx-auto mb-4 text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    ></path>
+                  </svg>
+                  <p>No upcoming events</p>
+                  <a
+                    href="/calendar"
+                    class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
+                  >
+                    View Calendar →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -459,26 +516,128 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
         }
       }
 
-      // TODO: Load actual course and event data
+      // Load dashboard data including courses
       loadDashboardData();
     }
 
     async function loadDashboardData() {
-      // TODO: Implement actual API calls for courses and events
-      // For now, show placeholder data
+      // Load courses and update stats
+      await loadDashboardCourses();
 
-      // Update stats (these would come from API calls)
-      const activeCoursesCount = document.getElementById(
-        "active-courses-count",
-      );
-      const avgProgress = document.getElementById("avg-progress");
+      // Update other stats (events, etc.)
       const upcomingEventsCount = document.getElementById(
         "upcoming-events-count",
       );
-
-      if (activeCoursesCount) activeCoursesCount.textContent = "0";
-      if (avgProgress) avgProgress.textContent = "0%";
       if (upcomingEventsCount) upcomingEventsCount.textContent = "0";
+    }
+
+    async function loadDashboardCourses() {
+      try {
+        const api = await import("../../lib/api");
+        const userCourses = await api.fetchUserCourses();
+
+        const coursesContainer = document.getElementById("dashboard-courses");
+        const noCourses = document.getElementById("no-courses");
+        const activeCoursesCount = document.getElementById(
+          "active-courses-count",
+        );
+        const avgProgress = document.getElementById("avg-progress");
+
+        if (userCourses.length === 0) {
+          if (coursesContainer) {
+            coursesContainer.style.display = "none";
+          }
+          if (noCourses) {
+            noCourses.classList.remove("hidden");
+          }
+
+          // Update stats
+          if (activeCoursesCount) activeCoursesCount.textContent = "0";
+          if (avgProgress) avgProgress.textContent = "0%";
+          return;
+        }
+
+        // Update stats
+        if (activeCoursesCount)
+          activeCoursesCount.textContent = userCourses.length.toString();
+
+        // Calculate average progress
+        const totalProgress = userCourses.reduce(
+          (sum, enrollment) => sum + (enrollment.progress_percentage || 0),
+          0,
+        );
+        const averageProgress = Math.round(totalProgress / userCourses.length);
+        if (avgProgress) avgProgress.textContent = `${averageProgress}%`;
+
+        // Show only first 3 courses for dashboard
+        const recentCourses = userCourses.slice(0, 3);
+
+        if (coursesContainer) {
+          coursesContainer.innerHTML = recentCourses
+            .map((enrollment) => {
+              const courseData = enrollment.course;
+              const progressData = enrollment.progress_percentage || 0;
+
+              return `
+              <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                <div class="p-6">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-teal-600 text-sm font-medium">${courseData.category ? courseData.category.name : "Course"}</span>
+                    ${
+                      progressData === 100
+                        ? '<span class="text-green-600 text-xs font-medium">Completed</span>'
+                        : ""
+                    }
+                  </div>
+                  
+                  <h3 class="font-semibold text-gray-900 mb-3 line-clamp-2">${courseData.title}</h3>
+                  
+                  <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-1">
+                      <span class="text-gray-600">Progress</span>
+                      <span class="text-gray-900 font-medium">${progressData}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                      <div class="bg-teal-700 h-2 rounded-full transition-all duration-300" style="width: ${progressData}%"></div>
+                    </div>
+                  </div>
+                  
+                  <a
+                    href="/courses/${courseData.slug}/dashboard"
+                    class="block w-full text-center bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                  >
+                    ${progressData > 0 ? "Continue" : "Start Course"}
+                  </a>
+                </div>
+              </div>
+            `;
+            })
+            .join("");
+        }
+
+        // Hide loading state
+        if (coursesContainer) {
+          const loadingElement = coursesContainer.querySelector(
+            ".dashboard-courses-loading",
+          );
+          if (loadingElement && loadingElement instanceof HTMLElement) {
+            loadingElement.style.display = "none";
+          }
+        }
+      } catch (error) {
+        console.error("Error loading dashboard courses:", error);
+
+        // Show fallback
+        const coursesContainer = document.getElementById("dashboard-courses");
+        if (coursesContainer) {
+          coursesContainer.innerHTML = `
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
+              <p class="text-gray-500">Unable to load courses</p>
+              <a href="/courses" class="text-teal-700 hover:text-teal-800 text-sm">Browse Courses →</a>
+            </div>
+          `;
+        }
+      }
     }
   });
 </script>
@@ -487,5 +646,12 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   /* Dashboard-specific styles */
   main {
     min-height: calc(100vh - 64px); /* Adjust based on header height */
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 </style>

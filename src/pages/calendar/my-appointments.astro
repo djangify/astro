@@ -1,0 +1,620 @@
+---
+// src/pages/calendar/my-appointments.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import DashboardNav from "../../components/dashboard/DashboardNav.astro";
+import AppointmentList from "../../components/calendar/AppointmentList.astro";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">My Appointments - Dashboard</title>
+  <meta
+    slot="head"
+    name="description"
+    content="View and manage all your scheduled appointments in one place."
+  />
+
+  <!-- Dashboard Navigation -->
+  <DashboardNav currentPage="calendar" />
+
+  <!-- Main Content -->
+  <div class="lg:ml-64">
+    <main class="py-6">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+          <div class="md:flex md:items-center md:justify-between">
+            <div class="flex-1 min-w-0">
+              <h1 class="text-2xl font-bold text-gray-900">My Appointments</h1>
+              <p class="mt-1 text-sm text-gray-600">
+                View and manage all your scheduled appointments
+              </p>
+            </div>
+
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+              <a
+                href="/calendar"
+                class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <svg
+                  class="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Book New Appointment
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Authentication Check -->
+        <div id="auth-check" class="hidden">
+          <div
+            class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6"
+          >
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg
+                  class="h-5 w-5 text-yellow-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clip-rule="evenodd"></path>
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-yellow-800">
+                  Authentication Required
+                </h3>
+                <div class="mt-2 text-sm text-yellow-700">
+                  <p>Please log in to view your appointments.</p>
+                </div>
+                <div class="mt-4">
+                  <div class="-mx-2 -my-1.5 flex">
+                    <a
+                      href="/auth/login?redirect=/calendar/my-appointments"
+                      class="bg-yellow-50 px-2 py-1.5 rounded-md text-sm font-medium text-yellow-800 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-600"
+                    >
+                      Sign In
+                    </a>
+                    <a
+                      href="/auth/register?redirect=/calendar/my-appointments"
+                      class="ml-3 bg-yellow-50 px-2 py-1.5 rounded-md text-sm font-medium text-yellow-800 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-600"
+                    >
+                      Create Account
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div
+          id="appointment-stats"
+          class="hidden grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+        >
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Total</p>
+                <p
+                  class="text-2xl font-semibold text-gray-900"
+                  id="total-count"
+                >
+                  0
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Confirmed</p>
+                <p
+                  class="text-2xl font-semibold text-gray-900"
+                  id="confirmed-count"
+                >
+                  0
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-yellow-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Pending</p>
+                <p
+                  class="text-2xl font-semibold text-gray-900"
+                  id="pending-count"
+                >
+                  0
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">This Month</p>
+                <p
+                  class="text-2xl font-semibold text-gray-900"
+                  id="month-count"
+                >
+                  0
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upcoming Appointments -->
+        <div id="upcoming-appointments" class="hidden mb-8">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-900">
+                Upcoming Appointments
+              </h2>
+            </div>
+            <div class="p-6">
+              <div id="upcoming-list" class="space-y-4">
+                <!-- Upcoming appointments will be populated here -->
+              </div>
+              <div id="no-upcoming" class="hidden text-center py-8">
+                <svg
+                  class="w-12 h-12 mx-auto mb-4 text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">
+                  No Upcoming Appointments
+                </h3>
+                <p class="text-gray-600 mb-4">
+                  You don't have any appointments scheduled in the near future.
+                </p>
+                <a
+                  href="/calendar"
+                  class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Book an Appointment
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Appointments List -->
+        <div id="appointments-list-container" class="hidden">
+          <AppointmentList
+            title="All Appointments"
+            showFilters={true}
+            showPagination={true}
+            variant="default"
+            isPublic={false}
+            emptyMessage="No appointments found"
+            emptyDescription="You haven't booked any appointments yet."
+          />
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script is:inline>
+  import { authStore } from "../../stores/authStore";
+
+  // Global variables
+  let allAppointments = [];
+  let isAuthenticated = false;
+
+  // Check authentication status
+  function checkAuthentication() {
+    const token = localStorage.getItem("access_token");
+    return !!token;
+  }
+
+  // Initialize page
+  async function initializePage() {
+    isAuthenticated = checkAuthentication();
+
+    if (!isAuthenticated) {
+      showAuthWarning();
+      return;
+    }
+
+    try {
+      await loadAppointments();
+      await loadUpcomingAppointments();
+      showContent();
+    } catch (error) {
+      console.error("Error initializing page:", error);
+
+      // Check if it's an auth error
+      if (
+        error.message.includes("401") ||
+        error.message.includes("Unauthorized")
+      ) {
+        showAuthWarning();
+      } else {
+        showError("Failed to load appointments. Please try again later.");
+      }
+    }
+  }
+
+  // Load all appointments
+  async function loadAppointments() {
+    try {
+      const API_BASE = window.location.origin.includes("localhost")
+        ? "http://localhost:8000"
+        : "https://corrison.corrisonapi.com";
+
+      const response = await fetch(
+        `${API_BASE}/api/v1/appointments/appointments/`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load appointments: ${response.status}`);
+      }
+
+      allAppointments = await response.json();
+      updateStats();
+    } catch (error) {
+      console.error("Error loading appointments:", error);
+      throw error;
+    }
+  }
+
+  // Load upcoming appointments
+  async function loadUpcomingAppointments() {
+    const now = new Date();
+    const upcoming = allAppointments
+      .filter((appointment) => {
+        const appointmentDate = new Date(
+          `${appointment.date}T${appointment.start_time}`,
+        );
+        return (
+          appointmentDate > now &&
+          (appointment.status === "confirmed" ||
+            appointment.status === "pending")
+        );
+      })
+      .sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.start_time}`);
+        const dateB = new Date(`${b.date}T${b.start_time}`);
+        return dateA - dateB;
+      })
+      .slice(0, 3); // Show only next 3
+
+    const upcomingList = document.getElementById("upcoming-list");
+    const noUpcoming = document.getElementById("no-upcoming");
+
+    if (upcoming.length === 0) {
+      if (upcomingList) upcomingList.classList.add("hidden");
+      if (noUpcoming) noUpcoming.classList.remove("hidden");
+    } else {
+      if (noUpcoming) noUpcoming.classList.add("hidden");
+      if (upcomingList) {
+        upcomingList.classList.remove("hidden");
+        upcomingList.innerHTML = upcoming
+          .map((appointment) => renderUpcomingAppointment(appointment))
+          .join("");
+      }
+    }
+  }
+
+  // Render upcoming appointment
+  function renderUpcomingAppointment(appointment) {
+    const statusColors = {
+      confirmed: "bg-green-100 text-green-800",
+      pending: "bg-yellow-100 text-yellow-800",
+      cancelled: "bg-red-100 text-red-800",
+      completed: "bg-blue-100 text-blue-800",
+    };
+
+    return `
+      <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+        <div class="flex items-center space-x-4">
+          <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-medium text-gray-900">${appointment.appointment_type_name || "Appointment"}</h3>
+            <div class="flex items-center space-x-4 text-sm text-gray-600">
+              <span>${formatDate(appointment.date)}</span>
+              <span>${formatTime(appointment.start_time)}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[appointment.status] || "bg-gray-100 text-gray-800"}">
+            ${getStatusText(appointment.status)}
+          </span>
+          <a
+            href="/calendar/appointments/${appointment.id}"
+            class="text-teal-600 hover:text-teal-800 text-sm font-medium"
+          >
+            View Details
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  // Update statistics
+  function updateStats() {
+    const total = allAppointments.length;
+    const confirmed = allAppointments.filter(
+      (a) => a.status === "confirmed",
+    ).length;
+    const pending = allAppointments.filter(
+      (a) => a.status === "pending",
+    ).length;
+
+    // This month count
+    const now = new Date();
+    const thisMonth = allAppointments.filter((appointment) => {
+      const appointmentDate = new Date(appointment.date);
+      return (
+        appointmentDate.getMonth() === now.getMonth() &&
+        appointmentDate.getFullYear() === now.getFullYear()
+      );
+    }).length;
+
+    // Update DOM
+    const totalElement = document.getElementById("total-count");
+    const confirmedElement = document.getElementById("confirmed-count");
+    const pendingElement = document.getElementById("pending-count");
+    const monthElement = document.getElementById("month-count");
+
+    if (totalElement) totalElement.textContent = total;
+    if (confirmedElement) confirmedElement.textContent = confirmed;
+    if (pendingElement) pendingElement.textContent = pending;
+    if (monthElement) monthElement.textContent = thisMonth;
+  }
+
+  // Utility functions
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  function formatTime(timeString) {
+    const [hours, minutes] = timeString.split(":");
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
+  function getStatusText(status) {
+    const statusTexts = {
+      confirmed: "Confirmed",
+      pending: "Pending",
+      cancelled: "Cancelled",
+      completed: "Completed",
+    };
+    return statusTexts[status] || status;
+  }
+
+  // State management
+  function showAuthWarning() {
+    document.getElementById("auth-check").classList.remove("hidden");
+    hideContent();
+  }
+
+  function showContent() {
+    document.getElementById("appointment-stats").classList.remove("hidden");
+    document.getElementById("upcoming-appointments").classList.remove("hidden");
+    document
+      .getElementById("appointments-list-container")
+      .classList.remove("hidden");
+    document.getElementById("auth-check").classList.add("hidden");
+  }
+
+  function hideContent() {
+    document.getElementById("appointment-stats").classList.add("hidden");
+    document.getElementById("upcoming-appointments").classList.add("hidden");
+    document
+      .getElementById("appointments-list-container")
+      .classList.add("hidden");
+  }
+
+  function showError(message) {
+    // Create error notification
+    const notification = document.createElement("div");
+    notification.className =
+      "fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm bg-red-100 text-red-800 border border-red-200";
+
+    notification.innerHTML = `
+      <div class="flex items-center">
+        <div class="flex-1">
+          <p class="text-sm font-medium">${message}</p>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-red-400 hover:text-red-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+
+  // Handle auth state changes
+  function handleAuthChange() {
+    const newAuthState = checkAuthentication();
+
+    if (newAuthState !== isAuthenticated) {
+      isAuthenticated = newAuthState;
+
+      if (isAuthenticated) {
+        initializePage();
+      } else {
+        showAuthWarning();
+      }
+    }
+  }
+
+  // Initialize page when DOM is ready
+  document.addEventListener("DOMContentLoaded", function () {
+    initializePage();
+
+    // Listen for storage changes (login/logout in other tabs)
+    window.addEventListener("storage", function (e) {
+      if (e.key === "access_token") {
+        handleAuthChange();
+      }
+    });
+  });
+
+  // Global refresh function for AppointmentList component
+  window.refreshUserAppointments = async function () {
+    if (isAuthenticated) {
+      try {
+        await loadAppointments();
+        await loadUpcomingAppointments();
+      } catch (error) {
+        console.error("Error refreshing appointments:", error);
+        showError("Failed to refresh appointments");
+      }
+    }
+  };
+
+  // Export for use by AppointmentList component
+  window.getUserAppointments = function () {
+    return allAppointments;
+  };
+</script>
+
+<style>
+  /* Page specific styles */
+  main {
+    min-height: calc(100vh - 64px);
+  }
+
+  /* Ensure stats cards are responsive */
+  @media (max-width: 768px) {
+    #appointment-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    #appointment-stats {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
