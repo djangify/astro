@@ -1,0 +1,56 @@
+---
+// src/pages/auth/login.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import LoginForm from "../../components/auth/LoginForm.astro";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">Sign In – Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content="Sign in to your Corrison account to access your dashboard, courses, and more."
+  />
+
+  <main
+    class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8"
+  >
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <!-- Logo -->
+      <div class="flex justify-center items-center mb-8">
+        <div
+          class="w-12 h-12 bg-teal-700 flex items-center justify-center rounded-lg mr-3"
+        >
+          <span class="text-white text-2xl font-bold italic">C</span>
+        </div>
+        <span class="text-teal-700 font-bold text-2xl">Corrison</span>
+      </div>
+
+      <!-- Login Form Card -->
+      <div class="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
+        <LoginForm />
+      </div>
+
+      <!-- Additional Links -->
+      <div class="mt-8 text-center">
+        <div class="text-sm text-gray-600">
+          <a href="/" class="text-teal-600 hover:text-teal-500 font-medium">
+            ← Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<style>
+  /* Ensure the main content takes full height */
+  main {
+    min-height: calc(100vh - 120px); /* Adjust based on header/footer height */
+  }
+</style>

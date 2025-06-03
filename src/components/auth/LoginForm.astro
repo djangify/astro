@@ -1,0 +1,320 @@
+---
+// src/components/auth/LoginForm.astro
+export interface Props {
+  redirectTo?: string;
+  showTitle?: boolean;
+  className?: string;
+}
+
+const {
+  redirectTo = "/auth/dashboard",
+  showTitle = true,
+  className = "",
+} = Astro.props;
+---
+
+<div class={`login-form ${className}`}>
+  {
+    showTitle && (
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-900">Welcome Back</h2>
+        <p class="text-gray-600 mt-2">Sign in to your account</p>
+      </div>
+    )
+  }
+
+  <form id="login-form" class="space-y-6">
+    <!-- Error Display -->
+    <div
+      id="login-error"
+      class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+    >
+      <div class="flex">
+        <svg
+          class="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"></path>
+        </svg>
+        <span id="login-error-message"></span>
+      </div>
+    </div>
+
+    <!-- Username/Email Field -->
+    <div>
+      <label
+        for="username"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        Username or Email
+      </label>
+      <input
+        type="text"
+        id="username"
+        name="username"
+        required
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+        placeholder="Enter your username or email"
+      />
+      <div id="username-error" class="hidden text-red-600 text-sm mt-1"></div>
+    </div>
+
+    <!-- Password Field -->
+    <div>
+      <label
+        for="password"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        Password
+      </label>
+      <div class="relative">
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors pr-10"
+          placeholder="Enter your password"
+        />
+        <button
+          type="button"
+          id="toggle-password"
+          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        >
+          <svg
+            id="eye-open"
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            ></path>
+          </svg>
+          <svg
+            id="eye-closed"
+            class="w-5 h-5 hidden"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+            ></path>
+          </svg>
+        </button>
+      </div>
+      <div id="password-error" class="hidden text-red-600 text-sm mt-1"></div>
+    </div>
+
+    <!-- Remember Me & Forgot Password -->
+    <div class="flex items-center justify-between">
+      <label class="flex items-center">
+        <input
+          type="checkbox"
+          id="remember-me"
+          name="remember"
+          class="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+        />
+        <span class="ml-2 text-sm text-gray-600">Remember me</span>
+      </label>
+
+      <a
+        href="/auth/password-reset"
+        class="text-sm text-teal-600 hover:text-teal-500 font-medium"
+      >
+        Forgot password?
+      </a>
+    </div>
+
+    <!-- Submit Button -->
+    <button
+      type="submit"
+      id="login-submit"
+      class="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <span id="login-submit-text">Sign In</span>
+      <svg
+        id="login-loading"
+        class="hidden animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </button>
+
+    <!-- Register Link -->
+    <div class="text-center">
+      <p class="text-sm text-gray-600">
+        Don't have an account?
+        <a
+          href="/auth/register"
+          class="text-teal-600 hover:text-teal-500 font-medium ml-1"
+        >
+          Sign up here
+        </a>
+      </p>
+    </div>
+  </form>
+</div>
+
+<script>
+  import { authStore } from "../../stores/authStore";
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("login-form") as HTMLFormElement;
+    const errorDiv = document.getElementById("login-error") as HTMLElement;
+    const errorMessage = document.getElementById(
+      "login-error-message",
+    ) as HTMLElement;
+    const submitButton = document.getElementById(
+      "login-submit",
+    ) as HTMLButtonElement;
+    const submitText = document.getElementById(
+      "login-submit-text",
+    ) as HTMLElement;
+    const loadingIcon = document.getElementById("login-loading") as HTMLElement;
+    const passwordToggle = document.getElementById(
+      "toggle-password",
+    ) as HTMLButtonElement;
+    const passwordInput = document.getElementById(
+      "password",
+    ) as HTMLInputElement;
+    const eyeOpen = document.getElementById("eye-open") as HTMLElement;
+    const eyeClosed = document.getElementById("eye-closed") as HTMLElement;
+
+    // Password visibility toggle
+    passwordToggle?.addEventListener("click", function () {
+      const isPassword = passwordInput.type === "password";
+      passwordInput.type = isPassword ? "text" : "password";
+
+      if (isPassword) {
+        eyeOpen.classList.add("hidden");
+        eyeClosed.classList.remove("hidden");
+      } else {
+        eyeOpen.classList.remove("hidden");
+        eyeClosed.classList.add("hidden");
+      }
+    });
+
+    // Form submission
+    form?.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      // Clear previous errors
+      errorDiv.classList.add("hidden");
+      clearFieldErrors();
+
+      // Show loading state
+      setLoadingState(true);
+
+      const formData = new FormData(form);
+      const credentials = {
+        username: formData.get("username") as string,
+        password: formData.get("password") as string,
+      };
+
+      try {
+        await authStore.login(credentials);
+
+        // Success - redirect
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams.get("redirect") || "/auth/dashboard";
+        window.location.href = redirectTo;
+      } catch (error: any) {
+        console.error("Login error:", error);
+
+        setLoadingState(false);
+
+        // Handle field-specific errors
+        if (error.errors) {
+          Object.entries(error.errors).forEach(
+            ([field, messages]: [string, any]) => {
+              showFieldError(
+                field,
+                Array.isArray(messages) ? messages[0] : messages,
+              );
+            },
+          );
+        }
+
+        // Show general error
+        const message =
+          error.detail ||
+          error.non_field_errors?.[0] ||
+          "Login failed. Please check your credentials and try again.";
+        showError(message);
+      }
+    });
+
+    function setLoadingState(loading: boolean) {
+      if (loading) {
+        submitButton.disabled = true;
+        submitText.textContent = "Signing In...";
+        loadingIcon.classList.remove("hidden");
+      } else {
+        submitButton.disabled = false;
+        submitText.textContent = "Sign In";
+        loadingIcon.classList.add("hidden");
+      }
+    }
+
+    function showError(message: string) {
+      errorMessage.textContent = message;
+      errorDiv.classList.remove("hidden");
+    }
+
+    function showFieldError(field: string, message: string) {
+      const errorElement = document.getElementById(`${field}-error`);
+      const inputElement = document.getElementById(field) as HTMLInputElement;
+
+      if (errorElement && inputElement) {
+        errorElement.textContent = message;
+        errorElement.classList.remove("hidden");
+        inputElement.classList.add("border-red-500");
+      }
+    }
+
+    function clearFieldErrors() {
+      const errorElements = form.querySelectorAll('[id$="-error"]');
+      const inputElements = form.querySelectorAll("input");
+
+      errorElements.forEach((el) => {
+        el.classList.add("hidden");
+        el.textContent = "";
+      });
+
+      inputElements.forEach((input) => {
+        input.classList.remove("border-red-500");
+      });
+    }
+  });
+</script>

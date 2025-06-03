@@ -1,4 +1,6 @@
 ---
+import UserMenu from "./auth/UserMenu.astro";
+
 const links = [
   { href: "/", label: "Home" },
   { href: "/blog", label: "Blog" },
@@ -10,7 +12,6 @@ const links = [
   <div class="container mx-auto px-4">
     <div class="flex items-center justify-between h-16">
       <!-- Logo -->
-
       <a href="/" class="flex items-center">
         <div
           class="w-8 h-8 bg-teal-700 flex items-center justify-center rounded-md mr-2"
@@ -34,27 +35,51 @@ const links = [
         }
       </nav>
 
-      <!-- Mobile Navigation Button -->
-      <div class="md:hidden">
-        <button
-          id="mobile-menu-button"
-          type="button"
-          class="text-gray-500 hover:text-teal-700 focus:outline-none"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+      <!-- Auth Section -->
+      <div class="flex items-center space-x-4">
+        <!-- Authenticated User Menu -->
+        <div id="authenticated-section" class="hidden">
+          <UserMenu />
+        </div>
+
+        <!-- Non-authenticated Buttons -->
+        <div id="non-authenticated-section" class="flex items-center space-x-3">
+          <a
+            href="/auth/login"
+            class="text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </button>
+            Sign In
+          </a>
+          <a
+            href="/auth/register"
+            class="bg-teal-600 text-white hover:bg-teal-700 font-medium px-4 py-2 rounded-md transition-colors"
+          >
+            Sign Up
+          </a>
+        </div>
+
+        <!-- Mobile Navigation Button -->
+        <div class="md:hidden">
+          <button
+            id="mobile-menu-button"
+            type="button"
+            class="text-gray-500 hover:text-teal-700 focus:outline-none"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -74,19 +99,155 @@ const links = [
             </a>
           ))
         }
+
+        <!-- Mobile Auth Links -->
+        <div
+          id="mobile-auth-section"
+          class="border-t border-gray-100 pt-2 mt-2"
+        >
+          <!-- Non-authenticated mobile links -->
+          <div id="mobile-non-authenticated" class="space-y-2">
+            <a
+              href="/auth/login"
+              class="block text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+            >
+              Sign In
+            </a>
+            <a
+              href="/auth/register"
+              class="block text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+            >
+              Sign Up
+            </a>
+          </div>
+
+          <!-- Authenticated mobile links -->
+          <div id="mobile-authenticated" class="hidden space-y-2">
+            <div class="px-3 py-2 border-b border-gray-100 mb-2">
+              <p
+                class="text-sm font-medium text-gray-900"
+                id="mobile-user-name"
+              >
+              </p>
+              <p class="text-sm text-gray-500" id="mobile-user-email"></p>
+            </div>
+
+            <a
+              href="/auth/dashboard"
+              class="block text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+            >
+              Dashboard
+            </a>
+            <a
+              href="/auth/profile"
+              class="block text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+            >
+              Profile
+            </a>
+            <a
+              href="/courses"
+              class="block text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+            >
+              My Courses
+            </a>
+            <a
+              href="/calendar"
+              class="block text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+            >
+              Calendar
+            </a>
+            <button
+              id="mobile-logout-button"
+              class="block w-full text-left text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+            >
+              <span id="mobile-logout-text">Sign Out</span>
+            </button>
+          </div>
+        </div>
       </nav>
     </div>
   </div>
 </header>
 
 <script>
-  // Mobile menu toggle functionality
-  const mobileMenuButton = document.getElementById("mobile-menu-button");
-  const mobileMenu = document.getElementById("mobile-menu");
+  import { authStore } from "../stores/authStore";
 
-  if (mobileMenuButton && mobileMenu) {
-    mobileMenuButton.addEventListener("click", () => {
-      mobileMenu.classList.toggle("hidden");
+  document.addEventListener("DOMContentLoaded", function () {
+    // Mobile menu toggle functionality
+    const mobileMenuButton = document.getElementById("mobile-menu-button");
+    const mobileMenu = document.getElementById("mobile-menu");
+
+    if (mobileMenuButton && mobileMenu) {
+      mobileMenuButton.addEventListener("click", () => {
+        mobileMenu.classList.toggle("hidden");
+      });
+    }
+
+    // Auth state management
+    const authenticatedSection = document.getElementById(
+      "authenticated-section",
+    );
+    const nonAuthenticatedSection = document.getElementById(
+      "non-authenticated-section",
+    );
+    const mobileAuthenticated = document.getElementById("mobile-authenticated");
+    const mobileNonAuthenticated = document.getElementById(
+      "mobile-non-authenticated",
+    );
+    const mobileUserName = document.getElementById("mobile-user-name");
+    const mobileUserEmail = document.getElementById("mobile-user-email");
+    const mobileLogoutButton = document.getElementById("mobile-logout-button");
+    const mobileLogoutText = document.getElementById("mobile-logout-text");
+
+    // Initialize auth state
+    updateAuthUI();
+
+    // Subscribe to auth state changes
+    authStore.subscribe(() => {
+      updateAuthUI();
     });
-  }
+
+    // Mobile logout functionality
+    mobileLogoutButton?.addEventListener("click", async function () {
+      mobileLogoutText!.textContent = "Signing Out...";
+
+      try {
+        await authStore.logout();
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Mobile logout error:", error);
+        mobileLogoutText!.textContent = "Sign Out";
+        // Still redirect even if logout request failed
+        window.location.href = "/";
+      }
+    });
+
+    function updateAuthUI() {
+      const state = authStore.getState();
+      const isAuthenticated = state.isAuthenticated;
+      const user = state.user;
+
+      if (isAuthenticated && user) {
+        // Show authenticated UI
+        authenticatedSection?.classList.remove("hidden");
+        nonAuthenticatedSection?.classList.add("hidden");
+        mobileAuthenticated?.classList.remove("hidden");
+        mobileNonAuthenticated?.classList.add("hidden");
+
+        // Update mobile user info
+        if (mobileUserName) {
+          mobileUserName.textContent = authStore.getUserFullName();
+        }
+        if (mobileUserEmail) {
+          mobileUserEmail.textContent = user.email;
+        }
+      } else {
+        // Show non-authenticated UI
+        authenticatedSection?.classList.add("hidden");
+        nonAuthenticatedSection?.classList.remove("hidden");
+        mobileAuthenticated?.classList.add("hidden");
+        mobileNonAuthenticated?.classList.remove("hidden");
+      }
+    }
+  });
 </script>

@@ -1,0 +1,491 @@
+---
+// src/pages/auth/dashboard.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import DashboardNav from "../../components/dashboard/DashboardNav.astro";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">Dashboard – Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content="Your personal dashboard with course progress, calendar, and account management."
+  />
+
+  <!-- Dashboard Navigation -->
+  <DashboardNav currentPage="dashboard" />
+
+  <!-- Main Dashboard Content -->
+  <div class="lg:ml-64">
+    <main class="py-6">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900" id="dashboard-welcome">
+            Welcome back!
+          </h1>
+          <p class="mt-1 text-sm text-gray-600">
+            Here's what's happening with your account today.
+          </p>
+        </div>
+
+        <!-- Email Verification Alert -->
+        <div
+          id="email-verification-alert"
+          class="hidden mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4"
+        >
+          <div class="flex">
+            <svg
+              class="w-5 h-5 text-yellow-400 mr-3 mt-0.5 flex-shrink-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"></path>
+            </svg>
+            <div>
+              <h3 class="text-sm font-medium text-yellow-800">
+                Email Verification Required
+              </h3>
+              <p class="mt-1 text-sm text-yellow-700">
+                Please verify your email address to access all features.
+                <button
+                  id="resend-verification"
+                  class="font-medium underline hover:no-underline ml-1"
+                >
+                  Resend verification email
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <!-- Courses Progress -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Active Courses</p>
+                <p
+                  class="text-2xl font-semibold text-gray-900"
+                  id="active-courses-count"
+                >
+                  0
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Course Progress -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Avg. Progress</p>
+                <p
+                  class="text-2xl font-semibold text-gray-900"
+                  id="avg-progress"
+                >
+                  0%
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Events -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Upcoming Events</p>
+                <p
+                  class="text-2xl font-semibold text-gray-900"
+                  id="upcoming-events-count"
+                >
+                  0
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Account Status -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+              <div
+                class="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-teal-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm text-gray-600">Account Status</p>
+                <p class="text-lg font-semibold" id="account-status">Active</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Recent Courses -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Recent Courses</h3>
+            </div>
+            <div class="p-6">
+              <div id="recent-courses-list" class="space-y-4">
+                <div class="text-center py-8 text-gray-500">
+                  <svg
+                    class="w-12 h-12 mx-auto mb-4 text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    ></path>
+                  </svg>
+                  <p>No courses enrolled yet</p>
+                  <a
+                    href="/courses"
+                    class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
+                  >
+                    Browse Available Courses →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Events -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Upcoming Events</h3>
+            </div>
+            <div class="p-6">
+              <div id="upcoming-events-list" class="space-y-4">
+                <div class="text-center py-8 text-gray-500">
+                  <svg
+                    class="w-12 h-12 mx-auto mb-4 text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    ></path>
+                  </svg>
+                  <p>No upcoming events</p>
+                  <a
+                    href="/calendar"
+                    class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
+                  >
+                    View Calendar →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div
+          class="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+        >
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <a
+              href="/courses"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:shadow-sm transition-all"
+            >
+              <svg
+                class="w-8 h-8 text-teal-600 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                ></path>
+              </svg>
+              <div>
+                <h4 class="font-medium text-gray-900">Browse Courses</h4>
+                <p class="text-sm text-gray-600">
+                  Discover new learning opportunities
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="/calendar"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:shadow-sm transition-all"
+            >
+              <svg
+                class="w-8 h-8 text-teal-600 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                ></path>
+              </svg>
+              <div>
+                <h4 class="font-medium text-gray-900">View Calendar</h4>
+                <p class="text-sm text-gray-600">
+                  Check your schedule and events
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="/auth/profile"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:shadow-sm transition-all"
+            >
+              <svg
+                class="w-8 h-8 text-teal-600 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                ></path>
+              </svg>
+              <div>
+                <h4 class="font-medium text-gray-900">Update Profile</h4>
+                <p class="text-sm text-gray-600">
+                  Manage your account settings
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="/support"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:shadow-sm transition-all"
+            >
+              <svg
+                class="w-8 h-8 text-teal-600 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+                ></path>
+              </svg>
+              <div>
+                <h4 class="font-medium text-gray-900">Get Support</h4>
+                <p class="text-sm text-gray-600">Need help? Contact our team</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script>
+  import { authStore } from "../../stores/authStore";
+  import { resendVerification } from "../../lib/auth";
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const welcomeHeading = document.getElementById("dashboard-welcome");
+    const emailAlert = document.getElementById("email-verification-alert");
+    const resendButton = document.getElementById("resend-verification");
+    const accountStatus = document.getElementById("account-status");
+
+    // Initialize dashboard
+    updateDashboard();
+
+    // Subscribe to auth state changes
+    authStore.subscribe(() => {
+      updateDashboard();
+    });
+
+    // Resend verification email
+    resendButton?.addEventListener("click", async function () {
+      const state = authStore.getState();
+      const userEmail = state.user?.email;
+
+      if (!userEmail) return;
+
+      try {
+        resendButton.textContent = "Sending...";
+        (resendButton as HTMLButtonElement).disabled = true;
+
+        await resendVerification(userEmail);
+
+        resendButton.textContent = "Email sent!";
+        (resendButton as HTMLButtonElement).disabled = true;
+
+        setTimeout(() => {
+          resendButton.textContent = "Resend verification email";
+          (resendButton as HTMLButtonElement).disabled = false;
+        }, 3000);
+      } catch (error: unknown) {
+        console.error("Failed to resend verification:", error);
+        resendButton.textContent = "Failed to send";
+
+        setTimeout(() => {
+          resendButton.textContent = "Resend verification email";
+          (resendButton as HTMLButtonElement).disabled = false;
+        }, 3000);
+      }
+    });
+
+    function updateDashboard() {
+      const state = authStore.getState();
+      const user = state.user;
+
+      if (!user) {
+        // Redirect to login if not authenticated
+        window.location.href =
+          "/auth/login?redirect=" +
+          encodeURIComponent(window.location.pathname);
+        return;
+      }
+
+      // Update welcome message
+      const fullName = authStore.getUserFullName();
+      if (welcomeHeading) {
+        welcomeHeading.textContent = `Welcome back, ${fullName}!`;
+      }
+
+      // Show/hide email verification alert
+      const isVerified = authStore.isEmailVerified();
+      if (emailAlert) {
+        if (isVerified) {
+          emailAlert.classList.add("hidden");
+        } else {
+          emailAlert.classList.remove("hidden");
+        }
+      }
+
+      // Update account status
+      if (accountStatus) {
+        if (isVerified) {
+          accountStatus.textContent = "Verified";
+          accountStatus.className = "text-lg font-semibold text-green-600";
+        } else {
+          accountStatus.textContent = "Pending";
+          accountStatus.className = "text-lg font-semibold text-yellow-600";
+        }
+      }
+
+      // TODO: Load actual course and event data
+      loadDashboardData();
+    }
+
+    async function loadDashboardData() {
+      // TODO: Implement actual API calls for courses and events
+      // For now, show placeholder data
+
+      // Update stats (these would come from API calls)
+      const activeCoursesCount = document.getElementById(
+        "active-courses-count",
+      );
+      const avgProgress = document.getElementById("avg-progress");
+      const upcomingEventsCount = document.getElementById(
+        "upcoming-events-count",
+      );
+
+      if (activeCoursesCount) activeCoursesCount.textContent = "0";
+      if (avgProgress) avgProgress.textContent = "0%";
+      if (upcomingEventsCount) upcomingEventsCount.textContent = "0";
+    }
+  });
+</script>
+
+<style>
+  /* Dashboard-specific styles */
+  main {
+    min-height: calc(100vh - 64px); /* Adjust based on header height */
+  }
+</style>
