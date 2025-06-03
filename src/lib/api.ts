@@ -1,5 +1,5 @@
 // src/lib/api.ts
-import type { BlogPost, Page, LinkHub, Testimonial } from "../types";
+import type { BlogPost, Page, LinkHub, Testimonial, Course, CourseEnrollment, LessonProgress } from "../types";
 const API = "https://corrison.corrisonapi.com";
 
 async function check<T>(res: Response, what: string): Promise<T> {
@@ -72,4 +72,50 @@ export function fetchLinkHubs(): Promise<LinkHub[]> {
 }
 export function fetchLinkHub(slug: string): Promise<LinkHub> {
   return fetch(`${API}/api/v1/linkhubs/${slug}/`).then(r => check<LinkHub>(r, "link hub"));
+}
+
+/** NEW: Courses API */
+export function fetchCourses(): Promise<Course[]> {
+  return fetch(`${API}/api/v1/courses/`).then(r => check<Course[]>(r, "courses"));
+}
+
+export function fetchCourse(slug: string): Promise<Course> {
+  return fetch(`${API}/api/v1/courses/${slug}/`).then(r => check<Course>(r, "course"));
+}
+
+export function fetchUserCourses(): Promise<CourseEnrollment[]> {
+  return fetch(`${API}/api/v1/courses/enrollments/`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<CourseEnrollment[]>(r, "user courses"));
+}
+
+export function enrollInCourse(courseId: number): Promise<CourseEnrollment> {
+  return fetch(`${API}/api/v1/courses/${courseId}/enroll/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<CourseEnrollment>(r, "course enrollment"));
+}
+
+export function fetchLessonProgress(enrollmentId: number): Promise<LessonProgress[]> {
+  return fetch(`${API}/api/v1/courses/enrollments/${enrollmentId}/progress/`, {
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+  }).then(r => check<LessonProgress[]>(r, "lesson progress"));
+}
+
+export function updateLessonProgress(lessonId: number, completed: boolean): Promise<LessonProgress> {
+  return fetch(`${API}/api/v1/courses/lessons/${lessonId}/progress/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+    },
+    body: JSON.stringify({ completed }),
+  }).then(r => check<LessonProgress>(r, "lesson progress update"));
 }

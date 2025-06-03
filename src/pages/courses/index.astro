@@ -1,0 +1,446 @@
+---
+// src/pages/courses/index.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import CourseGrid from "../../components/courses/CourseGrid.astro";
+import { fetchCourses, fetchUserCourses } from "../../lib/api";
+import type { Course, CourseEnrollment } from "../../types";
+
+// Fetch all courses
+const courses: Course[] = await fetchCourses();
+
+// Try to fetch user courses if authenticated (server-side check would be ideal)
+let userEnrollments: CourseEnrollment[] = [];
+// Note: We'll handle user enrollments client-side since we can't easily check auth server-side
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">Courses – Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content="Discover our comprehensive collection of courses designed to help you learn and grow. From beginner to advanced levels, find the perfect course for your journey."
+  />
+
+  <div class="min-h-screen bg-gray-50">
+    <!-- Hero Section -->
+    <section class="bg-white border-b border-gray-200">
+      <div class="container mx-auto px-4 py-16">
+        <div class="text-center max-w-4xl mx-auto">
+          <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Learn New Skills
+          </h1>
+          <p class="text-xl text-gray-600 mb-8">
+            Discover our comprehensive collection of courses designed to help
+            you learn and grow. From beginner to advanced levels, find the
+            perfect course for your journey.
+          </p>
+
+          <!-- Quick Stats -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl mx-auto">
+            <div class="text-center">
+              <div class="text-3xl font-bold text-teal-700" id="course-count">
+                {courses.length}
+              </div>
+              <div class="text-sm text-gray-600">Courses Available</div>
+            </div>
+            <div class="text-center">
+              <div
+                class="text-3xl font-bold text-teal-700"
+                id="instructor-count"
+              >
+                {
+                  new Set(courses.map((c) => c.instructor?.id).filter(Boolean))
+                    .size
+                }
+              </div>
+              <div class="text-sm text-gray-600">Expert Instructors</div>
+            </div>
+            <div class="text-center">
+              <div
+                class="text-3xl font-bold text-teal-700"
+                id="total-enrollments"
+              >
+                {
+                  courses.reduce(
+                    (sum, course) => sum + (course.enrollments_count || 0),
+                    0,
+                  )
+                }
+              </div>
+              <div class="text-sm text-gray-600">Total Enrollments</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter and Search Section -->
+    <section
+      class="bg-white shadow-sm sticky top-16 z-10 border-b border-gray-200"
+    >
+      <div class="container mx-auto px-4 py-4">
+        <div
+          class="flex flex-col md:flex-row gap-4 items-center justify-between"
+        >
+          <!-- Search -->
+          <div class="flex-1 max-w-md">
+            <div class="relative">
+              <input
+                type="text"
+                id="course-search"
+                placeholder="Search courses..."
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="flex flex-wrap gap-4 items-center">
+            <!-- Level Filter -->
+            <select
+              id="level-filter"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="">All Levels</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+
+            <!-- Price Filter -->
+            <select
+              id="price-filter"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="">All Courses</option>
+              <option value="free">Free Courses</option>
+              <option value="paid">Paid Courses</option>
+            </select>
+
+            <!-- Sort -->
+            <select
+              id="sort-filter"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="featured">Featured First</option>
+              <option value="newest">Newest First</option>
+              <option value="popular">Most Popular</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+            </select>
+
+            <!-- View Toggle -->
+            <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                id="grid-view"
+                class="px-3 py-2 bg-teal-700 text-white text-sm hover:bg-teal-800"
+                data-view="grid"
+              >
+                <svg
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                  ></path>
+                </svg>
+              </button>
+              <button
+                id="list-view"
+                class="px-3 py-2 bg-gray-100 text-gray-700 text-sm hover:bg-gray-200"
+                data-view="list"
+              >
+                <svg
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12">
+      <!-- Featured Courses Section -->
+      {
+        courses.filter((course) => course.is_featured).length > 0 && (
+          <section class="mb-16">
+            <div class="text-center mb-8">
+              <h2 class="text-3xl font-bold text-gray-900 mb-2">
+                Featured Courses
+              </h2>
+              <p class="text-gray-600">
+                Hand-picked courses to help you get started
+              </p>
+            </div>
+            <CourseGrid
+              courses={courses.filter((course) => course.is_featured)}
+              userEnrollments={userEnrollments}
+              gridCols={3}
+              className="featured-courses"
+            />
+          </section>
+        )
+      }
+
+      <!-- All Courses Section -->
+      <section>
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h2 class="text-3xl font-bold text-gray-900">All Courses</h2>
+            <p class="text-gray-600 mt-1">
+              <span id="filtered-count">{courses.length}</span> courses available
+            </p>
+          </div>
+
+          <!-- Mobile Filter Toggle -->
+          <button
+            id="mobile-filter-toggle"
+            class="md:hidden bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          >
+            Filters
+          </button>
+        </div>
+
+        <!-- Course Grid -->
+        <div id="course-grid-container">
+          <CourseGrid
+            courses={courses}
+            userEnrollments={userEnrollments}
+            gridCols={3}
+            className="all-courses"
+          />
+        </div>
+
+        <!-- Load More Button (for future pagination) -->
+        <div class="text-center mt-12">
+          <button
+            id="load-more"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-6 py-3 rounded-lg transition-colors hidden"
+          >
+            Load More Courses
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<!-- JavaScript for filtering and search functionality -->
+<script is:inline>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Store original courses data
+    const originalCourses = { courses };
+    let filteredCourses = [...originalCourses];
+    let currentUserEnrollments = [];
+
+    // Load user enrollments if authenticated
+    loadUserEnrollments();
+
+    async function loadUserEnrollments() {
+      try {
+        const authStore = await import("/src/stores/authStore.ts");
+        if (authStore.isAuthenticated()) {
+          const api = await import("/src/lib/api.ts");
+          currentUserEnrollments = await api.fetchUserCourses();
+          // Re-render course grid with enrollment data
+          renderCourseGrid();
+        }
+      } catch (error) {
+        console.log("Could not load user enrollments:", error);
+      }
+    }
+
+    // Filter and search functionality
+    const searchInput = document.getElementById("course-search");
+    const levelFilter = document.getElementById("level-filter");
+    const priceFilter = document.getElementById("price-filter");
+    const sortFilter = document.getElementById("sort-filter");
+    const filteredCountSpan = document.getElementById("filtered-count");
+
+    function applyFilters() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const levelValue = levelFilter.value;
+      const priceValue = priceFilter.value;
+      const sortValue = sortFilter.value;
+
+      // Filter courses
+      filteredCourses = originalCourses.filter((course) => {
+        // Search filter
+        const matchesSearch =
+          !searchTerm ||
+          course.title.toLowerCase().includes(searchTerm) ||
+          (course.description &&
+            course.description.toLowerCase().includes(searchTerm)) ||
+          (course.category &&
+            course.category.name.toLowerCase().includes(searchTerm)) ||
+          (course.instructor &&
+            course.instructor.name.toLowerCase().includes(searchTerm));
+
+        // Level filter
+        const matchesLevel =
+          !levelValue || course.level.toLowerCase() === levelValue;
+
+        // Price filter
+        const matchesPrice =
+          !priceValue ||
+          (priceValue === "free" && course.price === 0) ||
+          (priceValue === "paid" && course.price > 0);
+
+        return matchesSearch && matchesLevel && matchesPrice;
+      });
+
+      // Sort courses
+      filteredCourses.sort((a, b) => {
+        switch (sortValue) {
+          case "newest":
+            return (
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+            );
+          case "popular":
+            return (b.enrollment_count || 0) - (a.enrollment_count || 0);
+          case "price-low":
+            return a.price - b.price;
+          case "price-high":
+            return b.price - a.price;
+          case "featured":
+          default:
+            if (a.is_featured && !b.is_featured) return -1;
+            if (!a.is_featured && b.is_featured) return 1;
+            return (b.enrollment_count || 0) - (a.enrollment_count || 0);
+        }
+      });
+
+      // Update count
+      filteredCountSpan.textContent = filteredCourses.length;
+
+      // Re-render grid
+      renderCourseGrid();
+    }
+
+    function renderCourseGrid() {
+      // This would typically re-render the course grid with filtered courses
+      // For now, we'll hide/show existing course cards
+      const allCourseCards = document.querySelectorAll(
+        ".courses-grid .bg-white",
+      );
+
+      allCourseCards.forEach((card, index) => {
+        if (index < filteredCourses.length) {
+          card.style.display = "block";
+        } else {
+          card.style.display = "none";
+        }
+      });
+    }
+
+    // Event listeners
+    searchInput.addEventListener("input", applyFilters);
+    levelFilter.addEventListener("change", applyFilters);
+    priceFilter.addEventListener("change", applyFilters);
+    sortFilter.addEventListener("change", applyFilters);
+
+    // View toggle functionality
+    const gridViewBtn = document.getElementById("grid-view");
+    const listViewBtn = document.getElementById("list-view");
+    const courseGridContainer = document.getElementById(
+      "course-grid-container",
+    );
+
+    gridViewBtn.addEventListener("click", () => {
+      gridViewBtn.classList.add("bg-teal-700", "text-white");
+      gridViewBtn.classList.remove("bg-gray-100", "text-gray-700");
+      listViewBtn.classList.add("bg-gray-100", "text-gray-700");
+      listViewBtn.classList.remove("bg-teal-700", "text-white");
+
+      courseGridContainer.classList.remove("list-view");
+    });
+
+    listViewBtn.addEventListener("click", () => {
+      listViewBtn.classList.add("bg-teal-700", "text-white");
+      listViewBtn.classList.remove("bg-gray-100", "text-gray-700");
+      gridViewBtn.classList.add("bg-gray-100", "text-gray-700");
+      gridViewBtn.classList.remove("bg-teal-700", "text-white");
+
+      courseGridContainer.classList.add("list-view");
+    });
+
+    // Mobile filter toggle
+    const mobileFilterToggle = document.getElementById("mobile-filter-toggle");
+    const filterSection = document.querySelector(".sticky");
+
+    mobileFilterToggle.addEventListener("click", () => {
+      filterSection.classList.toggle("active");
+    });
+  });
+</script>
+
+<style>
+  .list-view .courses-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .list-view .courses-grid .bg-white {
+    display: flex;
+    flex-direction: row;
+    max-width: none;
+  }
+
+  .list-view .courses-grid .bg-white > div:first-child {
+    flex-shrink: 0;
+    width: 200px;
+  }
+
+  .list-view .courses-grid .bg-white > div:last-child {
+    flex: 1;
+  }
+
+  @media (max-width: 768px) {
+    .list-view .courses-grid .bg-white {
+      flex-direction: column;
+    }
+
+    .list-view .courses-grid .bg-white > div:first-child {
+      width: 100%;
+    }
+  }
+</style>
