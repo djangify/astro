@@ -1,6 +1,7 @@
 ---
 // src/pages/calendar/index.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import CalendarView from "../../components/calendar/CalendarView.astro";
 ---
 
 <BaseLayout>
@@ -34,14 +35,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Calendar Owner Selection -->
-      <div class="mb-8">
+      <div class="mb-8" id="calendar-selection">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 class="text-xl font-semibold text-gray-900 mb-4">
             Select Calendar Owner
           </h2>
 
           <div class="space-y-4">
-            <!-- Demo Calendar Owner Input -->
             <div>
               <label
                 for="calendar-username"
@@ -60,7 +60,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                 <button
                   id="load-calendar-btn"
                   class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 py-2 rounded-lg transition-colors"
-                  onclick="loadCalendar()"
                 >
                   Load Calendar
                 </button>
@@ -70,64 +69,26 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
                 with.
               </p>
             </div>
-
-            <!-- Popular Calendar Owners (Demo) -->
-            <div>
-              <h3 class="text-sm font-medium text-gray-700 mb-3">
-                Popular Calendar Owners
-              </h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <button
-                  class="text-left p-3 border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-teal-50 transition-all"
-                  onclick="selectCalendarOwner('demo')"
-                >
-                  <div class="font-medium text-gray-900">Demo Calendar</div>
-                  <div class="text-sm text-gray-600">
-                    Sample appointment booking
-                  </div>
-                </button>
-
-                <button
-                  class="text-left p-3 border border-gray-200 rounded-lg hover:border-teal-300 hover:bg-teal-50 transition-all"
-                  onclick="selectCalendarOwner('corrison')"
-                >
-                  <div class="font-medium text-gray-900">Corrison</div>
-                  <div class="text-sm text-gray-600">Main calendar</div>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      <!-- Calendar Container - NOW EMPTY, will be populated dynamically -->
-      <div id="calendar-container" class="hidden"></div>
-
-      <!-- No Calendar Selected State -->
-      <div id="no-calendar-state" class="text-center py-12">
-        <svg
-          class="w-16 h-16 mx-auto mb-4 text-gray-300"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      <!-- Loading State -->
+      <div id="calendar-loading" class="text-center py-12">
+        <div
+          class="animate-spin rounded-full h-16 w-16 border-b-2 border-teal-600 mx-auto mb-4"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          ></path>
-        </svg>
+        </div>
         <h3 class="text-lg font-medium text-gray-900 mb-2">
           Loading Calendar...
         </h3>
-        <p class="text-gray-600 mb-6">
+        <p class="text-gray-600">
           Finding available appointment slots for you.
         </p>
       </div>
 
       <!-- Error State -->
-      <div id="calendar-error-state" class="hidden text-center py-12">
+      <div id="calendar-error" class="hidden text-center py-12">
         <svg
           class="w-16 h-16 mx-auto mb-4 text-red-300"
           fill="none"
@@ -143,785 +104,176 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         <h3 class="text-lg font-medium text-gray-900 mb-2">
           Calendar Not Found
         </h3>
-        <p class="text-gray-600 mb-6" id="calendar-error-message">
+        <p class="text-gray-600 mb-6" id="error-message">
           No calendars are available for booking at this time.
         </p>
         <button
-          onclick="loadDefaultCalendar()"
+          id="retry-btn"
           class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
         >
           Try Again
         </button>
       </div>
 
-      <!-- Loading State -->
-      <div id="calendar-loading-state" class="hidden text-center py-12">
-        <div
-          class="animate-spin rounded-full h-16 w-16 border-b-2 border-teal-600 mx-auto mb-4"
-        >
-        </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">
-          Loading Calendar...
-        </h3>
-        <p class="text-gray-600">
-          Please wait while we load the appointment calendar.
-        </p>
+      <!-- Calendar Container -->
+      <div id="calendar-container" class="hidden">
+        <CalendarView username="" />
       </div>
     </div>
   </main>
 </BaseLayout>
-
-<script is:inline>
-  // Global calendar instance
-  let currentCalendar = null;
-
-  // Load default calendar on page load
-  window.loadDefaultCalendar = async function () {
-    showState("loading");
-
-    try {
-      const API_BASE = window.location.origin.includes("localhost")
-        ? "http://localhost:8000"
-        : "https://corrison.corrisonapi.com";
-
-      const response = await fetch(
-        `${API_BASE}/api/v1/appointments-booking/api/public/default/`,
-      );
-
-      if (!response.ok) {
-        throw new Error("No calendars available");
-      }
-
-      const defaultCalendar = await response.json();
-      await selectCalendarOwner(defaultCalendar.username);
-    } catch (error) {
-      console.error("Error loading default calendar:", error);
-      showState("error");
-
-      const errorMessage = document.getElementById("calendar-error-message");
-      if (errorMessage) {
-        errorMessage.textContent =
-          "No calendars are available for booking at this time.";
-      }
-    }
-  };
-
-  // Load calendar by username input
-  window.loadCalendar = async function () {
-    const usernameInput = document.getElementById("calendar-username");
-    const username = usernameInput?.value.trim();
-
-    if (!username) {
-      alert("Please enter a calendar username");
-      return;
-    }
-
-    await selectCalendarOwner(username);
-  };
-
-  // Select and load a specific calendar
-  window.selectCalendarOwner = async function (username) {
+<script>
+  document.addEventListener("DOMContentLoaded", async function () {
     const calendarContainer = document.getElementById("calendar-container");
-    const usernameInput = document.getElementById("calendar-username");
+    const loadingDiv = document.getElementById("calendar-loading");
+    const errorDiv = document.getElementById("calendar-error");
+    const selectionDiv = document.getElementById("calendar-selection");
+    const usernameInput = document.getElementById(
+      "calendar-username",
+    ) as HTMLInputElement;
+    const loadBtn = document.getElementById("load-calendar-btn");
+    const retryBtn = document.getElementById("retry-btn");
+    const errorMessage = document.getElementById("error-message");
 
-    // Show loading state
-    showState("loading");
-
-    // Update input field
-    if (usernameInput) {
-      usernameInput.value = username;
-    }
-
-    try {
-      // Test if calendar user exists
-      const API_BASE = window.location.origin.includes("localhost")
-        ? "http://localhost:8000"
-        : "https://corrison.corrisonapi.com";
-
-      const response = await fetch(
-        `${API_BASE}/api/v1/appointments-booking/api/public/${username}/`,
-      );
-
-      if (!response.ok) {
-        throw new Error("Calendar user not found or not accepting bookings");
-      }
-
-      const calendarUser = await response.json();
-
-      // Create calendar HTML dynamically
-      if (calendarContainer) {
-        calendarContainer.innerHTML = createCalendarHTML();
-
-        // Initialize the calendar JavaScript with the username
-        currentCalendar = new CalendarView(username);
-      }
-
-      // Show calendar
-      showState("calendar");
-
-      // Update page URL without reload
-      const url = new URL(window.location);
-      url.searchParams.set("calendar", username);
-      window.history.pushState({}, "", url);
-    } catch (error) {
-      console.error("Error loading calendar:", error);
-
-      const errorMessage = document.getElementById("calendar-error-message");
-      if (errorMessage) {
-        errorMessage.textContent =
-          error.message || "Failed to load calendar. Please try again.";
-      }
-
-      showState("error");
-    }
-  };
-
-  // Create calendar HTML structure
-  function createCalendarHTML() {
-    return `
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <!-- Calendar Header -->
-        <div class="px-6 py-4 border-b border-gray-200">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900" id="calendar-title">
-                Loading...
-              </h3>
-              <p class="text-sm text-gray-600" id="calendar-subtitle">
-                Select a date to view available appointment times
-              </p>
-            </div>
-
-            <!-- Month Navigation -->
-            <div class="flex items-center space-x-2">
-              <button
-                id="prev-month"
-                class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Previous month"
-              >
-                <svg
-                  class="w-5 h-5 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 19l-7-7 7-7"></path>
-                </svg>
-              </button>
-
-              <div
-                class="px-4 py-2 text-sm font-medium text-gray-700"
-                id="month-year-display"
-              >
-                <!-- Will be populated by JavaScript -->
-              </div>
-
-              <button
-                id="next-month"
-                class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Next month"
-              >
-                <svg
-                  class="w-5 h-5 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Loading State -->
-        <div id="calendar-loading" class="p-6">
-          <div class="animate-pulse">
-            <div class="grid grid-cols-7 gap-1 mb-4">
-              <div class="h-8 bg-gray-200 rounded"></div>
-              <div class="h-8 bg-gray-200 rounded"></div>
-              <div class="h-8 bg-gray-200 rounded"></div>
-              <div class="h-8 bg-gray-200 rounded"></div>
-              <div class="h-8 bg-gray-200 rounded"></div>
-              <div class="h-8 bg-gray-200 rounded"></div>
-              <div class="h-8 bg-gray-200 rounded"></div>
-            </div>
-            <div class="grid grid-cols-7 gap-1">
-              ${Array.from({ length: 35 })
-                .map(() => '<div class="h-16 bg-gray-100 rounded"></div>')
-                .join("")}
-            </div>
-          </div>
-        </div>
-
-        <!-- Calendar Grid -->
-        <div id="calendar-content" class="hidden">
-          <!-- Day Headers -->
-          <div class="grid grid-cols-7 border-b border-gray-200">
-            <div class="px-3 py-2 text-xs font-medium text-gray-500 text-center border-r border-gray-200">Sun</div>
-            <div class="px-3 py-2 text-xs font-medium text-gray-500 text-center border-r border-gray-200">Mon</div>
-            <div class="px-3 py-2 text-xs font-medium text-gray-500 text-center border-r border-gray-200">Tue</div>
-            <div class="px-3 py-2 text-xs font-medium text-gray-500 text-center border-r border-gray-200">Wed</div>
-            <div class="px-3 py-2 text-xs font-medium text-gray-500 text-center border-r border-gray-200">Thu</div>
-            <div class="px-3 py-2 text-xs font-medium text-gray-500 text-center border-r border-gray-200">Fri</div>
-            <div class="px-3 py-2 text-xs font-medium text-gray-500 text-center">Sat</div>
-          </div>
-
-          <!-- Calendar Days -->
-          <div id="calendar-grid" class="grid grid-cols-7">
-            <!-- Days will be populated by JavaScript -->
-          </div>
-        </div>
-
-        <!-- Error State -->
-        <div id="calendar-error" class="hidden p-6 text-center">
-          <div class="text-red-600 mb-2">
-            <svg
-              class="w-12 h-12 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-          </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">
-            Unable to load calendar
-          </h3>
-          <p class="text-gray-600 mb-4" id="error-message">Please try again later</p>
-          <button
-            id="retry-calendar"
-            class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-4 py-2 rounded-lg transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-
-      <!-- Selected Date Details Modal/Panel -->
-      <div
-        id="date-details"
-        class="hidden mt-4 bg-white rounded-lg shadow-sm border border-gray-200"
-      >
-        <div class="px-6 py-4 border-b border-gray-200">
-          <div class="flex items-center justify-between">
-            <h4 class="text-lg font-medium text-gray-900" id="selected-date-title">
-              Available Times
-            </h4>
-            <button
-              id="close-date-details"
-              class="text-gray-400 hover:text-gray-600"
-              aria-label="Close"
-            >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="p-6">
-          <div id="available-slots" class="space-y-3">
-            <!-- Available time slots will be populated here -->
-          </div>
-
-          <div id="no-slots" class="hidden text-center py-8">
-            <svg
-              class="w-12 h-12 mx-auto mb-4 text-gray-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path>
-            </svg>
-            <h5 class="text-lg font-medium text-gray-900 mb-2">No Available Times</h5>
-            <p class="text-gray-600">
-              No appointment slots are available on this date.
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  window.resetCalendarSelection = function () {
-    const usernameInput = document.getElementById("calendar-username");
-    if (usernameInput) {
-      usernameInput.value = "";
-    }
-
-    // Clear URL parameter
-    const url = new URL(window.location);
-    url.searchParams.delete("calendar");
-    window.history.pushState({}, "", url);
-
-    // Try to load default calendar
-    loadDefaultCalendar();
-  };
-
-  function showState(state) {
-    const calendarContainer = document.getElementById("calendar-container");
-    const noCalendarState = document.getElementById("no-calendar-state");
-    const errorState = document.getElementById("calendar-error-state");
-    const loadingState = document.getElementById("calendar-loading-state");
-
-    // Hide all states
-    [calendarContainer, noCalendarState, errorState, loadingState].forEach(
-      (el) => {
-        if (el) el.classList.add("hidden");
-      },
-    );
-
-    // Show selected state
-    switch (state) {
-      case "calendar":
-        if (calendarContainer) calendarContainer.classList.remove("hidden");
-        break;
-      case "error":
-        if (errorState) errorState.classList.remove("hidden");
-        break;
-      case "loading":
-        if (loadingState) loadingState.classList.remove("hidden");
-        break;
-      default:
-        if (noCalendarState) noCalendarState.classList.remove("hidden");
-    }
-  }
-
-  // Check URL parameters on page load, otherwise load default
-  document.addEventListener("DOMContentLoaded", function () {
+    // Check URL parameters first
     const urlParams = new URLSearchParams(window.location.search);
     const calendarParam = urlParams.get("calendar");
 
     if (calendarParam) {
-      selectCalendarOwner(calendarParam);
+      await loadCalendar(calendarParam);
     } else {
-      // Load default calendar automatically
-      loadDefaultCalendar();
+      await loadDefaultCalendar();
     }
 
-    // Handle Enter key in username input
-    const usernameInput = document.getElementById("calendar-username");
-    if (usernameInput) {
-      usernameInput.addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
-          loadCalendar();
-        }
-      });
-    }
-  });
-
-  // CalendarView class - moved here from component
-  class CalendarView {
-    constructor(username, selectedDate = null) {
-      this.username = username;
-      this.currentDate = new Date();
-      this.selectedDate = selectedDate ? new Date(selectedDate) : null;
-      this.availableSlots = new Map();
-      this.calendarUser = null;
-      this.appointmentTypes = [];
-
-      this.init();
-    }
-
-    async init() {
+    async function loadDefaultCalendar(): Promise<void> {
       try {
-        await this.loadCalendarUser();
-        await this.loadCurrentMonth();
-        this.setupEventListeners();
-        this.hideLoading();
-      } catch (error) {
-        console.error("Calendar initialization failed:", error);
-        this.showError("Failed to load calendar");
-      }
-    }
+        const API_BASE = window.location.origin.includes("localhost")
+          ? "http://localhost:8000"
+          : "https://corrison.corrisonapi.com";
 
-    async loadCalendarUser() {
-      const API_BASE = window.location.origin.includes("localhost")
-        ? "http://localhost:8000"
-        : "https://corrison.corrisonapi.com";
-
-      const response = await fetch(
-        `${API_BASE}/api/v1/appointments-booking/api/public/${this.username}/`,
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to load calendar user: ${response.status}`);
-      }
-
-      this.calendarUser = await response.json();
-      this.appointmentTypes = this.calendarUser.appointment_types || [];
-
-      // Update calendar title
-      const title = document.getElementById("calendar-title");
-      if (title) {
-        title.textContent = `Book with ${this.calendarUser.display_name}`;
-      }
-    }
-
-    async loadCurrentMonth() {
-      const year = this.currentDate.getFullYear();
-      const month = this.currentDate.getMonth() + 1;
-
-      // Update month/year display
-      const monthYearDisplay = document.getElementById("month-year-display");
-      if (monthYearDisplay) {
-        monthYearDisplay.textContent = this.currentDate.toLocaleDateString(
-          "en-US",
-          {
-            month: "long",
-            year: "numeric",
-          },
+        const response = await fetch(
+          `${API_BASE}/api/v1/appointments-booking/api/public/default/`,
         );
+
+        if (response.ok) {
+          const defaultCalendar = await response.json();
+          await loadCalendar(defaultCalendar.username);
+        } else {
+          // No default calendar, show selection
+          showSelection();
+        }
+      } catch (error: unknown) {
+        console.error("No default calendar:", error);
+        showSelection();
       }
-
-      // Load available slots for the month
-      await this.loadAvailableSlots(year, month);
-
-      // Render calendar grid
-      this.renderCalendarGrid();
     }
 
-    async loadAvailableSlots(year, month) {
-      const API_BASE = window.location.origin.includes("localhost")
-        ? "http://localhost:8000"
-        : "https://corrison.corrisonapi.com";
-
-      // Calculate date range for the month
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0);
-
-      const startDateStr = startDate.toISOString().split("T")[0];
-      const endDateStr = endDate.toISOString().split("T")[0];
-
-      if (this.appointmentTypes.length === 0) {
-        console.warn("No appointment types available");
-        return;
-      }
+    async function loadCalendar(username: string): Promise<void> {
+      showLoading();
 
       try {
-        const allSlots = new Map();
+        const API_BASE = window.location.origin.includes("localhost")
+          ? "http://localhost:8000"
+          : "https://corrison.corrisonapi.com";
 
-        for (const appointmentType of this.appointmentTypes) {
-          const url = `${API_BASE}/api/v1/appointments-booking/api/public/${this.username}/slots/?start_date=${startDateStr}&end_date=${endDateStr}&appointment_type_id=${appointmentType.id}`;
+        const response = await fetch(
+          `${API_BASE}/api/v1/appointments-booking/api/public/${username}/`,
+        );
 
-          const response = await fetch(url);
-          if (!response.ok) continue;
-
-          const slots = await response.json();
-
-          slots.forEach((slot) => {
-            const dateKey = slot.date;
-            if (!allSlots.has(dateKey)) {
-              allSlots.set(dateKey, []);
-            }
-            allSlots.get(dateKey).push({
-              ...slot,
-              appointment_type: appointmentType,
-            });
-          });
+        if (!response.ok) {
+          throw new Error(
+            `Calendar user '${username}' not found or not accepting bookings`,
+          );
         }
 
-        this.availableSlots = allSlots;
-      } catch (error) {
-        console.error("Failed to load available slots:", error);
-      }
-    }
-
-    renderCalendarGrid() {
-      const grid = document.getElementById("calendar-grid");
-      if (!grid) return;
-
-      grid.innerHTML = "";
-
-      const year = this.currentDate.getFullYear();
-      const month = this.currentDate.getMonth();
-
-      const firstDay = new Date(year, month, 1);
-      const lastDay = new Date(year, month + 1, 0);
-      const daysInMonth = lastDay.getDate();
-      const startingDayOfWeek = firstDay.getDay();
-
-      // Add empty cells for days before month starts
-      for (let i = 0; i < startingDayOfWeek; i++) {
-        const emptyCell = document.createElement("div");
-        emptyCell.className = "h-16 border-r border-b border-gray-200";
-        grid.appendChild(emptyCell);
-      }
-
-      // Add cells for each day of the month
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const dateStr = date.toISOString().split("T")[0];
-        const isToday = this.isToday(date);
-        const isPast = date < new Date().setHours(0, 0, 0, 0);
-        const hasSlots = this.availableSlots.has(dateStr);
-        const isSelected =
-          this.selectedDate && this.isSameDate(date, this.selectedDate);
-
-        const dayCell = document.createElement("div");
-        dayCell.className = `h-16 border-r border-b border-gray-200 p-1 cursor-pointer transition-colors ${
-          isPast
-            ? "bg-gray-50 text-gray-400"
-            : hasSlots
-              ? "hover:bg-teal-50 bg-white"
-              : "bg-gray-50 text-gray-600"
-        } ${isSelected ? "bg-teal-100 border-teal-300" : ""}`;
-
-        dayCell.innerHTML = `
-        <div class="flex flex-col h-full">
-          <div class="flex-1">
-            <span class="text-sm font-medium ${isToday ? "text-teal-700" : ""}">${day}</span>
-            ${isToday ? '<div class="w-1 h-1 bg-teal-700 rounded-full mt-1"></div>' : ""}
-          </div>
-          ${
-            hasSlots && !isPast
-              ? `
-            <div class="flex-shrink-0">
-              <div class="w-2 h-2 bg-teal-600 rounded-full"></div>
-            </div>
-          `
-              : ""
-          }
-        </div>
-      `;
-
-        if (!isPast && hasSlots) {
-          dayCell.addEventListener("click", () => this.selectDate(dateStr));
+        // Update input field
+        if (usernameInput) {
+          usernameInput.value = username;
         }
 
-        grid.appendChild(dayCell);
-      }
-    }
+        // Show calendar container and initialize it
+        showCalendar();
 
-    selectDate(dateStr) {
-      this.selectedDate = new Date(dateStr);
-      this.renderCalendarGrid();
-      this.showDateDetails(dateStr);
-    }
+        // Update URL
+        const url = new URL(window.location.href);
+        url.searchParams.set("calendar", username);
+        window.history.pushState({}, "", url);
 
-    showDateDetails(dateStr) {
-      const dateDetails = document.getElementById("date-details");
-      const selectedDateTitle = document.getElementById("selected-date-title");
-      const availableSlotsContainer =
-        document.getElementById("available-slots");
-      const noSlotsMessage = document.getElementById("no-slots");
-
-      if (!dateDetails || !selectedDateTitle || !availableSlotsContainer)
-        return;
-
-      const date = new Date(dateStr);
-      selectedDateTitle.textContent = `Available Times - ${date.toLocaleDateString(
-        "en-US",
-        {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        },
-      )}`;
-
-      const slots = this.availableSlots.get(dateStr) || [];
-
-      if (slots.length === 0) {
-        availableSlotsContainer.classList.add("hidden");
-        noSlotsMessage.classList.remove("hidden");
-      } else {
-        noSlotsMessage.classList.add("hidden");
-        availableSlotsContainer.classList.remove("hidden");
-
-        // Group slots by appointment type
-        const slotsByType = new Map();
-        slots.forEach((slot) => {
-          const typeId = slot.appointment_type.id;
-          if (!slotsByType.has(typeId)) {
-            slotsByType.set(typeId, {
-              type: slot.appointment_type,
-              slots: [],
-            });
+        // Initialize calendar with the username
+        // We need to pass the username to the CalendarView component
+        if (calendarContainer) {
+          const calendarView = calendarContainer.querySelector(
+            "[data-calendar-username]",
+          ) as HTMLElement;
+          if (calendarView) {
+            calendarView.setAttribute("data-calendar-username", username);
           }
-          slotsByType.get(typeId).slots.push(slot);
-        });
-
-        // Render slots by type
-        availableSlotsContainer.innerHTML = "";
-        slotsByType.forEach(({ type, slots }) => {
-          const typeSection = document.createElement("div");
-          typeSection.className = "mb-6 last:mb-0";
-
-          typeSection.innerHTML = `
-          <h6 class="font-medium text-gray-900 mb-3">
-            ${type.name} (${type.duration_minutes} min)
-            ${type.price ? `- $${type.price}` : ""}
-          </h6>
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-            ${slots
-              .map(
-                (slot) => `
-              <button
-                class="p-2 text-sm border border-gray-300 rounded-lg hover:border-teal-500 hover:bg-teal-50 transition-colors"
-                onclick="window.selectTimeSlot('${dateStr}', '${slot.start_time}', ${type.id})"
-              >
-                ${this.formatTime(slot.start_time)}
-              </button>
-            `,
-              )
-              .join("")}
-          </div>
-        `;
-
-          availableSlotsContainer.appendChild(typeSection);
-        });
-      }
-
-      dateDetails.classList.remove("hidden");
-      dateDetails.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-
-    formatTime(timeString) {
-      const [hours, minutes] = timeString.split(":");
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
-      return date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-    }
-
-    setupEventListeners() {
-      // Month navigation
-      const prevButton = document.getElementById("prev-month");
-      const nextButton = document.getElementById("next-month");
-
-      if (prevButton) {
-        prevButton.addEventListener("click", () => this.navigateMonth(-1));
-      }
-
-      if (nextButton) {
-        nextButton.addEventListener("click", () => this.navigateMonth(1));
-      }
-
-      // Close date details
-      const closeButton = document.getElementById("close-date-details");
-      if (closeButton) {
-        closeButton.addEventListener("click", () => {
-          document.getElementById("date-details").classList.add("hidden");
-        });
-      }
-
-      // Retry button
-      const retryButton = document.getElementById("retry-calendar");
-      if (retryButton) {
-        retryButton.addEventListener("click", () => {
-          this.hideError();
-          this.showLoading();
-          this.init();
-        });
+        }
+      } catch (error: unknown) {
+        console.error("Error loading calendar:", error);
+        const message =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        showError(message);
       }
     }
 
-    async navigateMonth(direction) {
-      this.currentDate.setMonth(this.currentDate.getMonth() + direction);
-      await this.loadCurrentMonth();
+    function showLoading(): void {
+      hideAll();
+      if (loadingDiv) loadingDiv.classList.remove("hidden");
     }
 
-    hideLoading() {
-      const loading = document.getElementById("calendar-loading");
-      const content = document.getElementById("calendar-content");
-
-      if (loading) loading.classList.add("hidden");
-      if (content) content.classList.remove("hidden");
+    function showCalendar(): void {
+      hideAll();
+      if (calendarContainer) calendarContainer.classList.remove("hidden");
     }
 
-    showLoading() {
-      const loading = document.getElementById("calendar-loading");
-      const content = document.getElementById("calendar-content");
-      const error = document.getElementById("calendar-error");
-
-      if (loading) loading.classList.remove("hidden");
-      if (content) content.classList.add("hidden");
-      if (error) error.classList.add("hidden");
+    function showSelection(): void {
+      hideAll();
+      if (selectionDiv) selectionDiv.classList.remove("hidden");
     }
 
-    showError(message) {
-      const loading = document.getElementById("calendar-loading");
-      const content = document.getElementById("calendar-content");
-      const error = document.getElementById("calendar-error");
-      const errorMessage = document.getElementById("error-message");
-
-      if (loading) loading.classList.add("hidden");
-      if (content) content.classList.add("hidden");
-      if (error) error.classList.remove("hidden");
+    function showError(message: string): void {
+      hideAll();
+      if (errorDiv) errorDiv.classList.remove("hidden");
       if (errorMessage) errorMessage.textContent = message;
     }
 
-    hideError() {
-      const error = document.getElementById("calendar-error");
-      if (error) error.classList.add("hidden");
+    function hideAll(): void {
+      [calendarContainer, loadingDiv, errorDiv, selectionDiv].forEach((el) => {
+        if (el) el.classList.add("hidden");
+      });
     }
 
-    isToday(date) {
-      const today = new Date();
-      return this.isSameDate(date, today);
+    // Event listeners
+    if (loadBtn) {
+      loadBtn.addEventListener("click", async () => {
+        const username = usernameInput?.value.trim();
+        if (!username) {
+          alert("Please enter a calendar username");
+          return;
+        }
+        await loadCalendar(username);
+      });
     }
 
-    isSameDate(date1, date2) {
-      return (
-        date1.getFullYear() === date2.getFullYear() &&
-        date1.getMonth() === date2.getMonth() &&
-        date1.getDate() === date2.getDate()
+    if (retryBtn) {
+      retryBtn.addEventListener("click", () => {
+        loadDefaultCalendar();
+      });
+    }
+
+    if (usernameInput) {
+      usernameInput.addEventListener(
+        "keypress",
+        async (event: KeyboardEvent) => {
+          if (event.key === "Enter") {
+            const username = usernameInput.value.trim();
+            if (username) {
+              await loadCalendar(username);
+            }
+          }
+        },
       );
     }
-  }
-
-  // Global function for slot selection
-  window.selectTimeSlot = function (date, time, appointmentTypeId) {
-    console.log("Selected slot:", { date, time, appointmentTypeId });
-    alert(
-      `Selected: ${date} at ${time}\nAppointment Type ID: ${appointmentTypeId}\n\nBooking functionality will be added next.`,
-    );
-  };
+  });
 </script>
-
-<style>
-  /* Calendar page specific styles */
-  main {
-    min-height: calc(100vh - 64px);
-  }
-
-  /* Calendar grid styles */
-  #calendar-grid > div:nth-child(7n) {
-    border-right: none;
-  }
-
-  #calendar-grid > div:nth-last-child(-n + 7) {
-    border-bottom: none;
-  }
-</style>
