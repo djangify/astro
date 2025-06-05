@@ -1,7 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
 import { fetchLinkHubs } from "../lib/api";
 import type { LinkHub, Link } from "../types";
 import { getHeroicon } from "../lib/heroicons";
@@ -105,7 +103,6 @@ const getButtonStyle = (mediaType: string): string => {
 ---
 
 <BaseLayout>
-  <Header slot="header" />
   <title slot="title">Media Portfolio – Corrison</title>
 
   <div class="container mx-auto px-4 py-12">
@@ -260,6 +257,4 @@ const getButtonStyle = (mediaType: string): string => {
       )
     }
   </div>
-
-  <Footer slot="footer" />
 </BaseLayout>

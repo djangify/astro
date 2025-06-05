@@ -1,13 +1,10 @@
 ---
 // src/pages/auth/register.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Header from "../../components/Header.astro";
-import Footer from "../../components/Footer.astro";
 import RegisterForm from "../../components/auth/RegisterForm.astro";
 ---
 
 <BaseLayout>
-  <Header slot="header" />
   <title slot="title">Sign Up – Corrison</title>
   <meta
     slot="head"
@@ -44,8 +41,6 @@ import RegisterForm from "../../components/auth/RegisterForm.astro";
       </div>
     </div>
   </main>
-
-  <Footer slot="footer" />
 </BaseLayout>
 
 <style>

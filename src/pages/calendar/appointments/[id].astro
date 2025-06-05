@@ -1,8 +1,6 @@
 ---
 // src/pages/calendar/appointments/[id].astro
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import Header from "../../../components/Header.astro";
-import Footer from "../../../components/Footer.astro";
 import AppointmentCard from "../../../components/calendar/AppointmentCard.astro";
 
 export async function getStaticPaths() {
@@ -15,7 +13,6 @@ const { id } = Astro.params;
 ---
 
 <BaseLayout>
-  <Header slot="header" />
   <title slot="title">Appointment Details</title>
   <meta
     slot="head"
@@ -244,8 +241,6 @@ const { id } = Astro.params;
       </div>
     </div>
   </main>
-
-  <Footer slot="footer" />
 </BaseLayout>
 
 <script is:inline define:vars={{ id }}>

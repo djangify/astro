@@ -5,6 +5,7 @@ export interface BlogPost {
   title: string;
   slug: string;
   content: string;
+  excerpt?: string;
   created_at: string;
   is_published: boolean;
   published_at: string | null;

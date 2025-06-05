@@ -1,8 +1,6 @@
 ---
 // src/pages/blog/index.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Header from "../../components/Header.astro";
-import Footer from "../../components/Footer.astro";
 import { fetchPosts } from "../../lib/api";
 
 // Fetch all blog posts
@@ -50,7 +48,6 @@ const truncateText = (text: string, length = 20) => {
 ---
 
 <BaseLayout>
-  <Header slot="header" />
   <title slot="title">Blog – Corrison</title>
 
   <div class="container mx-auto px-4 py-12 mt-8">
@@ -177,6 +174,4 @@ const truncateText = (text: string, length = 20) => {
       }
     </div>
   </div>
-
-  <Footer slot="footer" />
 </BaseLayout>

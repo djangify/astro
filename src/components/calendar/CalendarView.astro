@@ -236,6 +236,7 @@ const { username, selectedDate } = Astro.props;
       this.availableSlots = new Map(); // Map of date string to slots array
       this.calendarUser = null;
       this.appointmentTypes = [];
+      this.selectedSlot = null; // Store selected slot for booking
 
       this.init();
     }
@@ -593,27 +594,330 @@ const { username, selectedDate } = Astro.props;
         date1.getDate() === date2.getDate()
       );
     }
+
+    // NEW AUTH AND BOOKING METHODS
+    checkAuthentication() {
+      const token = localStorage.getItem("access_token");
+      return !!token;
+    }
+
+    getStoredUser() {
+      try {
+        const userData = localStorage.getItem("user");
+        return userData ? JSON.parse(userData) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    calculateEndTime(startTime, durationMinutes) {
+      const [hours, minutes] = startTime.split(":").map(Number);
+      const startDate = new Date();
+      startDate.setHours(hours, minutes, 0, 0);
+
+      const endDate = new Date(
+        startDate.getTime() + durationMinutes * 60 * 1000,
+      );
+
+      return endDate.toTimeString().slice(0, 5); // Return HH:MM format
+    }
+
+    showBookingForm(slot) {
+      const user = this.getStoredUser();
+
+      // Create booking form HTML
+      const bookingFormHTML = `
+        <div id="booking-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Book Appointment</h3>
+                <button id="close-booking-form" class="text-gray-400 hover:text-gray-600">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Form -->
+            <form id="booking-form" class="p-6 space-y-4">
+              <!-- Appointment Details (Read-only) -->
+              <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-900 mb-2">Appointment Details</h4>
+                <div class="space-y-1 text-sm text-gray-600">
+                  <p><span class="font-medium">Service:</span> ${slot.appointment_type.name}</p>
+                  <p><span class="font-medium">Duration:</span> ${slot.appointment_type.duration_minutes} minutes</p>
+                  <p><span class="font-medium">Date:</span> ${new Date(slot.date).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+                  <p><span class="font-medium">Time:</span> ${this.formatTime(slot.start_time)} - ${this.formatTime(slot.end_time)}</p>
+                  ${slot.appointment_type.price ? `<p><span class="font-medium">Price:</span> $${slot.appointment_type.price}</p>` : ""}
+                </div>
+              </div>
+
+              <!-- Customer Information -->
+              <div class="space-y-4">
+                <div>
+                  <label for="customer_name" class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                  <input 
+                    type="text" 
+                    id="customer_name" 
+                    name="customer_name" 
+                    required 
+                    value="${user ? (user.first_name + " " + user.last_name).trim() || user.username : ""}"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label for="customer_email" class="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                  <input 
+                    type="email" 
+                    id="customer_email" 
+                    name="customer_email" 
+                    required 
+                    value="${user ? user.email : ""}"
+                    ${user ? "readonly" : ""}
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 ${user ? "bg-gray-50" : ""}"
+                  />
+                </div>
+
+                <div>
+                  <label for="customer_phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <input 
+                    type="tel" 
+                    id="customer_phone" 
+                    name="customer_phone" 
+                    value="${user && user.profile ? user.profile.phone || "" : ""}"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label for="customer_notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                  <textarea 
+                    id="customer_notes" 
+                    name="customer_notes" 
+                    rows="3"
+                    placeholder="Any special requests or information..."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Error Display -->
+              <div id="booking-error" class="hidden p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
+                <!-- Error message will be inserted here -->
+              </div>
+
+              <!-- Buttons -->
+              <div class="flex justify-end space-x-3 pt-4">
+                <button 
+                  type="button" 
+                  id="cancel-booking"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  id="submit-booking"
+                  class="px-6 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
+                >
+                  <span id="submit-text">Book Appointment</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      // Add form to page
+      document.body.insertAdjacentHTML("beforeend", bookingFormHTML);
+
+      // Setup form event listeners
+      this.setupBookingFormListeners();
+    }
+
+    setupBookingFormListeners() {
+      const overlay = document.getElementById("booking-overlay");
+      const closeBtn = document.getElementById("close-booking-form");
+      const cancelBtn = document.getElementById("cancel-booking");
+      const form = document.getElementById("booking-form");
+
+      // Close form handlers
+      const closeForm = () => {
+        if (overlay) overlay.remove();
+        this.selectedSlot = null;
+      };
+
+      if (closeBtn) closeBtn.addEventListener("click", closeForm);
+      if (cancelBtn) cancelBtn.addEventListener("click", closeForm);
+
+      // Close on overlay click
+      if (overlay) {
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) closeForm();
+        });
+      }
+
+      // Form submission
+      if (form) {
+        form.addEventListener("submit", (e) => this.handleBookingSubmission(e));
+      }
+    }
+
+    async handleBookingSubmission(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById("submit-booking");
+      const submitText = document.getElementById("submit-text");
+      const errorDiv = document.getElementById("booking-error");
+
+      // Show loading state
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitText) submitText.textContent = "Booking...";
+      if (errorDiv) errorDiv.classList.add("hidden");
+
+      try {
+        const formData = new FormData(event.target);
+        const bookingData = {
+          appointment_type_id: this.selectedSlot.appointment_type.id,
+          customer_name: formData.get("customer_name"),
+          customer_email: formData.get("customer_email"),
+          customer_phone: formData.get("customer_phone") || "",
+          customer_notes: formData.get("customer_notes") || "",
+          date: this.selectedSlot.date,
+          start_time: this.selectedSlot.start_time,
+        };
+
+        const API_BASE = window.location.origin.includes("localhost")
+          ? "http://localhost:8000"
+          : "https://corrison.corrisonapi.com";
+
+        const response = await fetch(
+          `${API_BASE}/api/v1/appointments-booking/api/public/book/`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(bookingData),
+          },
+        );
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.detail || result.error || "Booking failed");
+        }
+
+        // Success! Show confirmation
+        this.showBookingConfirmation(result);
+
+        // Close form
+        const overlay = document.getElementById("booking-overlay");
+        if (overlay) overlay.remove();
+
+        // Refresh calendar to show updated availability
+        await this.loadCurrentMonth();
+      } catch (error) {
+        console.error("Booking failed:", error);
+
+        // Show error message
+        if (errorDiv) {
+          errorDiv.textContent =
+            error.message || "Failed to book appointment. Please try again.";
+          errorDiv.classList.remove("hidden");
+        }
+      } finally {
+        // Reset button state
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.textContent = "Book Appointment";
+      }
+    }
+
+    showBookingConfirmation(appointmentData) {
+      // Create success notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm bg-green-100 text-green-800 border border-green-200";
+
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+          <div class="flex-1">
+            <h4 class="font-medium">Appointment Booked!</h4>
+            <p class="text-sm mt-1">You'll receive a confirmation email shortly.</p>
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-green-400 hover:text-green-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(notification);
+
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        if (notification.parentElement) {
+          notification.remove();
+        }
+      }, 5000);
+    }
   }
 
-  // Global function for slot selection (called from dynamically generated buttons)
+  // Global function for slot selection
   window.selectTimeSlot = function (date, time, appointmentTypeId) {
-    // This will be handled by a booking component/modal
-    console.log("Selected slot:", { date, time, appointmentTypeId });
+    const calendarInstance = window.currentCalendarInstance;
+    if (!calendarInstance) return;
 
-    // For now, show an alert - this will be replaced with booking modal
-    alert(
-      `Selected: ${date} at ${time}\nAppointment Type ID: ${appointmentTypeId}\n\nBooking functionality will be added in the next component.`,
+    // Check authentication
+    if (!calendarInstance.checkAuthentication()) {
+      // Redirect to login with return URL
+      const returnUrl = encodeURIComponent(
+        `${window.location.pathname}${window.location.search}&selected=${date}_${time}_${appointmentTypeId}`,
+      );
+      window.location.href = `/auth/login?redirect=${returnUrl}`;
+      return;
+    }
+
+    // Find the appointment type
+    const appointmentType = calendarInstance.appointmentTypes.find(
+      (type) => type.id === appointmentTypeId,
     );
+    if (!appointmentType) {
+      console.error("Appointment type not found");
+      return;
+    }
+
+    // Create slot object
+    const slot = {
+      date,
+      start_time: time,
+      end_time: calendarInstance.calculateEndTime(
+        time,
+        appointmentType.duration_minutes,
+      ),
+      appointment_type: appointmentType,
+    };
+
+    calendarInstance.selectedSlot = slot;
+    calendarInstance.showBookingForm(slot);
   };
 
   // Initialize calendar when page loads
   document.addEventListener("DOMContentLoaded", function () {
-    // Get username from a data attribute or script parameter
     const calendarElement = document.querySelector("[data-calendar-username]");
     const username = calendarElement?.getAttribute("data-calendar-username");
 
     if (username) {
-      new CalendarView(username);
+      const calendar = new CalendarView(username);
+      window.currentCalendarInstance = calendar; // Store reference for global access
     } else {
       console.error("Calendar username not provided");
     }

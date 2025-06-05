@@ -1,8 +1,6 @@
 ---
 // src/pages/courses/[slug].astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Header from "../../components/Header.astro";
-import Footer from "../../components/Footer.astro";
 import { fetchCourses, fetchCourse } from "../../lib/api";
 import type { Course } from "../../types";
 
@@ -88,7 +86,6 @@ if (!course) {
 ---
 
 <BaseLayout>
-  <Header slot="header" />
   <title slot="title">{courseData.title} – Corrison Courses</title>
   <meta
     slot="head"
@@ -455,8 +452,6 @@ if (!course) {
       )
     }
   </div>
-
-  <Footer slot="footer" />
 </BaseLayout>
 
 <!-- JavaScript for enrollment and preview functionality -->

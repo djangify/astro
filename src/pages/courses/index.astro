@@ -1,8 +1,6 @@
 ---
 // src/pages/courses/index.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Header from "../../components/Header.astro";
-import Footer from "../../components/Footer.astro";
 import CourseGrid from "../../components/courses/CourseGrid.astro";
 import { fetchCourses } from "../../lib/api";
 import type { Course, CourseEnrollment } from "../../types";
@@ -35,7 +33,6 @@ const featuredCourses = courses.filter((course) => course.is_featured);
 ---
 
 <BaseLayout>
-  <Header slot="header" />
   <title slot="title">Courses – Corrison</title>
   <meta
     slot="head"
@@ -368,8 +365,6 @@ const featuredCourses = courses.filter((course) => course.is_featured);
       </div>
     </main>
   </div>
-
-  <Footer slot="footer" />
 </BaseLayout>
 
 <!-- JavaScript for dynamic course loading and filtering -->

@@ -1,14 +1,11 @@
 ---
 // src/pages/courses/my-courses.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Header from "../../components/Header.astro";
-import Footer from "../../components/Footer.astro";
 
 // This page requires authentication, so we'll handle data loading client-side
 ---
 
 <BaseLayout>
-  <Header slot="header" />
   <title slot="title">My Courses – Corrison</title>
   <meta
     slot="head"
@@ -221,8 +218,6 @@ import Footer from "../../components/Footer.astro";
       </div>
     </main>
   </div>
-
-  <Footer slot="footer" />
 </BaseLayout>
 
 <!-- JavaScript for loading and displaying user courses -->

@@ -2,8 +2,6 @@
 import type { BlogPost } from "../../types";
 import { fetchPosts } from "../../lib/api";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import Header from "../../components/Header.astro";
-import Footer from "../../components/Footer.astro";
 
 // Generate all blog post routes at build time
 export async function getStaticPaths() {
@@ -20,7 +18,6 @@ const { post } = Astro.props;
 ---
 
 <BaseLayout>
-  <Header slot="header" />
   <title slot="title">{post.title} – Corrison</title>
 
   <article class="container mx-auto bg-white px-8 py-12 max-w-4xl">
@@ -211,6 +208,4 @@ const { post } = Astro.props;
       </div>
     </div>
   </article>
-
-  <Footer slot="footer" />
 </BaseLayout>
