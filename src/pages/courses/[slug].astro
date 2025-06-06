@@ -41,7 +41,7 @@ const courseData: Course = course || {
   featured_image: "",
   video_preview: "",
   duration_weeks: 0,
-  difficulty_level: "beginner" as const,
+  difficulty: "beginner" as const,
   is_published: false,
   is_featured: false,
   category: null,
@@ -91,7 +91,7 @@ if (!course) {
     slot="head"
     name="description"
     content={courseData.description ||
-      `Learn ${courseData.title} with our comprehensive course. ${courseData.difficulty_level} level course by ${courseData.instructor?.name || "expert instructors"}.`}
+      `Learn ${courseData.title} with our comprehensive course. ${courseData.difficulty} level course by ${courseData.instructor?.name || "expert instructors"}.`}
   />
 
   <div class="min-h-screen bg-gray-50">
@@ -148,9 +148,9 @@ if (!course) {
             <div class="flex flex-wrap items-center gap-4 mb-8">
               <!-- Level Badge -->
               <span
-                class={`px-3 py-1 text-sm font-medium rounded-full border ${getLevelColor(courseData.difficulty_level)}`}
+                class={`px-3 py-1 text-sm font-medium rounded-full border ${getLevelColor(courseData.difficulty)}`}
               >
-                {courseData.difficulty_level}
+                {courseData.difficulty}
               </span>
 
               <!-- Duration -->
@@ -681,8 +681,8 @@ if (!course) {
 <!-- Hidden data attributes for JavaScript -->
 <div
   data-course-id={courseData.id.toString()}
-  data-course-price={courseData.price.toString()}
-  data-video-preview={courseData.video_preview}
+  data-course-price={(courseData.price ?? 0).toString()}
+  data-video-preview={courseData.video_preview ?? ""}
   style="display: none;"
 >
 </div>

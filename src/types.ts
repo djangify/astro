@@ -209,7 +209,7 @@ export interface Course {
   featured_image?: string;
   video_preview?: string;
   duration_weeks: number;
-  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
   is_published: boolean;
   is_featured: boolean;
   category?: CourseCategory;
