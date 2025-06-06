@@ -113,11 +113,7 @@ const sortedCourses = sortCourses(filteredCourses);
     sortedCourses.length > 0 && (
       <div class={`grid ${gridClasses[gridCols]} gap-8`}>
         {sortedCourses.map((course) => (
-          <CourseCard
-            course={course}
-            showEnrollButton={showEnrollButtons}
-            isEnrolled={isUserEnrolled(course.id)}
-          />
+          <CourseCard course={course} />
         ))}
       </div>
     )
