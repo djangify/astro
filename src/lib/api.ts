@@ -396,3 +396,12 @@ export function deleteAvailability(availabilityId: number): Promise<void> {
     if (!r.ok) throw new Error('Failed to delete availability slot');
   });
 }
+/** NEW: Fetch available calendar users */
+export function fetchAvailableCalendars(): Promise<{
+  username: string;
+  display_name: string;
+  business_name: string;
+}[]> {
+  return fetch(`${API}/api/v1/appointments-booking/api/public/available/`)
+    .then(r => check(r, "available calendars"));
+}

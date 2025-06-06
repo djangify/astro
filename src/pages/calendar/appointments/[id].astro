@@ -1,7 +1,6 @@
 ---
 // src/pages/calendar/appointments/[id].astro
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-import AppointmentCard from "../../../components/calendar/AppointmentCard.astro";
 
 export async function getStaticPaths() {
   // For now, return empty array since appointments are dynamic
@@ -254,7 +253,7 @@ const { id } = Astro.params;
     return !!token;
   }
 
-  // Load appointment details
+  // Load appointment details using single-user endpoints
   async function loadAppointment(email = null) {
     showLoading();
 
@@ -287,7 +286,7 @@ const { id } = Astro.params;
         }
 
         response = await fetch(
-          `${API_BASE}/api/v1/appointments-booking/api/public/appointment/${id}/?email=${encodeURIComponent(email)}`,
+          `${API_BASE}/api/v1/calendar/appointment/${id}/?email=${encodeURIComponent(email)}`,
         );
       }
 
@@ -508,7 +507,7 @@ const { id } = Astro.params;
                 <span class="text-gray-700">Payment</span>
               </div>
               <div class="text-right">
-                <div class="font-semibold text-gray-900">$${appointment.payment_amount}</div>
+                <div class="font-semibold text-gray-900">${appointment.payment_amount}</div>
                 <div class="text-sm ${
                   appointment.payment_status === "paid"
                     ? "text-green-600"
@@ -550,7 +549,7 @@ const { id } = Astro.params;
     `;
   }
 
-  // Cancel appointment
+  // Cancel appointment using single-user endpoints
   window.cancelAppointment = async function () {
     if (!confirm("Are you sure you want to cancel this appointment?")) {
       return;
@@ -577,7 +576,7 @@ const { id } = Astro.params;
       } else {
         const email = appointmentData.customer_email;
         response = await fetch(
-          `${API_BASE}/api/v1/appointments-booking/api/public/appointment/${id}/cancel/`,
+          `${API_BASE}/api/v1/calendar/appointment/${id}/cancel/`,
           {
             method: "POST",
             headers: {

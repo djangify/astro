@@ -328,6 +328,7 @@ const {
         ? "http://localhost:8000"
         : "https://corrison.corrisonapi.com";
 
+      // Updated to use new single-user endpoint
       const response = await fetch(
         `${API_BASE}/api/v1/appointments/appointments/${appointmentId}/cancel/`,
         {
@@ -396,8 +397,9 @@ const {
         ? "http://localhost:8000"
         : "https://corrison.corrisonapi.com";
 
+      // Updated to use new single-user endpoint
       const response = await fetch(
-        `${API_BASE}/api/v1/appointments-booking/api/public/appointment/${appointmentId}/cancel/`,
+        `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/cancel/`,
         {
           method: "POST",
           headers: {
@@ -442,12 +444,8 @@ const {
   };
 
   window.viewAppointmentDetails = function (appointmentId) {
-    // This could open a modal or navigate to a details page
-    console.log("View details for appointment:", appointmentId);
-    showNotification(
-      "Details view will be implemented in the next update",
-      "info",
-    );
+    // Navigate to appointment details page
+    window.location.href = `/calendar/appointments/${appointmentId}`;
   };
 
   // Utility function for notifications

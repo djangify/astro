@@ -273,13 +273,12 @@ class AppointmentList {
       let headers = { 'Content-Type': 'application/json' };
 
       if (isPublic) {
-        // For public view, we might need a different endpoint
-        // This would be for viewing specific appointments with email verification
-        endpoint = `${API_BASE}/api/v1/appointments-booking/api/public/appointment/`;
-        // Note: Public appointments typically require email verification
+        // For public view - this would typically be for specific appointment access
+        // Since we're single-user now, public appointments need email verification
         // This might need to be adapted based on your specific use case
+        throw new Error('Public appointment lists not supported in single-user mode');
       } else {
-        // Private authenticated view
+        // Private authenticated view - Updated to use new single-user endpoint
         endpoint = `${API_BASE}/api/v1/appointments/appointments/`;
         headers['Authorization'] = `Bearer ${localStorage.getItem('access_token')}`;
       }

@@ -2,7 +2,6 @@
 // src/components/calendar/RegistrationButton.astro
 export interface Props {
   appointmentTypeId: number;
-  username: string;
   selectedDate?: string;
   selectedTime?: string;
   variant?: "default" | "compact" | "large";
@@ -14,7 +13,6 @@ export interface Props {
 
 const {
   appointmentTypeId,
-  username,
   selectedDate,
   selectedTime,
   variant = "default",
@@ -47,7 +45,7 @@ const finalButtonText = buttonText || defaultButtonText;
         ? "bg-green-600 hover:bg-green-700 text-white shadow-sm hover:shadow-md"
         : "bg-teal-600 hover:bg-teal-700 text-white shadow-sm hover:shadow-md"
   }`}
-  onclick={`openBookingModal(${appointmentTypeId}, '${username}', '${selectedDate || ""}', '${selectedTime || ""}')`}
+  onclick={`openBookingModal(${appointmentTypeId}, '${selectedDate || ""}', '${selectedTime || ""}')`}
   disabled={disabled}
 >
   <svg
@@ -341,7 +339,6 @@ const finalButtonText = buttonText || defaultButtonText;
   is:inline
   define:vars={{
     appointmentTypeId,
-    username,
     selectedDate,
     selectedTime,
     requiresPayment,
@@ -351,21 +348,20 @@ const finalButtonText = buttonText || defaultButtonText;
   // Global variables for this instance
   window.currentBookingData = window.currentBookingData || {};
 
-  // Open booking modal
-  window.openBookingModal = function (typeId, user, date, time) {
+  // Open booking modal - Updated for single-user system
+  window.openBookingModal = function (typeId, date, time) {
     const modal = document.getElementById(`booking-modal-${typeId}`);
     if (!modal) return;
 
     // Store booking data
     window.currentBookingData[typeId] = {
       appointmentTypeId: typeId,
-      username: user,
       selectedDate: date,
       selectedTime: time,
     };
 
     // Load appointment type details
-    loadAppointmentTypeDetails(typeId, user);
+    loadAppointmentTypeDetails(typeId);
 
     // Pre-fill date and time if provided
     if (date) {
@@ -450,16 +446,15 @@ const finalButtonText = buttonText || defaultButtonText;
     }
   };
 
-  // Load appointment type details
-  async function loadAppointmentTypeDetails(typeId, user) {
+  // Load appointment type details - Updated for single-user system
+  async function loadAppointmentTypeDetails(typeId) {
     try {
       const API_BASE = window.location.origin.includes("localhost")
         ? "http://localhost:8000"
         : "https://corrison.corrisonapi.com";
 
-      const response = await fetch(
-        `${API_BASE}/api/v1/appointments-booking/api/public/${user}/`,
-      );
+      // Updated to use new single-user endpoint
+      const response = await fetch(`${API_BASE}/api/v1/calendar/info/`);
 
       if (!response.ok) {
         throw new Error("Failed to load appointment details");
@@ -505,7 +500,7 @@ const finalButtonText = buttonText || defaultButtonText;
     }
   }
 
-  // Submit booking
+  // Submit booking - Updated for single-user system
   window.submitBooking = async function (event) {
     event.preventDefault();
 
@@ -552,16 +547,14 @@ const finalButtonText = buttonText || defaultButtonText;
         start_time: formData.get("start_time"),
       };
 
-      const response = await fetch(
-        `${API_BASE}/api/v1/appointments-booking/api/public/book/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(bookingData),
+      // Updated to use new single-user endpoint
+      const response = await fetch(`${API_BASE}/api/v1/calendar/book/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(bookingData),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();

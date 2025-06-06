@@ -1,7 +1,6 @@
 ---
 // src/pages/calendar/my-appointments.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
-
 import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 import AppointmentList from "../../components/calendar/AppointmentList.astro";
 ---
@@ -288,8 +287,6 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
 </BaseLayout>
 
 <script is:inline>
-  import { authStore } from "../../stores/authStore";
-
   // Global variables
   let allAppointments = [];
   let isAuthenticated = false;
@@ -328,7 +325,7 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
     }
   }
 
-  // Load all appointments
+  // Load all appointments using single-user endpoints
   async function loadAppointments() {
     try {
       const API_BASE = window.location.origin.includes("localhost")
