@@ -217,6 +217,8 @@ export interface Course {
   lessons: CourseLesson[];
   enrollments_count: number;
   average_rating: number;
+  external_course_url?: string;
+  external_platform?: string;
   created_at: string;
   updated_at: string;
 }

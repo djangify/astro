@@ -4,21 +4,11 @@ import type { Course } from "../../types";
 
 interface Props {
   course: Course;
-  showEnrollButton?: boolean;
-  isEnrolled?: boolean;
 }
 
-const { course, showEnrollButton = true, isEnrolled = false } = Astro.props;
+const { course } = Astro.props;
 
-// Helper function to get duration display - fallback if no duration
-const getDurationDisplay = (duration?: number): string => {
-  if (!duration || duration < 60) return duration ? `${duration} mins` : "";
-  const hours = Math.floor(duration / 60);
-  const mins = duration % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-};
-
-// Helper function to get level badge color - fallback to beginner
+// Helper function to get level badge color
 const getLevelColor = (level?: string): string => {
   if (!level) return "bg-gray-100 text-gray-800";
   switch (level.toLowerCase()) {
@@ -66,49 +56,23 @@ const getLevelColor = (level?: string): string => {
       )
     }
 
-    <!-- Level Badge - only show if level exists -->
+    <!-- Level Badge -->
     <div class="absolute top-3 left-3">
       <span
-        class={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor()}`}
+        class={`px-2 py-1 text-xs font-medium rounded-full ${getLevelColor(course.difficulty)}`}
       >
-        Course
+        {course.difficulty}
       </span>
     </div>
 
-    <!-- Price Badge -->
-    {
-      course.price && course.price > 0 ? (
-        <div class="absolute top-3 right-3">
-          <span class="bg-white text-teal-700 px-2 py-1 text-sm font-bold rounded-full shadow">
-            ${course.price}
-          </span>
-        </div>
-      ) : (
-        <div class="absolute top-3 right-3">
-          <span class="bg-green-500 text-white px-2 py-1 text-sm font-bold rounded-full shadow">
-            FREE
-          </span>
-        </div>
-      )
-    }
-
-    <!-- Enrolled Badge -->
-    {
-      isEnrolled && (
-        <div class="absolute bottom-3 right-3">
-          <span class="bg-teal-700 text-white px-2 py-1 text-xs font-medium rounded-full flex items-center">
-            <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            Enrolled
-          </span>
-        </div>
-      )
-    }
+    <!-- Free Badge -->
+    <div class="absolute top-3 right-3">
+      <span
+        class="bg-green-500 text-white px-2 py-1 text-sm font-bold rounded-full shadow"
+      >
+        FREE
+      </span>
+    </div>
   </div>
 
   <!-- Course Content -->
@@ -141,7 +105,6 @@ const getLevelColor = (level?: string): string => {
     <!-- Course Meta Info -->
     <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
       <div class="flex items-center space-x-4">
-        <!-- Show basic course info -->
         <div class="flex items-center">
           <svg
             class="h-4 w-4 mr-1"
@@ -153,10 +116,10 @@ const getLevelColor = (level?: string): string => {
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 002 2z"
             ></path>
           </svg>
-          Online Course
+          Free Video Course
         </div>
       </div>
     </div>
@@ -202,23 +165,23 @@ const getLevelColor = (level?: string): string => {
       </a>
 
       {
-        showEnrollButton && !isEnrolled && (
-          <button
-            class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm enroll-btn"
-            data-course-id={course.id}
+        course.external_course_url ? (
+          <a
+            href={course.external_course_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center text-sm"
           >
-            {course.price > 0 ? `Enroll - ${course.price}` : "Enroll Free"}
-          </button>
-        )
-      }
-
-      {
-        isEnrolled && (
+            {course.external_platform
+              ? `View on ${course.external_platform}`
+              : "View Paid Course"}
+          </a>
+        ) : (
           <a
             href={`/courses/${course.slug}`}
             class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center text-sm"
           >
-            Continue Learning
+            Watch Free
           </a>
         )
       }
