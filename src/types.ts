@@ -212,6 +212,7 @@ export interface Course {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   is_published: boolean;
   is_featured: boolean;
+  requires_enrollment: boolean;
   category?: CourseCategory;
   instructor: CourseInstructor;
   lessons: CourseLesson[];

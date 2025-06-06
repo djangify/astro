@@ -478,6 +478,10 @@ if (!course) {
       video_preview: document
         .querySelector("[data-video-preview]")
         ?.getAttribute("data-video-preview"),
+      requires_enrollment:
+        document
+          .querySelector("[data-requires-enrollment]")
+          ?.getAttribute("data-requires-enrollment") === "true",
     };
 
     let userEnrollment = null;
@@ -549,22 +553,39 @@ if (!course) {
     function showEnrollmentButton() {
       const enrollmentSection = document.getElementById("enrollment-section");
       if (enrollmentSection) {
-        enrollmentSection.innerHTML = `
-          <button
-            id="enroll-btn"
-            class="w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-          >
-            ${course.price > 0 ? `Enroll Now - $${course.price}` : "Enroll for Free"}
-          </button>
-          <div class="text-center">
-            <p class="text-sm text-gray-500">30-day money-back guarantee</p>
-          </div>
-        `;
+        // Check if enrollment is required
+        if (!course.requires_enrollment) {
+          // Course doesn't require enrollment - show direct access
+          enrollmentSection.innerHTML = `
+        
+          <a href="/courses/${course.slug}/lessons"
+          class="block w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors text-center"
+        >
+          Start Course - Free Access
+        </a>
+        <div class="text-center">
+          <p class="text-sm text-gray-500">No enrollment required</p>
+        </div>
+      `;
+        } else {
+          // Normal enrollment flow
+          enrollmentSection.innerHTML = `
+        <button
+          id="enroll-btn"
+          class="w-full bg-teal-700 hover:bg-teal-800 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+        >
+          ${course.price > 0 ? `Enroll Now - $${course.price}` : "Enroll for Free"}
+        </button>
+        <div class="text-center">
+          <p class="text-sm text-gray-500">30-day money-back guarantee</p>
+        </div>
+      `;
 
-        // Add enrollment click handler
-        const enrollBtn = document.getElementById("enroll-btn");
-        if (enrollBtn) {
-          enrollBtn.addEventListener("click", handleEnrollment);
+          // Add enrollment click handler
+          const enrollBtn = document.getElementById("enroll-btn");
+          if (enrollBtn) {
+            enrollBtn.addEventListener("click", handleEnrollment);
+          }
         }
       }
     }
@@ -683,6 +704,9 @@ if (!course) {
   data-course-id={courseData.id.toString()}
   data-course-price={(courseData.price ?? 0).toString()}
   data-video-preview={courseData.video_preview ?? ""}
+  data-requires-enrollment={(course?.requires_enrollment ?? true)
+    ? "true"
+    : "false"}
   style="display: none;"
 >
 </div>
