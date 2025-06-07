@@ -1,0 +1,500 @@
+---
+// src/pages/auth/profile.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import DashboardNav from "../../components/dashboard/DashboardNav.astro";
+---
+
+<BaseLayout>
+  <title slot="title">Profile – Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content="Manage your profile information, preferences, and account settings."
+  />
+
+  <!-- Dashboard Navigation -->
+  <DashboardNav currentPage="profile" />
+
+  <!-- Main Content -->
+  <div class="lg:ml-64">
+    <main class="py-6">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900">Profile Settings</h1>
+          <p class="mt-1 text-sm text-gray-600">
+            Manage your profile information and account preferences.
+          </p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-16">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
+          >
+          </div>
+          <p class="text-gray-600">Loading your profile...</p>
+        </div>
+
+        <!-- Not Authenticated State -->
+        <div id="not-authenticated" class="text-center py-16 hidden">
+          <svg
+            class="h-16 w-16 mx-auto text-gray-300 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            ></path>
+          </svg>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h2>
+          <p class="text-gray-600 mb-6">
+            You need to be signed in to view your profile.
+          </p>
+          <a
+            href="/auth/login"
+            class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Sign In
+          </a>
+        </div>
+
+        <!-- Profile Content -->
+        <div id="profile-content" class="hidden">
+          <!-- Success Message -->
+          <div
+            id="success-message"
+            class="hidden mb-6 bg-green-50 border border-green-200 rounded-lg p-4"
+          >
+            <div class="flex">
+              <svg
+                class="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-green-700">Profile updated successfully!</span>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div
+            id="error-message"
+            class="hidden mb-6 bg-red-50 border border-red-200 rounded-lg p-4"
+          >
+            <div class="flex">
+              <svg
+                class="w-5 h-5 text-red-600 mr-3 mt-0.5 flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L10 11.414l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"></path>
+              </svg>
+              <span class="text-red-700" id="error-text">An error occurred</span
+              >
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Profile Information -->
+            <div class="lg:col-span-2">
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+              >
+                <h3 class="text-lg font-medium text-gray-900 mb-6">
+                  Personal Information
+                </h3>
+
+                <form id="profile-form" class="space-y-6">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label
+                        for="first_name"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        id="first_name"
+                        name="first_name"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        placeholder="Enter your first name"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        for="last_name"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        id="last_name"
+                        name="last_name"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        placeholder="Enter your last name"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      for="email"
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="Enter your email address"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      for="phone"
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      for="birth_date"
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Birth Date
+                    </label>
+                    <input
+                      type="date"
+                      id="birth_date"
+                      name="birth_date"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div class="border-t border-gray-200 pt-6">
+                    <h4 class="text-md font-medium text-gray-900 mb-4">
+                      Preferences
+                    </h4>
+
+                    <div class="space-y-4">
+                      <div class="flex items-center">
+                        <input
+                          id="email_marketing"
+                          name="email_marketing"
+                          type="checkbox"
+                          class="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                        />
+                        <label
+                          for="email_marketing"
+                          class="ml-3 text-sm text-gray-700"
+                        >
+                          Receive marketing emails and promotional offers
+                        </label>
+                      </div>
+
+                      <div class="flex items-center">
+                        <input
+                          id="receive_order_updates"
+                          name="receive_order_updates"
+                          type="checkbox"
+                          class="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                        />
+                        <label
+                          for="receive_order_updates"
+                          class="ml-3 text-sm text-gray-700"
+                        >
+                          Receive order status updates via email
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex justify-end pt-6">
+                    <button
+                      type="submit"
+                      id="save-button"
+                      class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-2 rounded-lg transition-colors focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Account Status & Actions -->
+            <div class="lg:col-span-1">
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6"
+              >
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                  Account Status
+                </h3>
+
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Email Verified</span>
+                    <span id="email-status" class="text-sm font-medium">
+                      <!-- Will be populated by JavaScript -->
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Account Type</span>
+                    <span class="text-sm font-medium text-gray-900"
+                      >Standard</span
+                    >
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">Member Since</span>
+                    <span
+                      id="member-since"
+                      class="text-sm font-medium text-gray-900"
+                    >
+                      <!-- Will be populated by JavaScript -->
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Actions -->
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+              >
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                  Quick Actions
+                </h3>
+
+                <div class="space-y-3">
+                  <a
+                    href="/auth/settings"
+                    class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                  >
+                    Change Password
+                  </a>
+
+                  <a
+                    href="/courses/my-courses"
+                    class="block w-full text-center bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                  >
+                    View My Courses
+                  </a>
+
+                  <a
+                    href="/orders"
+                    class="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                  >
+                    Order History
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  import { authStore } from "../../stores/authStore";
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const loadingState = document.getElementById("loading-state");
+    const notAuthenticatedState = document.getElementById("not-authenticated");
+    const profileContent = document.getElementById("profile-content");
+    const profileForm = document.getElementById(
+      "profile-form",
+    ) as HTMLFormElement;
+    const saveButton = document.getElementById(
+      "save-button",
+    ) as HTMLButtonElement;
+    const successMessage = document.getElementById("success-message");
+    const errorMessage = document.getElementById("error-message");
+    const errorText = document.getElementById("error-text");
+
+    // Initialize page
+    initializePage();
+
+    async function initializePage() {
+      try {
+        const state = authStore.getState();
+
+        if (!state.isAuthenticated) {
+          showNotAuthenticatedState();
+          return;
+        }
+
+        // Load user profile data
+        await loadProfileData();
+        showProfileContent();
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        showNotAuthenticatedState();
+      } finally {
+        hideLoadingState();
+      }
+    }
+
+    async function loadProfileData() {
+      try {
+        const auth = await import("../../lib/auth");
+        const user = await auth.getCurrentUser();
+
+        // Populate form fields with proper type casting
+        const firstNameInput = document.getElementById(
+          "first_name",
+        ) as HTMLInputElement;
+        const lastNameInput = document.getElementById(
+          "last_name",
+        ) as HTMLInputElement;
+        const emailInput = document.getElementById("email") as HTMLInputElement;
+        const phoneInput = document.getElementById("phone") as HTMLInputElement;
+        const birthDateInput = document.getElementById(
+          "birth_date",
+        ) as HTMLInputElement;
+        const emailMarketingInput = document.getElementById(
+          "email_marketing",
+        ) as HTMLInputElement;
+        const receiveOrderUpdatesInput = document.getElementById(
+          "receive_order_updates",
+        ) as HTMLInputElement;
+
+        if (firstNameInput) firstNameInput.value = user.first_name || "";
+        if (lastNameInput) lastNameInput.value = user.last_name || "";
+        if (emailInput) emailInput.value = user.email || "";
+        if (phoneInput) phoneInput.value = user.profile?.phone || "";
+        if (birthDateInput)
+          birthDateInput.value = user.profile?.birth_date || "";
+        if (emailMarketingInput)
+          emailMarketingInput.checked = user.profile?.email_marketing || false;
+        if (receiveOrderUpdatesInput)
+          receiveOrderUpdatesInput.checked =
+            user.profile?.receive_order_updates || false;
+
+        // Update account status
+        const emailStatus = document.getElementById("email-status");
+        if (emailStatus) {
+          if (user.profile?.email_verified) {
+            emailStatus.innerHTML =
+              '<span class="text-green-600">✓ Verified</span>';
+          } else {
+            emailStatus.innerHTML =
+              '<span class="text-yellow-600">⚠ Pending</span>';
+          }
+        }
+
+        // Update member since date
+        const memberSince = document.getElementById("member-since");
+        if (memberSince) {
+          const joinDate = new Date(user.date_joined);
+          memberSince.textContent = joinDate.toLocaleDateString();
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        throw error;
+      }
+    }
+
+    // Form submission handler
+    if (profileForm) {
+      profileForm.addEventListener("submit", async function (e: Event) {
+        e.preventDefault();
+
+        if (saveButton) {
+          saveButton.disabled = true;
+          saveButton.textContent = "Saving...";
+        }
+        hideMessages();
+
+        try {
+          const formData = new FormData(profileForm);
+          const profileData = {
+            first_name: formData.get("first_name") as string,
+            last_name: formData.get("last_name") as string,
+            email: formData.get("email") as string,
+            phone: formData.get("phone") as string,
+            birth_date: formData.get("birth_date") as string,
+            email_marketing: formData.has("email_marketing"),
+            receive_order_updates: formData.has("receive_order_updates"),
+          };
+
+          const auth = await import("../../lib/auth");
+          await auth.updateProfile(profileData);
+
+          showSuccessMessage();
+        } catch (error: any) {
+          console.error("Error updating profile:", error);
+          showErrorMessage(
+            error.detail || "Failed to update profile. Please try again.",
+          );
+        } finally {
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = "Save Changes";
+          }
+        }
+      });
+    }
+
+    function hideLoadingState() {
+      if (loadingState) loadingState.classList.add("hidden");
+    }
+
+    function showNotAuthenticatedState() {
+      if (notAuthenticatedState)
+        notAuthenticatedState.classList.remove("hidden");
+    }
+
+    function showProfileContent() {
+      if (profileContent) profileContent.classList.remove("hidden");
+    }
+
+    function showSuccessMessage() {
+      if (successMessage) {
+        successMessage.classList.remove("hidden");
+        setTimeout(() => {
+          if (successMessage) successMessage.classList.add("hidden");
+        }, 5000);
+      }
+    }
+
+    function showErrorMessage(message: string) {
+      if (errorText) errorText.textContent = message;
+      if (errorMessage) errorMessage.classList.remove("hidden");
+    }
+
+    function hideMessages() {
+      if (successMessage) successMessage.classList.add("hidden");
+      if (errorMessage) errorMessage.classList.add("hidden");
+    }
+  });
+</script>
