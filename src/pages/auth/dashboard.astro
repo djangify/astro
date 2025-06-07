@@ -18,17 +18,20 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   <!-- Main Dashboard Content -->
   <div class="lg:ml-64">
     <main class="py-6">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Page Header -->
-        <div class="mb-8">
-          <h1 class="text-2xl font-bold text-gray-900" id="dashboard-welcome">
-            Welcome back!
-          </h1>
-          <p class="mt-1 text-sm text-gray-600">
-            Here's what's happening with your account today.
-          </p>
+      <!-- Page Header -->
+      <section>
+        <div class="container mx-auto px-4 py-12">
+          <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-semibold text-gray-900 mb-4">
+              Welcome back!
+            </h1>
+            <p class="text-xl text-gray-600">
+              Here's what's happening with your account today.
+            </p>
+          </div>
         </div>
-
+      </section>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Email Verification Alert -->
         <div
           id="email-verification-alert"
@@ -63,7 +66,9 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
         </div>
 
         <!-- Dashboard Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-8"
+        >
           <!-- Courses Progress -->
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="flex items-center">

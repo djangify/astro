@@ -16,12 +16,21 @@ const {
 } = Astro.props;
 
 // Check if we should hide header for dashboard pages
-// You can extend this logic as needed
 const currentPath = Astro.url.pathname;
-const isDashboardPage = currentPath.startsWith('/auth/dashboard') || 
-                       currentPath.startsWith('/auth/profile') || 
-                       currentPath.startsWith('/auth/settings') ||
-                       hideHeader;
+
+// Define pages that should NOT show the header when authenticated
+const authPagePaths = [
+  '/auth/dashboard',
+  '/auth/profile', 
+  '/auth/settings',
+  '/calendar',  // Calendar page should use sidebar only when logged in
+  '/courses/my-courses',
+  '/calendar/my-appointments',
+  '/orders'
+];
+
+// Check if current page is a dashboard-style page that should hide header when authenticated
+const isDashboardPage = authPagePaths.some(path => currentPath.startsWith(path)) || hideHeader;
 ---
 
 <html lang="en">
