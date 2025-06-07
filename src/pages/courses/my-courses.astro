@@ -1,6 +1,7 @@
 ---
 // src/pages/courses/my-courses.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
 // This page requires authentication, so we'll handle data loading client-side
 ---
@@ -13,276 +14,339 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     content="Track your learning progress and continue your courses. Access all your enrolled courses in one place."
   />
 
-  <div class="min-h-screen bg-gray-50">
-    <!-- Page Header -->
-    <section class="bg-white border-b border-gray-200">
-      <div class="container mx-auto px-4 py-12">
-        <div class="max-w-4xl mx-auto text-center">
-          <h1 class="text-4xl font-bold text-gray-900 mb-4">My Courses</h1>
-          <p class="text-xl text-gray-600">
-            Track your learning progress and continue where you left off
+  <!-- Dashboard Navigation -->
+  <DashboardNav currentPage="courses" />
+
+  <!-- Main Content with Sidebar Layout -->
+  <div class="lg:ml-64">
+    <div class="min-h-screen bg-gray-50">
+      <!-- Page Header -->
+      <section class="bg-white border-b border-gray-200">
+        <div class="container mx-auto px-4 py-12">
+          <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">My Courses</h1>
+            <p class="text-xl text-gray-600">
+              Track your learning progress and continue where you left off
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Content -->
+      <main class="container mx-auto px-4 py-12">
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-16">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
+          >
+          </div>
+          <p class="text-gray-600">Loading your courses...</p>
+        </div>
+
+        <!-- Not Authenticated State -->
+        <div id="not-authenticated" class="text-center py-16 hidden">
+          <svg
+            class="h-16 w-16 mx-auto text-gray-300 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            ></path>
+          </svg>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h2>
+          <p class="text-gray-600 mb-6">
+            You need to be signed in to view your courses.
           </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-12">
-      <!-- Loading State -->
-      <div id="loading-state" class="text-center py-16">
-        <div
-          class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
-        >
-        </div>
-        <p class="text-gray-600">Loading your courses...</p>
-      </div>
-
-      <!-- Not Authenticated State -->
-      <div id="not-authenticated" class="text-center py-16 hidden">
-        <svg
-          class="h-16 w-16 mx-auto text-gray-300 mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-          ></path>
-        </svg>
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h2>
-        <p class="text-gray-600 mb-6">
-          You need to be signed in to view your courses.
-        </p>
-        <div class="space-x-4">
-          <a
-            href="/auth/login"
-            class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
-          >
-            Sign In
-          </a>
-          <a
-            href="/auth/register"
-            class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-6 py-3 rounded-lg transition-colors"
-          >
-            Create Account
-          </a>
-        </div>
-      </div>
-
-      <!-- Course Statistics -->
-      <div id="course-stats" class="hidden mb-12">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div class="text-3xl font-bold text-teal-700" id="total-courses">
-              0
-            </div>
-            <div class="text-sm text-gray-600">Total Courses</div>
-          </div>
-          <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div
-              class="text-3xl font-bold text-green-600"
-              id="completed-courses"
+          <div class="space-x-4">
+            <a
+              href="/auth/login"
+              class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
             >
-              0
-            </div>
-            <div class="text-sm text-gray-600">Completed</div>
-          </div>
-          <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div
-              class="text-3xl font-bold text-blue-600"
-              id="in-progress-courses"
+              Sign In
+            </a>
+            <a
+              href="/auth/register"
+              class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-6 py-3 rounded-lg transition-colors"
             >
-              0
-            </div>
-            <div class="text-sm text-gray-600">In Progress</div>
-          </div>
-          <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div class="text-3xl font-bold text-gray-600" id="avg-progress">
-              0%
-            </div>
-            <div class="text-sm text-gray-600">Avg Progress</div>
+              Create Account
+            </a>
           </div>
         </div>
-      </div>
 
-      <!-- Filter/Sort Controls -->
-      <div id="course-controls" class="hidden mb-8">
-        <div
-          class="flex flex-col md:flex-row gap-4 items-center justify-between"
-        >
-          <div class="flex flex-wrap gap-4">
-            <!-- Status Filter -->
-            <select
-              id="status-filter"
-              class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="all">All Courses</option>
-              <option value="not-started">Not Started</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-
-            <!-- Sort Options -->
-            <select
-              id="sort-filter"
-              class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="recent">Recently Accessed</option>
-              <option value="progress">Progress</option>
-              <option value="enrollment-date">Enrollment Date</option>
-              <option value="alphabetical">Alphabetical</option>
-            </select>
-          </div>
-
-          <!-- View Toggle -->
-          <div class="flex border border-gray-300 rounded-lg overflow-hidden">
-            <button
-              id="grid-view"
-              class="px-3 py-2 bg-teal-700 text-white text-sm hover:bg-teal-800"
-              data-view="grid"
-            >
-              <svg
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+        <!-- Course Statistics -->
+        <div id="course-stats" class="hidden mb-12">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+              <div class="text-3xl font-bold text-teal-700" id="total-courses">
+                0
+              </div>
+              <div class="text-sm text-gray-600">Total Courses</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+              <div
+                class="text-3xl font-bold text-green-600"
+                id="completed-courses"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                ></path>
-              </svg>
-            </button>
-            <button
-              id="list-view"
-              class="px-3 py-2 bg-gray-100 text-gray-700 text-sm hover:bg-gray-200"
-              data-view="list"
-            >
-              <svg
-                class="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+                0
+              </div>
+              <div class="text-sm text-gray-600">Completed</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+              <div
+                class="text-3xl font-bold text-blue-600"
+                id="in-progress-courses"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-              </svg>
-            </button>
+                0
+              </div>
+              <div class="text-sm text-gray-600">In Progress</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+              <div class="text-3xl font-bold text-gray-600" id="avg-progress">
+                0%
+              </div>
+              <div class="text-sm text-gray-600">Avg Progress</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Courses Grid -->
-      <div id="courses-container" class="hidden">
+        <!-- Filter/Sort Controls -->
+        <div id="course-controls" class="hidden mb-8">
+          <div
+            class="flex flex-col md:flex-row gap-4 items-center justify-between"
+          >
+            <div class="flex flex-wrap gap-4">
+              <!-- Status Filter -->
+              <select
+                id="status-filter"
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="all">All Courses</option>
+                <option value="not-started">Not Started</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+
+              <!-- Sort Options -->
+              <select
+                id="sort-filter"
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="recent">Recently Accessed</option>
+                <option value="progress">Progress</option>
+                <option value="enrollment-date">Enrollment Date</option>
+                <option value="alphabetical">Alphabetical</option>
+              </select>
+            </div>
+
+            <!-- View Toggle -->
+            <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+              <button
+                id="grid-view"
+                class="px-3 py-2 bg-teal-700 text-white text-sm hover:bg-teal-800"
+                data-view="grid"
+              >
+                <svg
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                  ></path>
+                </svg>
+              </button>
+              <button
+                id="list-view"
+                class="px-3 py-2 bg-gray-100 text-gray-700 text-sm hover:bg-gray-200"
+                data-view="list"
+              >
+                <svg
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Courses Grid -->
         <div
           id="courses-grid"
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          class="hidden grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
-          <!-- Courses will be populated by JavaScript -->
+          <!-- Course cards will be populated here -->
         </div>
-      </div>
 
-      <!-- Empty State -->
-      <div id="empty-state" class="text-center py-16 hidden">
-        <svg
-          class="h-16 w-16 mx-auto text-gray-300 mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-          ></path>
-        </svg>
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">No Courses Yet</h2>
-        <p class="text-gray-600 mb-6">
-          You haven't enrolled in any courses yet. Start learning today!
-        </p>
-        <a
-          href="/courses"
-          class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
-        >
-          Browse Courses
-        </a>
-      </div>
-    </main>
+        <!-- Empty State (Hidden initially) -->
+        <div id="empty-state" class="text-center py-16 hidden">
+          <svg
+            class="h-16 w-16 mx-auto text-gray-300 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+            ></path>
+          </svg>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">No Courses Yet</h2>
+          <p class="text-gray-600 mb-6">
+            You haven't enrolled in any courses yet. Start learning today!
+          </p>
+          <a
+            href="/courses"
+            class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Browse Courses
+          </a>
+        </div>
+      </main>
+    </div>
   </div>
 </BaseLayout>
 
 <!-- JavaScript for loading and displaying user courses -->
-<script is:inline>
+<script>
+  import { authStore } from "../../stores/authStore";
+
   document.addEventListener("DOMContentLoaded", function () {
-    let userCourses = [];
-    let filteredCourses = [];
+    let userCourses: any[] = [];
+    let filteredCourses: any[] = [];
 
     // Initialize the page
     initializePage();
 
-    async function initializePage() {
-      try {
-        // Check authentication
-        const authStore = await import("/src/stores/authStore.ts");
+    async function initializePage(): Promise<void> {
+      console.log("🔍 Initializing My Courses page...");
 
-        if (!authStore.isAuthenticated()) {
+      try {
+        // Check authentication using proper method
+        const authState = authStore.getState();
+        console.log("🔐 Auth state:", {
+          isAuthenticated: authState.isAuthenticated,
+          user: authState.user,
+        });
+
+        if (!authState.isAuthenticated || !authState.user) {
+          console.log("❌ User not authenticated, showing login prompt");
           showNotAuthenticatedState();
           return;
         }
 
-        // Load user courses
-        const api = await import("/src/lib/api.ts");
-        userCourses = await api.fetchUserCourses();
+        console.log("✅ User authenticated, loading courses...");
+
+        // Load user courses using fetch API
+        userCourses = await fetchUserCourses();
+        console.log("📚 Loaded courses:", userCourses);
 
         if (userCourses.length === 0) {
+          console.log("📭 No courses found, showing empty state");
           showEmptyState();
         } else {
+          console.log("📊 Showing courses and stats");
           showCoursesState();
           updateStatistics();
           renderCourses();
+          setupEventListeners();
         }
       } catch (error) {
-        console.error("Error loading courses:", error);
-        showNotAuthenticatedState();
+        console.error("❌ Error loading courses:", error);
+
+        // Check if it's an authentication error
+        if (
+          error instanceof Error &&
+          (error.message.includes("401") ||
+            error.message.includes("Unauthorized"))
+        ) {
+          console.log("🔐 Authentication error, showing login prompt");
+          showNotAuthenticatedState();
+        } else {
+          console.log("💥 General error, showing login prompt as fallback");
+          showNotAuthenticatedState();
+        }
       } finally {
         hideLoadingState();
       }
     }
 
-    function hideLoadingState() {
-      document.getElementById("loading-state").classList.add("hidden");
+    async function fetchUserCourses(): Promise<any[]> {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        throw new Error("No access token");
+      }
+
+      const response = await fetch("/api/v1/courses/my_courses/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return response.json();
     }
 
-    function showNotAuthenticatedState() {
-      document.getElementById("not-authenticated").classList.remove("hidden");
+    function hideLoadingState(): void {
+      const loadingElement = document.getElementById("loading-state");
+      if (loadingElement) {
+        loadingElement.classList.add("hidden");
+      }
     }
 
-    function showEmptyState() {
-      document.getElementById("empty-state").classList.remove("hidden");
+    function showNotAuthenticatedState(): void {
+      const notAuthElement = document.getElementById("not-authenticated");
+      if (notAuthElement) {
+        notAuthElement.classList.remove("hidden");
+      }
     }
 
-    function showCoursesState() {
-      document.getElementById("course-stats").classList.remove("hidden");
-      document.getElementById("course-controls").classList.remove("hidden");
-      document.getElementById("courses-container").classList.remove("hidden");
+    function showEmptyState(): void {
+      const emptyElement = document.getElementById("empty-state");
+      if (emptyElement) {
+        emptyElement.classList.remove("hidden");
+      }
     }
 
-    function updateStatistics() {
+    function showCoursesState(): void {
+      const statsElement = document.getElementById("course-stats");
+      const controlsElement = document.getElementById("course-controls");
+      const gridElement = document.getElementById("courses-grid");
+
+      if (statsElement) statsElement.classList.remove("hidden");
+      if (controlsElement) controlsElement.classList.remove("hidden");
+      if (gridElement) gridElement.classList.remove("hidden");
+    }
+
+    function updateStatistics(): void {
       const totalCourses = userCourses.length;
       const completedCourses = userCourses.filter(
-        (enrollment) => enrollment.progress_percentage === 100,
+        (enrollment: any) => enrollment.progress_percentage === 100,
       ).length;
       const inProgressCourses = userCourses.filter(
-        (enrollment) =>
+        (enrollment: any) =>
           enrollment.progress_percentage > 0 &&
           enrollment.progress_percentage < 100,
       ).length;
@@ -290,71 +354,61 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         totalCourses > 0
           ? Math.round(
               userCourses.reduce(
-                (sum, enrollment) =>
+                (sum: number, enrollment: any) =>
                   sum + (enrollment.progress_percentage || 0),
                 0,
               ) / totalCourses,
             )
           : 0;
 
-      document.getElementById("total-courses").textContent = totalCourses;
-      document.getElementById("completed-courses").textContent =
-        completedCourses;
-      document.getElementById("in-progress-courses").textContent =
-        inProgressCourses;
-      document.getElementById("avg-progress").textContent = avgProgress + "%";
+      const totalElement = document.getElementById("total-courses");
+      const completedElement = document.getElementById("completed-courses");
+      const progressElement = document.getElementById("in-progress-courses");
+      const avgElement = document.getElementById("avg-progress");
+
+      if (totalElement) totalElement.textContent = totalCourses.toString();
+      if (completedElement)
+        completedElement.textContent = completedCourses.toString();
+      if (progressElement)
+        progressElement.textContent = inProgressCourses.toString();
+      if (avgElement) avgElement.textContent = `${avgProgress}%`;
     }
 
-    function renderCourses() {
-      filteredCourses = [...userCourses];
-      applyFilters();
-
+    function renderCourses(): void {
       const coursesGrid = document.getElementById("courses-grid");
+      if (!coursesGrid) return;
+
+      filteredCourses = [...userCourses];
       coursesGrid.innerHTML = filteredCourses
-        .map((enrollment) => createCourseCard(enrollment))
+        .map((enrollment: any) => createCourseCard(enrollment))
         .join("");
     }
 
-    function createCourseCard(enrollment) {
+    function createCourseCard(enrollment: any): string {
       const course = enrollment.course;
       const progress = enrollment.progress_percentage || 0;
-      const isCompleted = progress === 100;
       const isStarted = progress > 0;
 
       return `
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300">
           <div class="relative">
-            ${
-              course.featured_image
-                ? `<img src="${course.featured_image}" alt="${course.title}" class="w-full h-48 object-cover" loading="lazy" />`
-                : `<div class="w-full h-48 bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
-                <svg class="h-16 w-16 text-white opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>`
-            }
-            
-            ${
-              isCompleted
-                ? `<div class="absolute top-3 right-3">
-                <span class="bg-green-500 text-white px-2 py-1 text-sm font-bold rounded-full shadow flex items-center">
-                  <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                  Completed
-                </span>
-              </div>`
-                : ""
-            }
-          </div>
-
-          <div class="p-6">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-teal-600 text-sm font-medium">${course.category ? course.category.name : "Course"}</span>
+            <div class="aspect-video bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center">
+              ${
+                course.featured_image
+                  ? `<img src="${course.featured_image}" alt="${course.name}" class="w-full h-full object-cover" />`
+                  : `<svg class="w-16 h-16 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
+                       <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                     </svg>`
+              }
+            </div>
+            <div class="absolute top-3 left-3">
+              <span class="bg-white/90 backdrop-blur text-xs font-medium px-2 py-1 rounded-full text-gray-700">
+                ${course.category ? course.category.name : "Course"}
+              </span>
               <span class="text-xs text-gray-500">Enrolled ${new Date(enrollment.enrollment_date).toLocaleDateString()}</span>
             </div>
 
-            <h3 class="text-xl font-bold text-gray-900 mb-3">${course.title}</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">${course.title || course.name}</h3>
 
             <div class="mb-4">
               <div class="flex justify-between text-sm mb-1">
@@ -391,15 +445,73 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       `;
     }
 
-    function applyFilters() {
-      const statusFilter = document.getElementById("status-filter").value;
-      const sortFilter = document.getElementById("sort-filter").value;
+    function setupEventListeners(): void {
+      // Filter functionality
+      const statusFilter = document.getElementById(
+        "status-filter",
+      ) as HTMLSelectElement;
+      const sortFilter = document.getElementById(
+        "sort-filter",
+      ) as HTMLSelectElement;
+
+      if (statusFilter) {
+        statusFilter.addEventListener("change", applyFilters);
+      }
+      if (sortFilter) {
+        sortFilter.addEventListener("change", applyFilters);
+      }
+
+      // View toggle functionality
+      const gridViewBtn = document.getElementById(
+        "grid-view",
+      ) as HTMLButtonElement;
+      const listViewBtn = document.getElementById(
+        "list-view",
+      ) as HTMLButtonElement;
+      const coursesGrid = document.getElementById(
+        "courses-grid",
+      ) as HTMLElement;
+
+      if (gridViewBtn && listViewBtn && coursesGrid) {
+        gridViewBtn.addEventListener("click", () => {
+          gridViewBtn.classList.add("bg-teal-700", "text-white");
+          gridViewBtn.classList.remove("bg-gray-100", "text-gray-700");
+          listViewBtn.classList.add("bg-gray-100", "text-gray-700");
+          listViewBtn.classList.remove("bg-teal-700", "text-white");
+
+          coursesGrid.className =
+            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
+        });
+
+        listViewBtn.addEventListener("click", () => {
+          listViewBtn.classList.add("bg-teal-700", "text-white");
+          listViewBtn.classList.remove("bg-gray-100", "text-gray-700");
+          gridViewBtn.classList.add("bg-gray-100", "text-gray-700");
+          gridViewBtn.classList.remove("bg-teal-700", "text-white");
+
+          coursesGrid.className = "grid grid-cols-1 gap-6";
+        });
+      }
+    }
+
+    function applyFilters(): void {
+      const statusFilter = document.getElementById(
+        "status-filter",
+      ) as HTMLSelectElement;
+      const sortFilter = document.getElementById(
+        "sort-filter",
+      ) as HTMLSelectElement;
+
+      if (!statusFilter || !sortFilter) return;
+
+      const statusValue = statusFilter.value;
+      const sortValue = sortFilter.value;
 
       // Filter by status
-      filteredCourses = userCourses.filter((enrollment) => {
+      filteredCourses = userCourses.filter((enrollment: any) => {
         const progress = enrollment.progress_percentage || 0;
 
-        switch (statusFilter) {
+        switch (statusValue) {
           case "not-started":
             return progress === 0;
           case "in-progress":
@@ -412,8 +524,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       });
 
       // Sort courses
-      filteredCourses.sort((a, b) => {
-        switch (sortFilter) {
+      filteredCourses.sort((a: any, b: any) => {
+        switch (sortValue) {
           case "progress":
             return (b.progress_percentage || 0) - (a.progress_percentage || 0);
           case "enrollment-date":
@@ -422,7 +534,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
               new Date(a.enrollment_date).getTime()
             );
           case "alphabetical":
-            return a.course.title.localeCompare(b.course.title);
+            return (a.course.title || a.course.name).localeCompare(
+              b.course.title || b.course.name,
+            );
           case "recent":
           default:
             const aAccessed = a.last_accessed
@@ -437,41 +551,22 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
       // Re-render courses
       const coursesGrid = document.getElementById("courses-grid");
-      coursesGrid.innerHTML = filteredCourses
-        .map((enrollment) => createCourseCard(enrollment))
-        .join("");
+      if (coursesGrid) {
+        coursesGrid.innerHTML = filteredCourses
+          .map((enrollment: any) => createCourseCard(enrollment))
+          .join("");
+      }
     }
 
-    // Event listeners for filters
-    document
-      .getElementById("status-filter")
-      .addEventListener("change", applyFilters);
-    document
-      .getElementById("sort-filter")
-      .addEventListener("change", applyFilters);
-
-    // View toggle functionality
-    const gridViewBtn = document.getElementById("grid-view");
-    const listViewBtn = document.getElementById("list-view");
-    const coursesGrid = document.getElementById("courses-grid");
-
-    gridViewBtn.addEventListener("click", () => {
-      gridViewBtn.classList.add("bg-teal-700", "text-white");
-      gridViewBtn.classList.remove("bg-gray-100", "text-gray-700");
-      listViewBtn.classList.add("bg-gray-100", "text-gray-700");
-      listViewBtn.classList.remove("bg-teal-700", "text-white");
-
-      coursesGrid.className =
-        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8";
-    });
-
-    listViewBtn.addEventListener("click", () => {
-      listViewBtn.classList.add("bg-teal-700", "text-white");
-      listViewBtn.classList.remove("bg-gray-100", "text-gray-700");
-      gridViewBtn.classList.add("bg-gray-100", "text-gray-700");
-      gridViewBtn.classList.remove("bg-teal-700", "text-white");
-
-      coursesGrid.className = "grid grid-cols-1 gap-6";
+    // Subscribe to auth changes
+    authStore.subscribe(() => {
+      const newAuthState = authStore.getState();
+      if (!newAuthState.isAuthenticated) {
+        // User logged out, redirect to login
+        window.location.href =
+          "/auth/login?redirect=" +
+          encodeURIComponent(window.location.pathname);
+      }
     });
   });
 </script>
