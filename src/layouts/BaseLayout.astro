@@ -6,12 +6,22 @@ import Footer from "../components/Footer.astro";
 interface Props {
   title?: string;
   description?: string;
+  hideHeader?: boolean; // Add prop to conditionally hide header
 }
 
 const {
   title = "Corrison",
   description = "Your trusted partner for innovative digital solutions",
+  hideHeader = false,
 } = Astro.props;
+
+// Check if we should hide header for dashboard pages
+// You can extend this logic as needed
+const currentPath = Astro.url.pathname;
+const isDashboardPage = currentPath.startsWith('/auth/dashboard') || 
+                       currentPath.startsWith('/auth/profile') || 
+                       currentPath.startsWith('/auth/settings') ||
+                       hideHeader;
 ---
 
 <html lang="en">
@@ -49,10 +59,38 @@ const {
   <body
     class="min-h-screen flex flex-col font-sans antialiased text-gray-900 bg-slate-50"
   >
-    <Header />
+    <!-- Conditionally render Header -->
+    {!isDashboardPage && <Header />}
+    
     <main class="flex-grow">
       <slot />
     </main>
-    <Footer />
+    
+    <!-- Conditionally render Footer -->
+    {!isDashboardPage && <Footer />}
+
+    <!-- Authentication state check script for dashboard pages -->
+    {isDashboardPage && (
+      <script>
+        // Add client-side authentication check for dashboard pages
+        document.addEventListener("DOMContentLoaded", function () {
+          // Import auth store and check authentication
+          import("../stores/authStore").then(({ authStore }) => {
+            const state = authStore.getState();
+            
+            // If not authenticated on a dashboard page, redirect to login
+            if (!state.isAuthenticated) {
+              const currentPath = window.location.pathname;
+              const loginUrl = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
+              window.location.href = loginUrl;
+            }
+          }).catch((error) => {
+            console.error("Error checking authentication:", error);
+            // Fallback: redirect to login if there's an error
+            window.location.href = "/auth/login";
+          });
+        });
+      </script>
+    )}
   </body>
 </html>

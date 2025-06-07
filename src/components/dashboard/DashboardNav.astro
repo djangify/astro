@@ -27,6 +27,12 @@ const navItems = [
     id: "courses",
   },
   {
+    label: "My Appointments",
+    href: "/calendar/my-appointments",
+    icon: "calendar",
+    id: "appointments",
+  },
+  {
     label: "Calendar",
     href: "/calendar",
     icon: "calendar",
@@ -59,6 +65,9 @@ const getIcon = (iconName: string) => {
     book: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
     </svg>`,
+    appointments: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>`,
     calendar: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
     </svg>`,
@@ -77,19 +86,41 @@ const getIcon = (iconName: string) => {
 <nav class={`dashboard-nav ${className}`}>
   <!-- Desktop Navigation -->
   <div
-    class="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:pt-5 lg:pb-4 lg:bg-white lg:border-r lg:border-gray-200"
+    class="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:bg-white lg:border-r lg:border-gray-200"
   >
-    <div class="flex items-center flex-shrink-0 px-6 mb-8">
-      <div
-        class="w-8 h-8 bg-teal-700 flex items-center justify-center rounded-md mr-3"
-      >
-        <span class="text-white text-xl font-bold italic">C</span>
+    <!-- Logo and User Section at Top -->
+    <div class="flex flex-col px-6 py-6 border-b border-gray-200">
+      <!-- Logo -->
+      <a href="/" class="flex items-center mb-4">
+        <div
+          class="w-8 h-8 bg-teal-700 flex items-center justify-center rounded-md mr-2"
+        >
+          <span class="text-white text-xl font-bold italic">C</span>
+        </div>
+        <span class="text-teal-700 font-bold text-xl">Corrison API</span>
+      </a>
+
+      <!-- User Info -->
+      <div class="flex items-center">
+        <div
+          class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center mr-3"
+          id="sidebar-user-avatar"
+        >
+          <span
+            id="sidebar-user-initials"
+            class="text-teal-700 font-medium text-sm"></span>
+        </div>
+        <div>
+          <p id="sidebar-user-name" class="text-sm font-medium text-gray-900">
+          </p>
+          <p id="sidebar-user-email" class="text-xs text-gray-500"></p>
+        </div>
       </div>
-      <span class="text-teal-700 font-bold text-xl">Dashboard</span>
     </div>
 
+    <!-- Navigation Links -->
     <div class="flex-1 flex flex-col overflow-y-auto">
-      <nav class="flex-1 px-3 space-y-1">
+      <nav class="flex-1 px-3 py-4 space-y-1">
         {
           navItems.map((item) => {
             const isActive = currentPage === item.id;
@@ -113,8 +144,8 @@ const getIcon = (iconName: string) => {
         }
       </nav>
 
-      <!-- Bottom section -->
-      <div class="px-3 mt-6 border-t border-gray-200 pt-6">
+      <!-- Bottom section with Logout -->
+      <div class="px-3 pb-6 border-t border-gray-200 pt-4 space-y-1">
         <a
           href="/support"
           class="group flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-gray-50 rounded-md transition-colors"
@@ -154,11 +185,32 @@ const getIcon = (iconName: string) => {
           </svg>
           Back to Site
         </a>
+
+        <!-- Logout Button -->
+        <button
+          id="sidebar-logout-button"
+          class="group flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+        >
+          <svg
+            class="w-5 h-5 mr-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            ></path>
+          </svg>
+          <span id="sidebar-logout-text">Sign Out</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Mobile Navigation -->
+  <!-- Mobile Navigation - Keep existing mobile menu -->
   <div class="lg:hidden bg-white border-b border-gray-200">
     <div class="px-4 py-3">
       <button
@@ -267,6 +319,29 @@ const getIcon = (iconName: string) => {
               Back to Site
             </span>
           </a>
+
+          <!-- Mobile Logout Button -->
+          <button
+            id="mobile-logout-button"
+            class="block w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+          >
+            <span class="inline-flex items-center">
+              <svg
+                class="w-5 h-5 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                ></path>
+              </svg>
+              <span id="mobile-logout-text">Sign Out</span>
+            </span>
+          </button>
         </div>
       </nav>
     </div>
@@ -274,7 +349,10 @@ const getIcon = (iconName: string) => {
 </nav>
 
 <script>
+  import { authStore } from "../../stores/authStore";
+
   document.addEventListener("DOMContentLoaded", function () {
+    // Mobile menu toggle functionality
     const mobileMenuButton = document.getElementById(
       "mobile-dashboard-menu-button",
     );
@@ -296,6 +374,118 @@ const getIcon = (iconName: string) => {
         mobileMenu.classList.add("hidden");
       }
     });
+
+    // Initialize user info
+    updateUserInfo();
+
+    // Subscribe to auth state changes
+    authStore.subscribe(() => {
+      updateUserInfo();
+    });
+
+    // Logout functionality for sidebar
+    const sidebarLogoutButton = document.getElementById(
+      "sidebar-logout-button",
+    ) as HTMLButtonElement;
+    const sidebarLogoutText = document.getElementById("sidebar-logout-text");
+
+    sidebarLogoutButton?.addEventListener("click", async function (e) {
+      e.preventDefault();
+
+      // Show loading state
+      if (sidebarLogoutText) {
+        sidebarLogoutText.textContent = "Signing Out...";
+      }
+      sidebarLogoutButton.disabled = true;
+
+      try {
+        await authStore.logout();
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Logout error:", error);
+
+        // Reset button state
+        if (sidebarLogoutText) {
+          sidebarLogoutText.textContent = "Sign Out";
+        }
+        sidebarLogoutButton.disabled = false;
+
+        // Still redirect even if logout request failed
+        window.location.href = "/";
+      }
+    });
+
+    // Logout functionality for mobile
+    const mobileLogoutButton = document.getElementById(
+      "mobile-logout-button",
+    ) as HTMLButtonElement;
+    const mobileLogoutText = document.getElementById("mobile-logout-text");
+
+    mobileLogoutButton?.addEventListener("click", async function (e) {
+      e.preventDefault();
+
+      // Show loading state
+      if (mobileLogoutText) {
+        mobileLogoutText.textContent = "Signing Out...";
+      }
+      mobileLogoutButton.disabled = true;
+
+      try {
+        await authStore.logout();
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Mobile logout error:", error);
+
+        // Reset button state
+        if (mobileLogoutText) {
+          mobileLogoutText.textContent = "Sign Out";
+        }
+        mobileLogoutButton.disabled = false;
+
+        // Still redirect even if logout request failed
+        window.location.href = "/";
+      }
+    });
+
+    function updateUserInfo() {
+      const state = authStore.getState();
+      const user = state.user;
+
+      if (!user) return;
+
+      // Update user initials
+      const initials = getInitials(
+        user.first_name,
+        user.last_name,
+        user.username,
+      );
+      const sidebarInitials = document.getElementById("sidebar-user-initials");
+      if (sidebarInitials) sidebarInitials.textContent = initials;
+
+      // Update user name
+      const fullName = authStore.getUserFullName();
+      const sidebarUserName = document.getElementById("sidebar-user-name");
+      if (sidebarUserName) sidebarUserName.textContent = fullName;
+
+      // Update email
+      const sidebarUserEmail = document.getElementById("sidebar-user-email");
+      if (sidebarUserEmail) sidebarUserEmail.textContent = user.email;
+    }
+
+    function getInitials(
+      firstName: string,
+      lastName: string,
+      username: string,
+    ): string {
+      if (firstName && lastName) {
+        return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+      } else if (firstName) {
+        return firstName.charAt(0).toUpperCase();
+      } else if (username) {
+        return username.substring(0, 2).toUpperCase();
+      }
+      return "U";
+    }
   });
 </script>
 

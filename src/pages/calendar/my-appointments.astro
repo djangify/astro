@@ -14,7 +14,7 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
   />
 
   <!-- Dashboard Navigation -->
-  <DashboardNav currentPage="calendar" />
+  <DashboardNav currentPage="appointments" />
 
   <!-- Main Content -->
   <div class="lg:ml-64">
@@ -286,310 +286,324 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
   </div>
 </BaseLayout>
 
-<script is:inline>
-  // Global variables
-  let allAppointments = [];
-  let isAuthenticated = false;
+<script>
+  import { authStore } from "../../stores/authStore";
 
-  // Check authentication status
-  function checkAuthentication() {
-    const token = localStorage.getItem("access_token");
-    return !!token;
-  }
-
-  // Initialize page
-  async function initializePage() {
-    isAuthenticated = checkAuthentication();
-
-    if (!isAuthenticated) {
-      showAuthWarning();
-      return;
-    }
-
-    try {
-      await loadAppointments();
-      await loadUpcomingAppointments();
-      showContent();
-    } catch (error) {
-      console.error("Error initializing page:", error);
-
-      // Check if it's an auth error
-      if (
-        error.message.includes("401") ||
-        error.message.includes("Unauthorized")
-      ) {
-        showAuthWarning();
-      } else {
-        showError("Failed to load appointments. Please try again later.");
-      }
-    }
-  }
-
-  // Load all appointments using single-user endpoints
-  async function loadAppointments() {
-    try {
-      const API_BASE = window.location.origin.includes("localhost")
-        ? "http://localhost:8000"
-        : "https://corrison.corrisonapi.com";
-
-      const response = await fetch(
-        `${API_BASE}/api/v1/appointments/appointments/`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to load appointments: ${response.status}`);
-      }
-
-      allAppointments = await response.json();
-      updateStats();
-    } catch (error) {
-      console.error("Error loading appointments:", error);
-      throw error;
-    }
-  }
-
-  // Load upcoming appointments
-  async function loadUpcomingAppointments() {
-    const now = new Date();
-    const upcoming = allAppointments
-      .filter((appointment) => {
-        const appointmentDate = new Date(
-          `${appointment.date}T${appointment.start_time}`,
-        );
-        return (
-          appointmentDate > now &&
-          (appointment.status === "confirmed" ||
-            appointment.status === "pending")
-        );
-      })
-      .sort((a, b) => {
-        const dateA = new Date(`${a.date}T${a.start_time}`);
-        const dateB = new Date(`${b.date}T${b.start_time}`);
-        return dateA - dateB;
-      })
-      .slice(0, 3); // Show only next 3
-
-    const upcomingList = document.getElementById("upcoming-list");
-    const noUpcoming = document.getElementById("no-upcoming");
-
-    if (upcoming.length === 0) {
-      if (upcomingList) upcomingList.classList.add("hidden");
-      if (noUpcoming) noUpcoming.classList.remove("hidden");
-    } else {
-      if (noUpcoming) noUpcoming.classList.add("hidden");
-      if (upcomingList) {
-        upcomingList.classList.remove("hidden");
-        upcomingList.innerHTML = upcoming
-          .map((appointment) => renderUpcomingAppointment(appointment))
-          .join("");
-      }
-    }
-  }
-
-  // Render upcoming appointment
-  function renderUpcomingAppointment(appointment) {
-    const statusColors = {
-      confirmed: "bg-green-100 text-green-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      cancelled: "bg-red-100 text-red-800",
-      completed: "bg-blue-100 text-blue-800",
-    };
-
-    return `
-      <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-        <div class="flex items-center space-x-4">
-          <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-            </svg>
-          </div>
-          <div>
-            <h3 class="font-medium text-gray-900">${appointment.appointment_type_name || "Appointment"}</h3>
-            <div class="flex items-center space-x-4 text-sm text-gray-600">
-              <span>${formatDate(appointment.date)}</span>
-              <span>${formatTime(appointment.start_time)}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="flex items-center space-x-3">
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[appointment.status] || "bg-gray-100 text-gray-800"}">
-            ${getStatusText(appointment.status)}
-          </span>
-          <a
-            href="/calendar/appointments/${appointment.id}"
-            class="text-teal-600 hover:text-teal-800 text-sm font-medium"
-          >
-            View Details
-          </a>
-        </div>
-      </div>
-    `;
-  }
-
-  // Update statistics
-  function updateStats() {
-    const total = allAppointments.length;
-    const confirmed = allAppointments.filter(
-      (a) => a.status === "confirmed",
-    ).length;
-    const pending = allAppointments.filter(
-      (a) => a.status === "pending",
-    ).length;
-
-    // This month count
-    const now = new Date();
-    const thisMonth = allAppointments.filter((appointment) => {
-      const appointmentDate = new Date(appointment.date);
-      return (
-        appointmentDate.getMonth() === now.getMonth() &&
-        appointmentDate.getFullYear() === now.getFullYear()
-      );
-    }).length;
-
-    // Update DOM
-    const totalElement = document.getElementById("total-count");
-    const confirmedElement = document.getElementById("confirmed-count");
-    const pendingElement = document.getElementById("pending-count");
-    const monthElement = document.getElementById("month-count");
-
-    if (totalElement) totalElement.textContent = total;
-    if (confirmedElement) confirmedElement.textContent = confirmed;
-    if (pendingElement) pendingElement.textContent = pending;
-    if (monthElement) monthElement.textContent = thisMonth;
-  }
-
-  // Utility functions
-  function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }
-
-  function formatTime(timeString) {
-    const [hours, minutes] = timeString.split(":");
-    const date = new Date();
-    date.setHours(parseInt(hours), parseInt(minutes));
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  }
-
-  function getStatusText(status) {
-    const statusTexts = {
-      confirmed: "Confirmed",
-      pending: "Pending",
-      cancelled: "Cancelled",
-      completed: "Completed",
-    };
-    return statusTexts[status] || status;
-  }
-
-  // State management
-  function showAuthWarning() {
-    document.getElementById("auth-check").classList.remove("hidden");
-    hideContent();
-  }
-
-  function showContent() {
-    document.getElementById("appointment-stats").classList.remove("hidden");
-    document.getElementById("upcoming-appointments").classList.remove("hidden");
-    document
-      .getElementById("appointments-list-container")
-      .classList.remove("hidden");
-    document.getElementById("auth-check").classList.add("hidden");
-  }
-
-  function hideContent() {
-    document.getElementById("appointment-stats").classList.add("hidden");
-    document.getElementById("upcoming-appointments").classList.add("hidden");
-    document
-      .getElementById("appointments-list-container")
-      .classList.add("hidden");
-  }
-
-  function showError(message) {
-    // Create error notification
-    const notification = document.createElement("div");
-    notification.className =
-      "fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm bg-red-100 text-red-800 border border-red-200";
-
-    notification.innerHTML = `
-      <div class="flex items-center">
-        <div class="flex-1">
-          <p class="text-sm font-medium">${message}</p>
-        </div>
-        <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-red-400 hover:text-red-600">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-    `;
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.remove();
-      }
-    }, 5000);
-  }
-
-  // Handle auth state changes
-  function handleAuthChange() {
-    const newAuthState = checkAuthentication();
-
-    if (newAuthState !== isAuthenticated) {
-      isAuthenticated = newAuthState;
-
-      if (isAuthenticated) {
-        initializePage();
-      } else {
-        showAuthWarning();
-      }
-    }
-  }
-
-  // Initialize page when DOM is ready
   document.addEventListener("DOMContentLoaded", function () {
+    console.log("🔍 Initializing My Appointments page...");
+
+    // Global variables
+    let allAppointments: any[] = [];
+
+    // Initialize page
     initializePage();
 
-    // Listen for storage changes (login/logout in other tabs)
-    window.addEventListener("storage", function (e) {
-      if (e.key === "access_token") {
-        handleAuthChange();
-      }
-    });
-  });
-
-  // Global refresh function for AppointmentList component
-  window.refreshUserAppointments = async function () {
-    if (isAuthenticated) {
+    async function initializePage(): Promise<void> {
       try {
+        // Check authentication using proper method
+        const authState = authStore.getState();
+        console.log("🔐 Auth state:", {
+          isAuthenticated: authState.isAuthenticated,
+          user: authState.user,
+        });
+
+        if (!authState.isAuthenticated || !authState.user) {
+          console.log("❌ User not authenticated, showing auth warning");
+          showAuthWarning();
+          return;
+        }
+
+        console.log("✅ User authenticated, loading appointments...");
         await loadAppointments();
         await loadUpcomingAppointments();
+        showContent();
       } catch (error) {
-        console.error("Error refreshing appointments:", error);
-        showError("Failed to refresh appointments");
+        console.error("❌ Error initializing page:", error);
+
+        // Check if it's an auth error
+        if (
+          error instanceof Error &&
+          (error.message.includes("401") ||
+            error.message.includes("Unauthorized"))
+        ) {
+          console.log("🔐 Authentication error, showing auth warning");
+          showAuthWarning();
+        } else {
+          console.log("💥 General error, showing error message");
+          showError("Failed to load appointments. Please try again later.");
+        }
       }
     }
-  };
 
-  // Export for use by AppointmentList component
-  window.getUserAppointments = function () {
-    return allAppointments;
-  };
+    // Load all appointments using single-user endpoints
+    async function loadAppointments(): Promise<void> {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("No access token");
+        }
+
+        const API_BASE = window.location.origin.includes("localhost")
+          ? "http://localhost:8000"
+          : "https://corrison.corrisonapi.com";
+
+        const response = await fetch(
+          `${API_BASE}/api/v1/appointments/appointments/`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        allAppointments = await response.json();
+        updateStats();
+      } catch (error) {
+        console.error("Error loading appointments:", error);
+        throw error;
+      }
+    }
+
+    // Load upcoming appointments
+    async function loadUpcomingAppointments(): Promise<void> {
+      const now = new Date();
+      const upcoming = allAppointments
+        .filter((appointment: any) => {
+          const appointmentDate = new Date(
+            `${appointment.date}T${appointment.start_time}`,
+          );
+          return (
+            appointmentDate > now &&
+            (appointment.status === "confirmed" ||
+              appointment.status === "pending")
+          );
+        })
+        .sort((a: any, b: any) => {
+          const dateA = new Date(`${a.date}T${a.start_time}`);
+          const dateB = new Date(`${b.date}T${b.start_time}`);
+          return dateA.getTime() - dateB.getTime();
+        })
+        .slice(0, 3); // Show only next 3
+
+      const upcomingList = document.getElementById("upcoming-list");
+      const noUpcoming = document.getElementById("no-upcoming");
+
+      if (upcoming.length === 0) {
+        if (upcomingList) upcomingList.classList.add("hidden");
+        if (noUpcoming) noUpcoming.classList.remove("hidden");
+      } else {
+        if (noUpcoming) noUpcoming.classList.add("hidden");
+        if (upcomingList) {
+          upcomingList.classList.remove("hidden");
+          upcomingList.innerHTML = upcoming
+            .map((appointment: any) => renderUpcomingAppointment(appointment))
+            .join("");
+        }
+      }
+    }
+
+    // Render upcoming appointment
+    function renderUpcomingAppointment(appointment: any): string {
+      const statusColors: Record<string, string> = {
+        confirmed: "bg-green-100 text-green-800",
+        pending: "bg-yellow-100 text-yellow-800",
+        cancelled: "bg-red-100 text-red-800",
+        completed: "bg-blue-100 text-blue-800",
+      };
+
+      return `
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div class="flex items-center space-x-4">
+            <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+              <svg class="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-medium text-gray-900">${appointment.appointment_type_name || "Appointment"}</h3>
+              <div class="flex items-center space-x-4 text-sm text-gray-600">
+                <span>${formatDate(appointment.date)}</span>
+                <span>${formatTime(appointment.start_time)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex items-center space-x-3">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[appointment.status] || "bg-gray-100 text-gray-800"}">
+              ${getStatusText(appointment.status)}
+            </span>
+            
+              href="/calendar/appointments/${appointment.id}"
+              class="text-teal-600 hover:text-teal-800 text-sm font-medium"
+            >
+              View Details
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    // Update statistics
+    function updateStats(): void {
+      const total = allAppointments.length;
+      const confirmed = allAppointments.filter(
+        (a: any) => a.status === "confirmed",
+      ).length;
+      const pending = allAppointments.filter(
+        (a: any) => a.status === "pending",
+      ).length;
+
+      // This month count
+      const now = new Date();
+      const thisMonth = allAppointments.filter((appointment: any) => {
+        const appointmentDate = new Date(appointment.date);
+        return (
+          appointmentDate.getMonth() === now.getMonth() &&
+          appointmentDate.getFullYear() === now.getFullYear()
+        );
+      }).length;
+
+      // Update DOM
+      const totalElement = document.getElementById("total-count");
+      const confirmedElement = document.getElementById("confirmed-count");
+      const pendingElement = document.getElementById("pending-count");
+      const monthElement = document.getElementById("month-count");
+
+      if (totalElement) totalElement.textContent = total.toString();
+      if (confirmedElement) confirmedElement.textContent = confirmed.toString();
+      if (pendingElement) pendingElement.textContent = pending.toString();
+      if (monthElement) monthElement.textContent = thisMonth.toString();
+    }
+
+    // Utility functions
+    function formatDate(dateString: string): string {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+
+    function formatTime(timeString: string): string {
+      const [hours, minutes] = timeString.split(":");
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes));
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+
+    function getStatusText(status: string): string {
+      const statusTexts: Record<string, string> = {
+        confirmed: "Confirmed",
+        pending: "Pending",
+        cancelled: "Cancelled",
+        completed: "Completed",
+      };
+      return statusTexts[status] || status;
+    }
+
+    // State management
+    function showAuthWarning(): void {
+      const authCheckElement = document.getElementById("auth-check");
+      if (authCheckElement) {
+        authCheckElement.classList.remove("hidden");
+      }
+      hideContent();
+    }
+
+    function showContent(): void {
+      const statsElement = document.getElementById("appointment-stats");
+      const upcomingElement = document.getElementById("upcoming-appointments");
+      const listElement = document.getElementById(
+        "appointments-list-container",
+      );
+      const authElement = document.getElementById("auth-check");
+
+      if (statsElement) statsElement.classList.remove("hidden");
+      if (upcomingElement) upcomingElement.classList.remove("hidden");
+      if (listElement) listElement.classList.remove("hidden");
+      if (authElement) authElement.classList.add("hidden");
+    }
+
+    function hideContent(): void {
+      const statsElement = document.getElementById("appointment-stats");
+      const upcomingElement = document.getElementById("upcoming-appointments");
+      const listElement = document.getElementById(
+        "appointments-list-container",
+      );
+
+      if (statsElement) statsElement.classList.add("hidden");
+      if (upcomingElement) upcomingElement.classList.add("hidden");
+      if (listElement) listElement.classList.add("hidden");
+    }
+
+    function showError(message: string): void {
+      // Create error notification
+      const notification = document.createElement("div");
+      notification.className =
+        "fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm bg-red-100 text-red-800 border border-red-200";
+
+      notification.innerHTML = `
+        <div class="flex items-center">
+          <div class="flex-1">
+            <p class="text-sm font-medium">${message}</p>
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-red-400 hover:text-red-600">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        if (notification.parentElement) {
+          notification.remove();
+        }
+      }, 5000);
+    }
+
+    // Subscribe to auth changes
+    authStore.subscribe(() => {
+      const newAuthState = authStore.getState();
+      if (!newAuthState.isAuthenticated) {
+        // User logged out, redirect to login
+        window.location.href =
+          "/auth/login?redirect=" +
+          encodeURIComponent(window.location.pathname);
+      }
+    });
+
+    // Global refresh function for AppointmentList component
+    (window as any).refreshUserAppointments = async function () {
+      const authState = authStore.getState();
+      if (authState.isAuthenticated) {
+        try {
+          await loadAppointments();
+          await loadUpcomingAppointments();
+        } catch (error) {
+          console.error("Error refreshing appointments:", error);
+          showError("Failed to refresh appointments");
+        }
+      }
+    };
+
+    // Export for use by AppointmentList component
+    (window as any).getUserAppointments = function () {
+      return allAppointments;
+    };
+  });
 </script>
 
 <style>

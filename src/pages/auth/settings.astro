@@ -415,6 +415,8 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   import { authStore } from "../../stores/authStore";
 
   document.addEventListener("DOMContentLoaded", function () {
+    console.log("🔍 Initializing Settings page...");
+
     const loadingState = document.getElementById("loading-state");
     const notAuthenticatedState = document.getElementById("not-authenticated");
     const settingsContent = document.getElementById("settings-content");
@@ -438,31 +440,34 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     // Initialize page
     initializePage();
 
-    async function initializePage() {
+    async function initializePage(): Promise<void> {
       try {
-        const state = authStore.getState();
+        // Check authentication using proper method
+        const authState = authStore.getState();
+        console.log("🔐 Auth state:", {
+          isAuthenticated: authState.isAuthenticated,
+          user: authState.user,
+        });
 
-        if (!state.isAuthenticated) {
+        if (!authState.isAuthenticated || !authState.user) {
+          console.log("❌ User not authenticated, showing login prompt");
           showNotAuthenticatedState();
           return;
         }
 
-        // Load user data
-        await loadAccountData();
+        console.log("✅ User authenticated, loading settings...");
+        loadAccountData(authState.user);
         showSettingsContent();
       } catch (error) {
-        console.error("Error loading settings:", error);
+        console.error("❌ Error loading settings:", error);
         showNotAuthenticatedState();
       } finally {
         hideLoadingState();
       }
     }
 
-    async function loadAccountData() {
+    function loadAccountData(user: any): void {
       try {
-        const auth = await import("../../lib/auth");
-        const user = await auth.getCurrentUser();
-
         // Populate account information
         const accountUsername = document.getElementById("account-username");
         const accountEmail = document.getElementById("account-email");
@@ -651,5 +656,16 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       if (successMessage) successMessage.classList.add("hidden");
       if (errorMessage) errorMessage.classList.add("hidden");
     }
+
+    // Subscribe to auth changes
+    authStore.subscribe(() => {
+      const newAuthState = authStore.getState();
+      if (!newAuthState.isAuthenticated) {
+        // User logged out, redirect to login
+        window.location.href =
+          "/auth/login?redirect=" +
+          encodeURIComponent(window.location.pathname);
+      }
+    });
   });
 </script>

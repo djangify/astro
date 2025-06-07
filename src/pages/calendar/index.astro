@@ -1,6 +1,7 @@
 ---
 // src/pages/calendar/index.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 ---
 
 <BaseLayout>
@@ -11,7 +12,15 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     content="Book an appointment with our calendar system. Select your preferred date and time."
   />
 
-  <main class="min-h-screen bg-gray-50">
+  <!-- Sidebar (hidden by default) -->
+  <div id="sidebar-nav" class="hidden">
+    <DashboardNav currentPage="calendar" />
+  </div>
+
+  <main
+    id="main-content"
+    class="min-h-screen bg-gray-50 transition-all duration-300"
+  >
     <!-- Page Header -->
     <div class="bg-white border-b border-gray-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -30,7 +39,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       </div>
     </div>
 
-    <!-- Main Content -->
+    <!-- Main Content Area -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Calendar Container - will be populated dynamically -->
       <div id="calendar-container" class="hidden"></div>
@@ -79,6 +88,43 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     </div>
   </main>
 </BaseLayout>
+
+<script>
+  import { authStore } from "../../stores/authStore";
+
+  // Declare the global function type
+  declare global {
+    interface Window {
+      loadCalendar: () => Promise<void>;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Check authentication and setup layout
+    const authState = authStore.getState();
+
+    if (authState.isAuthenticated) {
+      // Show sidebar
+      const sidebarNav = document.getElementById("sidebar-nav");
+      if (sidebarNav) {
+        sidebarNav.classList.remove("hidden");
+      }
+
+      // Add margin to main content
+      const mainContent = document.getElementById("main-content");
+      if (mainContent) {
+        mainContent.classList.add("lg:ml-64");
+      }
+    }
+
+    // Initialize calendar after layout is set
+    setTimeout(() => {
+      if (window.loadCalendar) {
+        window.loadCalendar();
+      }
+    }, 100);
+  });
+</script>
 
 <script is:inline>
   // Global calendar instance
@@ -342,11 +388,6 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         break;
     }
   }
-
-  // Auto-load calendar on page load
-  document.addEventListener("DOMContentLoaded", function () {
-    loadCalendar();
-  });
 
   // CalendarView class - updated for single user system with booking
   class CalendarView {
