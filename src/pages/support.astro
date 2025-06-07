@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import DashboardNav from "../components/dashboard/DashboardNav.astro";
 
 const metadata = {
   title: "Support - Corrison",
@@ -10,12 +11,24 @@ const metadata = {
 ---
 
 <BaseLayout>
+  <!-- Dashboard Navigation -->
+  <DashboardNav currentPage="support" />
   <main class="px-6 py-16 mx-auto max-w-4xl lg:px-8">
     <!-- Page Header -->
-    <div class="text-center mb-12">
-      <h1 class="text-4xl font-bold text-gray-900 mb-4">Support Center</h1>
-      <p class="text-xl text-gray-600">Need help? We're here to assist you.</p>
-    </div>
+    <section>
+      <div class="container mx-auto px-4 py-12">
+        <div class="max-w-4xl mx-auto">
+          <h1 class="text-3xl font-semibold text-gray-900 mb-4">
+            Support Center
+          </h1>
+          <p class="text-xl text-gray-600">
+            <p class="text-xl text-gray-600">
+              Need help? We're here to assist you.
+            </p>
+          </p>
+        </div>
+      </div>
+    </section>
 
     <!-- Contact Information -->
     <div class="grid md:grid-cols-2 gap-8 mb-12">
