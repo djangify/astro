@@ -295,7 +295,7 @@ const { showTitle = true, className = "" } = Astro.props;
 
     async function initializeAuthStore() {
       if (!authStore) {
-        const module = await import("../../stores/authStore");
+        const module = await import("/src/stores/authStore.ts");
         authStore = module.authStore;
       }
       return authStore;
