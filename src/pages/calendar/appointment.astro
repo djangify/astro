@@ -73,6 +73,43 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
         </a>
       </div>
 
+      <!-- Cancelled State -->
+      <div id="cancelled-state" class="text-center py-16 hidden">
+        <svg
+          class="h-16 w-16 mx-auto text-green-300 mb-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">
+          Appointment Cancelled
+        </h2>
+        <p class="text-gray-600 mb-6">
+          Your appointment has been successfully cancelled. You will receive a
+          confirmation email shortly.
+        </p>
+        <div class="space-x-4">
+          <a
+            href="/calendar/"
+            class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Book New Appointment
+          </a>
+          <button
+            onclick="window.history.back()"
+            class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+
       <!-- Appointment Content (Hidden initially) -->
       <div id="appointment-content" class="hidden max-w-4xl mx-auto">
         <!-- Success/Info Messages -->
@@ -396,6 +433,63 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       </div>
     </main>
   </div>
+
+  <!-- Custom Confirmation Modal -->
+  <div
+    id="confirmation-modal"
+    class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50"
+  >
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="p-6">
+          <div class="flex items-center mb-4">
+            <div
+              class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100"
+            >
+              <svg
+                class="h-6 w-6 text-red-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                ></path>
+              </svg>
+            </div>
+          </div>
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2" id="modal-title">
+              Cancel Appointment
+            </h3>
+            <p class="text-sm text-gray-500 mb-6" id="modal-message">
+              Are you sure you want to cancel this appointment? This action
+              cannot be undone.
+            </p>
+          </div>
+          <div class="flex space-x-3">
+            <button
+              type="button"
+              id="modal-cancel-btn"
+              class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Keep Appointment
+            </button>
+            <button
+              type="button"
+              id="modal-confirm-btn"
+              class="flex-1 px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 transition-colors"
+            >
+              <span id="modal-confirm-text">Cancel Appointment</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </BaseLayout>
 
 <script>
@@ -489,6 +583,14 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     }
 
     errorElement?.classList.remove("hidden");
+  }
+
+  function showCancelledState(): void {
+    const cancelledElement = document.getElementById("cancelled-state");
+    const appointmentElement = document.getElementById("appointment-content");
+
+    appointmentElement?.classList.add("hidden");
+    cancelledElement?.classList.remove("hidden");
   }
 
   function showAppointmentContent(): void {
@@ -604,7 +706,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     // Cancel appointment button
     document
       .getElementById("cancel-btn")
-      ?.addEventListener("click", handleCancelAppointment);
+      ?.addEventListener("click", showCancelConfirmation);
 
     // Edit form
     document
@@ -624,6 +726,24 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     document
       .getElementById("confirm-reschedule-btn")
       ?.addEventListener("click", handleRescheduleConfirm);
+
+    // Modal event listeners
+    document
+      .getElementById("modal-cancel-btn")
+      ?.addEventListener("click", hideConfirmationModal);
+    document
+      .getElementById("modal-confirm-btn")
+      ?.addEventListener("click", handleCancelAppointment);
+  }
+
+  function showCancelConfirmation(): void {
+    const modal = document.getElementById("confirmation-modal");
+    modal?.classList.remove("hidden");
+  }
+
+  function hideConfirmationModal(): void {
+    const modal = document.getElementById("confirmation-modal");
+    modal?.classList.add("hidden");
   }
 
   function showEditForm(): void {
@@ -750,48 +870,41 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   async function handleCancelAppointment(): Promise<void> {
     if (!currentAppointment || !customerEmail) return;
 
-    if (
-      !confirm(
-        "Are you sure you want to cancel this appointment? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-
-    const cancelBtn = document.getElementById(
-      "cancel-btn",
+    const confirmBtn = document.getElementById(
+      "modal-confirm-btn",
     ) as HTMLButtonElement;
-    const originalText = cancelBtn?.textContent || "Cancel Appointment";
+    const confirmText = document.getElementById("modal-confirm-text");
+    const originalText = confirmText?.textContent || "Cancel Appointment";
 
     try {
-      if (cancelBtn) {
-        cancelBtn.textContent = "Cancelling...";
-        cancelBtn.disabled = true;
+      if (confirmText) {
+        confirmText.textContent = "Cancelling...";
+      }
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
       }
 
-      const result = await cancelAppointment(
-        currentAppointment.id,
-        customerEmail,
-      );
-      currentAppointment = result.appointment;
+      await cancelAppointment(currentAppointment.id, customerEmail);
 
-      // Refresh display
-      displayAppointment(currentAppointment);
+      // Hide modal
+      hideConfirmationModal();
 
-      showMessage(
-        "global-message",
-        "Appointment cancelled successfully",
-        "success",
-      );
+      // Show cancelled state
+      showCancelledState();
     } catch (error) {
       console.error("Cancel error:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to cancel appointment";
+
+      // Hide modal and show error
+      hideConfirmationModal();
       showMessage("global-message", errorMessage, "error");
     } finally {
-      if (cancelBtn) {
-        cancelBtn.textContent = originalText;
-        cancelBtn.disabled = false;
+      if (confirmText) {
+        confirmText.textContent = originalText;
+      }
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
       }
     }
   }
