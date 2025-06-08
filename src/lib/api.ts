@@ -12,6 +12,7 @@ import type {
   AvailableSlot,
   Appointment,
   AvailabilitySlot,
+  CourseLesson,
   CalendarUser
 } from "../types";
 const API = "https://corrison.corrisonapi.com";
@@ -404,4 +405,9 @@ export function fetchAvailableCalendars(): Promise<{
 }[]> {
   return fetch(`${API}/api/v1/appointments-booking/api/public/available/`)
     .then(r => check(r, "available calendars"));
+}
+
+/** NEW: Fetch lessons for a specific course */
+export function fetchCourseLessons(courseSlug: string): Promise<CourseLesson[]> {
+  return fetch(`${API}/api/v1/courses/${courseSlug}/lessons/`).then(r => check<CourseLesson[]>(r, "course lessons"));
 }

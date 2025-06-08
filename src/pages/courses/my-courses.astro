@@ -45,40 +45,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
           <p class="text-gray-600">Loading your courses...</p>
         </div>
 
-        <!-- Not Authenticated State -->
-        <div id="not-authenticated" class="text-center py-16 hidden">
-          <svg
-            class="h-16 w-16 mx-auto text-gray-300 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-            ></path>
-          </svg>
-          <h2 class="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h2>
-          <p class="text-gray-600 mb-6">
-            You need to be signed in to view your courses.
-          </p>
-          <div class="space-x-4">
-            <a
-              href="/auth/login"
-              class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
-            >
-              Sign In
-            </a>
-            <a
-              href="/auth/register"
-              class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-6 py-3 rounded-lg transition-colors"
-            >
-              Create Account
-            </a>
-          </div>
-        </div>
+        <!-- Not Authenticated State removed -->
 
         <!-- Course Statistics -->
         <div id="course-stats" class="hidden mb-12">
@@ -242,23 +209,10 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       console.log("🔍 Initializing My Courses page...");
 
       try {
-        // Check authentication using proper method
-        const authState = authStore.getState();
-        console.log("🔐 Auth state:", {
-          isAuthenticated: authState.isAuthenticated,
-          user: authState.user,
-        });
+        console.log("✅ Loading all available courses...");
 
-        if (!authState.isAuthenticated || !authState.user) {
-          console.log("❌ User not authenticated, showing login prompt");
-          showNotAuthenticatedState();
-          return;
-        }
-
-        console.log("✅ User authenticated, loading courses...");
-
-        // Load user courses using fetch API
-        userCourses = await fetchUserCourses();
+        // Load all courses using fetch API - no authentication required
+        userCourses = await fetchAllCourses();
         console.log("📚 Loaded courses:", userCourses);
 
         if (userCourses.length === 0) {
@@ -273,55 +227,36 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
         }
       } catch (error) {
         console.error("❌ Error loading courses:", error);
-
-        // Check if it's an authentication error
-        if (
-          error instanceof Error &&
-          (error.message.includes("401") ||
-            error.message.includes("Unauthorized"))
-        ) {
-          console.log("🔐 Authentication error, showing login prompt");
-          showNotAuthenticatedState();
-        } else {
-          console.log("💥 General error, showing login prompt as fallback");
-          showNotAuthenticatedState();
-        }
+        console.log("💥 General error, showing empty state as fallback");
+        showEmptyState();
       } finally {
         hideLoadingState();
       }
     }
 
-    async function fetchUserCourses(): Promise<any[]> {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        throw new Error("No access token");
-      }
-
-      const response = await fetch("/api/v1/courses/my_courses/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+    async function fetchAllCourses(): Promise<any[]> {
+      const response = await fetch("/api/v1/courses/my_courses/");
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return response.json();
+      const courses = await response.json();
+
+      // Transform courses to match enrollment format for existing UI
+      return courses.map((course: any) => ({
+        course: course,
+        progress_percentage: 0,
+        enrollment_date: course.created_at,
+        last_accessed: null,
+        status: "active",
+      }));
     }
 
     function hideLoadingState(): void {
       const loadingElement = document.getElementById("loading-state");
       if (loadingElement) {
         loadingElement.classList.add("hidden");
-      }
-    }
-
-    function showNotAuthenticatedState(): void {
-      const notAuthElement = document.getElementById("not-authenticated");
-      if (notAuthElement) {
-        notAuthElement.classList.remove("hidden");
       }
     }
 
@@ -393,24 +328,26 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
       return `
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300">
-          <div class="relative">
-            <div class="aspect-video bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center">
+          <div class="p-6">
+            <div class="aspect-video bg-gradient-to-br from-teal-100 to-teal-200 flex items-center justify-center mb-4 rounded-lg">
               ${
-                course.featured_image
-                  ? `<img src="${course.featured_image}" alt="${course.name}" class="w-full h-full object-cover" />`
+                course.thumbnail
+                  ? `<img src="${course.thumbnail}" alt="${course.name}" class="w-full h-full object-cover rounded-lg" />`
                   : `<svg class="w-16 h-16 text-teal-600" fill="currentColor" viewBox="0 0 20 20">
                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                      </svg>`
               }
             </div>
-            <div class="absolute top-3 left-3">
-              <span class="bg-white/90 backdrop-blur text-xs font-medium px-2 py-1 rounded-full text-gray-700">
+            
+            <div class="mb-3">
+              <span class="bg-teal-100 text-teal-800 text-xs font-medium px-2 py-1 rounded-full">
                 ${course.category ? course.category.name : "Course"}
               </span>
-              <span class="text-xs text-gray-500">Enrolled ${new Date(enrollment.enrollment_date).toLocaleDateString()}</span>
             </div>
 
-            <h3 class="text-xl font-bold text-gray-900 mb-3">${course.title || course.name}</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">${course.name}</h3>
+            
+            <p class="text-gray-600 text-sm mb-4">${course.short_description || course.description?.substring(0, 100) + "..." || ""}</p>
 
             <div class="mb-4">
               <div class="flex justify-between text-sm mb-1">
@@ -422,12 +359,6 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
               </div>
             </div>
 
-            ${
-              enrollment.last_accessed
-                ? `<p class="text-sm text-gray-500 mb-4">Last accessed ${new Date(enrollment.last_accessed).toLocaleDateString()}</p>`
-                : ""
-            }
-
             <div class="flex space-x-3">
               <a
                 href="/courses/${course.slug}"
@@ -436,10 +367,10 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                 Course Details
               </a>
               <a
-                href="/courses/${course.slug}/lessons"
+                href="/courses/${course.slug}"
                 class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center text-sm"
               >
-                ${isStarted ? "Continue" : "Start Course"}
+                Start Course
               </a>
             </div>
           </div>
@@ -536,18 +467,13 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
               new Date(a.enrollment_date).getTime()
             );
           case "alphabetical":
-            return (a.course.title || a.course.name).localeCompare(
-              b.course.title || b.course.name,
-            );
+            return a.course.name.localeCompare(b.course.name);
           case "recent":
           default:
-            const aAccessed = a.last_accessed
-              ? new Date(a.last_accessed).getTime()
-              : 0;
-            const bAccessed = b.last_accessed
-              ? new Date(b.last_accessed).getTime()
-              : 0;
-            return bAccessed - aAccessed;
+            return (
+              new Date(b.enrollment_date).getTime() -
+              new Date(a.enrollment_date).getTime()
+            );
         }
       });
 
@@ -559,16 +485,5 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
           .join("");
       }
     }
-
-    // Subscribe to auth changes
-    authStore.subscribe(() => {
-      const newAuthState = authStore.getState();
-      if (!newAuthState.isAuthenticated) {
-        // User logged out, redirect to login
-        window.location.href =
-          "/auth/login?redirect=" +
-          encodeURIComponent(window.location.pathname);
-      }
-    });
   });
 </script>

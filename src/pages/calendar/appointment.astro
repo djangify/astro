@@ -2,21 +2,21 @@
 // src/pages/calendar/appointment.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import DashboardNav from "../../components/dashboard/DashboardNav.astro";
-// This page will handle appointment management via URL parameters
-// Example: /calendar/appointment?id=123&email=user@example.com
+// This page handles both:
+// 1. Single appointment management: /calendar/appointment?id=123&email=user@example.com
+// 2. All user appointments list: /calendar/appointment (no parameters)
 ---
 
 <BaseLayout>
-  <title slot="title">Manage Appointment – Corrison</title>
+  <title slot="title">Manage Appointments – Corrison</title>
   <meta
     slot="head"
     name="description"
-    content="View, edit, or cancel your appointment. Make changes to your booking details or reschedule to a new time."
+    content="View, edit, or cancel your appointments. See all your booking history and make changes as needed."
   />
 
   <!-- Dashboard Navigation -->
   <DashboardNav currentPage="customer-appointments" />
-  <!-- Main Content -->
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Page Header -->
@@ -24,30 +24,65 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       <div class="container mx-auto px-4 py-12">
         <div class="max-w-4xl mx-auto">
           <h1 class="text-3xl font-semibold text-gray-900 mb-4">
-            Manage Your Appointment
+            Your Appointments
           </h1>
           <p class="text-xl text-gray-600">
-            View your appointment details, make changes, or cancel if needed.
+            View and manage all your appointments in one place.
           </p>
         </div>
       </div>
     </section>
 
     <!-- Main Content -->
-    <main class="container bg-white mx-auto px-4 py-12">
+    <main class="container mx-auto px-4 py-12">
       <!-- Loading State -->
       <div id="loading-state" class="text-center py-16">
         <div
           class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
         >
         </div>
-        <p class="text-gray-600">Loading your appointment...</p>
+        <p class="text-gray-600">Loading your appointments...</p>
       </div>
 
-      <!-- Error State -->
-      <div id="error-state" class="text-center py-16 hidden">
+      <!-- Email Verification for Single Appointment -->
+      <div id="email-verification" class="max-w-md mx-auto hidden">
+        <div class="bg-white shadow-sm rounded-lg p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">
+            Verify Your Email
+          </h2>
+          <p class="text-gray-600 mb-6">
+            Please enter your email address to view this appointment.
+          </p>
+          <form onsubmit="verifyEmail(event)">
+            <div class="mb-4">
+              <input
+                type="email"
+                id="verification-email"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                placeholder="Enter your email address"
+              />
+            </div>
+            <div
+              id="verification-error"
+              class="hidden text-sm text-red-600 mb-4"
+            >
+            </div>
+            <button
+              type="submit"
+              id="verify-btn"
+              class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+            >
+              <span id="verify-btn-text">Verify Email</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- No Appointments State -->
+      <div id="no-appointments-state" class="text-center py-16 hidden">
         <svg
-          class="h-16 w-16 mx-auto text-red-300 mb-4"
+          class="h-16 w-16 mx-auto text-gray-300 mb-4"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -56,62 +91,45 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
           ></path>
         </svg>
         <h2 class="text-2xl font-bold text-gray-900 mb-4">
-          Appointment Not Found
+          No Appointments Yet
         </h2>
-        <p id="error-message" class="text-gray-600 mb-6">
-          The appointment could not be found or the email doesn't match.
+        <p class="text-gray-600 mb-6">
+          You don't have any appointments scheduled. Ready to book your first
+          one?
         </p>
         <a
           href="/calendar/"
           class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
         >
-          Book New Appointment
+          Book Your First Appointment
         </a>
       </div>
 
-      <!-- Cancelled State -->
-      <div id="cancelled-state" class="text-center py-16 hidden">
-        <svg
-          class="h-16 w-16 mx-auto text-green-300 mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">
-          Appointment Cancelled
-        </h2>
-        <p class="text-gray-600 mb-6">
-          Your appointment has been successfully cancelled. You will receive a
-          confirmation email shortly.
-        </p>
-        <div class="space-x-4">
-          <a
-            href="/calendar/"
-            class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
-          >
-            Book New Appointment
-          </a>
-          <button
-            onclick="window.history.back()"
-            class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-6 py-3 rounded-lg transition-colors"
-          >
-            Go Back
-          </button>
+      <!-- Appointments List -->
+      <div id="appointments-list" class="hidden max-w-6xl mx-auto">
+        <div class="bg-white shadow-sm rounded-lg mb-8">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">
+              All Appointments
+            </h2>
+            <p class="text-sm text-gray-600">
+              Complete history of your bookings, reschedules, and cancellations.
+            </p>
+          </div>
+          <div class="p-6">
+            <div id="appointments-grid" class="space-y-4">
+              <!-- Appointments will be populated here -->
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Appointment Content (Hidden initially) -->
-      <div id="appointment-content" class="hidden max-w-4xl mx-auto">
+      <!-- Single Appointment View -->
+      <div id="single-appointment" class="hidden max-w-4xl mx-auto">
         <!-- Success/Info Messages -->
         <div id="global-message" class="hidden mb-6"></div>
 
@@ -260,6 +278,12 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
               >
                 Cancel Appointment
               </button>
+              <a
+                href="/calendar/appointment"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-4 py-2 rounded-lg transition-colors"
+              >
+                ← View All Appointments
+              </a>
             </div>
           </div>
         </div>
@@ -431,6 +455,43 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
           </div>
         </div>
       </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="text-center py-16 hidden">
+        <svg
+          class="h-16 w-16 mx-auto text-red-300 mb-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+          ></path>
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">
+          Something Went Wrong
+        </h2>
+        <p id="error-message" class="text-gray-600 mb-6">
+          Unable to load appointment information.
+        </p>
+        <div class="space-x-4">
+          <button
+            onclick="window.location.reload()"
+            class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+          <a
+            href="/calendar/"
+            class="inline-block bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Book New Appointment
+          </a>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -492,89 +553,362 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   </div>
 </BaseLayout>
 
-<script>
-  interface Appointment {
-    id: number;
-    appointment_type_name: string;
-    calendar_user_name: string;
-    customer_name: string;
-    customer_phone?: string;
-    customer_email: string;
-    date: string;
-    start_time: string;
-    end_time: string;
-    duration_minutes: number;
-    status: string;
-    customer_notes?: string;
-    payment_status?: string;
-    payment_amount?: number;
-    can_be_cancelled: boolean;
-  }
-
-  interface AvailableSlot {
-    date: string;
-    start_time: string;
-    end_time: string;
-    appointment_type_id: number;
-  }
-
-  interface ApiResponse {
-    success: boolean;
-    message: string;
-    appointment: Appointment;
-  }
-
-  let currentAppointment: Appointment | null = null;
-  let selectedSlot: AvailableSlot | null = null;
-  let customerEmail: string | null = null;
+<script is:inline>
+  let allAppointments = [];
+  let currentAppointment = null;
+  let selectedSlot = null;
+  let customerEmail = null;
+  let appointmentId = null;
+  let isAuthenticated = false;
 
   document.addEventListener("DOMContentLoaded", function () {
-    console.log("🔍 Initializing Appointment Management page...");
+    console.log("🔍 Initializing Appointments page...");
 
-    // Get URL parameters - now from query string instead of path
+    // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     customerEmail = urlParams.get("email");
-    const appointmentId = urlParams.get("id");
+    appointmentId = urlParams.get("id");
 
-    if (!customerEmail || !appointmentId) {
-      showError(
-        "Invalid appointment link. Please check your email for the correct link.",
+    // Check authentication
+    isAuthenticated = checkAuthentication();
+
+    if (appointmentId && customerEmail) {
+      // Single appointment view with email
+      initializeSingleAppointment(appointmentId, customerEmail);
+    } else if (appointmentId && !customerEmail) {
+      // Show email verification for single appointment
+      hideLoadingState();
+      showEmailVerification();
+    } else {
+      // List all appointments - check if authenticated
+      if (isAuthenticated) {
+        initializeAuthenticatedAppointmentsList();
+      } else {
+        initializeUnauthenticatedAppointmentsList();
+      }
+    }
+  });
+
+  function checkAuthentication() {
+    const token = localStorage.getItem("access_token");
+    return !!token;
+  }
+
+  // Initialize for authenticated users - load all their appointments
+  async function initializeAuthenticatedAppointmentsList() {
+    try {
+      console.log("📅 Loading authenticated user appointments...");
+
+      await loadAllUserAppointments();
+
+      if (allAppointments.length === 0) {
+        hideLoadingState();
+        showNoAppointmentsState();
+      } else {
+        displayAppointmentsList();
+        hideLoadingState();
+        showAppointmentsList();
+      }
+    } catch (error) {
+      console.error("❌ Error loading user appointments:", error);
+      hideLoadingState();
+
+      if (
+        error &&
+        error.message &&
+        (error.message.includes("401") ||
+          error.message.includes("Unauthorized"))
+      ) {
+        // Token expired or invalid - treat as unauthenticated
+        localStorage.removeItem("access_token");
+        initializeUnauthenticatedAppointmentsList();
+      } else {
+        showError("Failed to load appointments");
+      }
+    }
+  }
+
+  // Initialize for unauthenticated users
+  async function initializeUnauthenticatedAppointmentsList() {
+    console.log("📅 User not authenticated - showing no appointments");
+    hideLoadingState();
+    showNoAppointmentsState();
+  }
+
+  // Load all appointments for authenticated user
+  async function loadAllUserAppointments() {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      throw new Error("No access token");
+    }
+
+    const API_BASE = window.location.origin.includes("localhost")
+      ? "http://localhost:8000"
+      : "https://corrison.corrisonapi.com";
+
+    const response = await fetch(
+      API_BASE + "/api/v1/appointments/appointments/",
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status + ": " + response.statusText);
+    }
+
+    allAppointments = await response.json();
+    console.log(
+      "✅ Loaded " + allAppointments.length + " appointments for user",
+    );
+  }
+
+  // Display appointments list
+  function displayAppointmentsList() {
+    const appointmentsGrid = document.getElementById("appointments-grid");
+    if (!appointmentsGrid) return;
+
+    // Sort appointments by date/time (newest first)
+    const sortedAppointments = allAppointments.slice().sort(function (a, b) {
+      const dateA = new Date(a.date + "T" + a.start_time);
+      const dateB = new Date(b.date + "T" + b.start_time);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    const appointmentCards = sortedAppointments.map(function (appointment) {
+      const appointmentDate = new Date(
+        appointment.date + "T" + appointment.start_time,
       );
+      const formattedDate = appointmentDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      const formattedTime =
+        formatTime(appointment.start_time) +
+        " - " +
+        formatTime(appointment.end_time);
+
+      const canCancel =
+        appointment.can_be_cancelled &&
+        !["cancelled", "completed"].includes(appointment.status);
+
+      let cancelButton = "";
+      if (canCancel) {
+        cancelButton =
+          '<button onclick="handleQuickCancel(' +
+          appointment.id +
+          ", '" +
+          appointment.customer_email.replace(/'/g, "\\'") +
+          '\')" class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors">Cancel</button>';
+      }
+
+      return (
+        '<div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">' +
+        '<div class="flex items-start justify-between mb-4">' +
+        "<div>" +
+        '<h3 class="text-lg font-semibold text-gray-900">' +
+        appointment.appointment_type_name +
+        "</h3>" +
+        '<p class="text-sm text-gray-600">' +
+        appointment.calendar_user_name +
+        "</p>" +
+        "</div>" +
+        '<span class="px-3 py-1 rounded-full text-sm font-medium ' +
+        getStatusBadgeClasses(appointment.status) +
+        '">' +
+        getStatusText(appointment.status) +
+        "</span>" +
+        "</div>" +
+        '<div class="space-y-2 mb-4">' +
+        '<div class="flex items-center text-sm text-gray-600">' +
+        '<svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />' +
+        "</svg>" +
+        formattedDate +
+        "</div>" +
+        '<div class="flex items-center text-sm text-gray-600">' +
+        '<svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />' +
+        "</svg>" +
+        formattedTime +
+        "</div>" +
+        '<div class="flex items-center text-sm text-gray-600">' +
+        '<svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />' +
+        "</svg>" +
+        appointment.customer_name +
+        "</div>" +
+        "</div>" +
+        '<div class="flex gap-2">' +
+        '<a href="/calendar/appointment?id=' +
+        appointment.id +
+        "&email=" +
+        encodeURIComponent(appointment.customer_email) +
+        '" class="bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors">View Details</a>' +
+        cancelButton +
+        "</div>" +
+        "</div>"
+      );
+    });
+
+    appointmentsGrid.innerHTML = appointmentCards.join("");
+  }
+
+  // Quick cancel function for appointments list
+  async function handleQuickCancel(appointmentId, email) {
+    if (!confirm("Are you sure you want to cancel this appointment?")) {
       return;
     }
 
-    initializePage(appointmentId, customerEmail);
-  });
-
-  async function initializePage(
-    appointmentId: string,
-    email: string,
-  ): Promise<void> {
     try {
-      console.log("📅 Loading appointment:", { appointmentId, email });
+      await cancelAppointment(appointmentId, email);
 
-      const appointment = await loadAppointment(appointmentId, email);
+      // Reload appointments list
+      await loadAllUserAppointments();
+      displayAppointmentsList();
+
+      alert("Appointment cancelled successfully!");
+    } catch (error) {
+      console.error("Cancel error:", error);
+      alert("Failed to cancel appointment. Please try again.");
+    }
+  }
+
+  function getStatusBadgeClasses(status) {
+    const statusClasses = {
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-green-100 text-green-800",
+      cancelled: "bg-red-100 text-red-800",
+      completed: "bg-blue-100 text-blue-800",
+      no_show: "bg-gray-100 text-gray-800",
+    };
+    return statusClasses[status] || "bg-gray-100 text-gray-800";
+  }
+
+  function getStatusText(status) {
+    const statusText = {
+      pending: "Pending",
+      confirmed: "Confirmed",
+      cancelled: "Cancelled",
+      completed: "Completed",
+      no_show: "No Show",
+    };
+    return (
+      statusText[status] || status.charAt(0).toUpperCase() + status.slice(1)
+    );
+  }
+
+  async function initializeSingleAppointment(appointmentId, email) {
+    try {
+      console.log("📅 Loading single appointment:", {
+        appointmentId: appointmentId,
+        email: email,
+      });
+
+      const appointment = await loadSingleAppointment(appointmentId, email);
       currentAppointment = appointment;
 
-      displayAppointment(appointment);
-      setupEventListeners();
-      showAppointmentContent();
+      displaySingleAppointment(appointment);
+      setupSingleAppointmentEventListeners();
+      showSingleAppointmentView();
     } catch (error) {
       console.error("❌ Error loading appointment:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to load appointment";
+        error && error.message ? error.message : "Failed to load appointment";
       showError(errorMessage);
     } finally {
       hideLoadingState();
     }
   }
 
-  function hideLoadingState(): void {
-    const loadingElement = document.getElementById("loading-state");
-    loadingElement?.classList.add("hidden");
+  // Email verification for single appointments without email in URL
+  function verifyEmail(event) {
+    event.preventDefault();
+
+    const emailInput = document.getElementById("verification-email");
+    const verifyBtn = document.getElementById("verify-btn");
+    const verifyBtnText = document.getElementById("verify-btn-text");
+
+    const email = emailInput.value.trim();
+
+    if (!email) {
+      showVerificationError("Please enter your email address");
+      return;
+    }
+
+    // Show loading state
+    verifyBtn.disabled = true;
+    if (verifyBtnText) verifyBtnText.textContent = "Verifying...";
+    hideVerificationError();
+
+    if (appointmentId) {
+      initializeSingleAppointment(appointmentId, email)
+        .then(function () {
+          customerEmail = email;
+        })
+        .catch(function (error) {
+          showVerificationError(
+            "Invalid email address or appointment not found",
+          );
+        })
+        .finally(function () {
+          verifyBtn.disabled = false;
+          if (verifyBtnText) verifyBtnText.textContent = "Verify Email";
+        });
+    }
   }
 
-  function showError(message: string): void {
+  // State management functions
+  function hideLoadingState() {
+    const loadingElement = document.getElementById("loading-state");
+    if (loadingElement) loadingElement.classList.add("hidden");
+  }
+
+  function showEmailVerification() {
+    const element = document.getElementById("email-verification");
+    if (element) element.classList.remove("hidden");
+  }
+
+  function hideEmailVerification() {
+    const element = document.getElementById("email-verification");
+    if (element) element.classList.add("hidden");
+  }
+
+  function showVerificationError(message) {
+    const errorDiv = document.getElementById("verification-error");
+    if (errorDiv) {
+      errorDiv.textContent = message;
+      errorDiv.classList.remove("hidden");
+    }
+  }
+
+  function hideVerificationError() {
+    const errorDiv = document.getElementById("verification-error");
+    if (errorDiv) errorDiv.classList.add("hidden");
+  }
+
+  function showNoAppointmentsState() {
+    const element = document.getElementById("no-appointments-state");
+    if (element) element.classList.remove("hidden");
+  }
+
+  function showAppointmentsList() {
+    const element = document.getElementById("appointments-list");
+    if (element) element.classList.remove("hidden");
+  }
+
+  function showSingleAppointmentView() {
+    hideEmailVerification();
+    const element = document.getElementById("single-appointment");
+    if (element) element.classList.remove("hidden");
+  }
+
+  function showError(message) {
     const errorElement = document.getElementById("error-state");
     const errorMessageElement = document.getElementById("error-message");
 
@@ -582,34 +916,22 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       errorMessageElement.textContent = message;
     }
 
-    errorElement?.classList.remove("hidden");
+    if (errorElement) errorElement.classList.remove("hidden");
   }
 
-  function showCancelledState(): void {
-    const cancelledElement = document.getElementById("cancelled-state");
-    const appointmentElement = document.getElementById("appointment-content");
-
-    appointmentElement?.classList.add("hidden");
-    cancelledElement?.classList.remove("hidden");
-  }
-
-  function showAppointmentContent(): void {
-    const appointmentElement = document.getElementById("appointment-content");
-    appointmentElement?.classList.remove("hidden");
-  }
-
-  function displayAppointment(appointment: Appointment): void {
+  // Single appointment display
+  function displaySingleAppointment(appointment) {
     // Update status badge
     updateStatusBadge(appointment.status);
 
     // Update appointment details
     updateElement("service-name", appointment.appointment_type_name);
     updateElement("provider-name", appointment.calendar_user_name);
-    updateElement("duration", `${appointment.duration_minutes} minutes`);
+    updateElement("duration", appointment.duration_minutes + " minutes");
 
     // Format and display date/time
     const appointmentDate = new Date(
-      `${appointment.date}T${appointment.start_time}`,
+      appointment.date + "T" + appointment.start_time,
     );
     updateElement(
       "appointment-date",
@@ -623,23 +945,29 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
     updateElement(
       "appointment-time",
-      `${formatTime(appointment.start_time)} - ${formatTime(appointment.end_time)}`,
+      formatTime(appointment.start_time) +
+        " - " +
+        formatTime(appointment.end_time),
     );
 
     // Show payment info if applicable
     if (appointment.payment_amount && appointment.payment_amount > 0) {
       const paymentInfo = document.getElementById("payment-info");
-      paymentInfo?.classList.remove("hidden");
+      if (paymentInfo) paymentInfo.classList.remove("hidden");
       updateElement(
         "payment-amount",
-        `$${appointment.payment_amount} (${appointment.payment_status || "N/A"})`,
+        "$" +
+          appointment.payment_amount +
+          " (" +
+          (appointment.payment_status || "N/A") +
+          ")",
       );
     }
 
     // Show notes if present
     if (appointment.customer_notes) {
       const notesSection = document.getElementById("notes-section");
-      notesSection?.classList.remove("hidden");
+      if (notesSection) notesSection.classList.remove("hidden");
       updateElement("customer-notes", appointment.customer_notes);
     }
 
@@ -647,11 +975,11 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     updateButtonStates(appointment);
   }
 
-  function updateStatusBadge(status: string): void {
+  function updateStatusBadge(status) {
     const badge = document.getElementById("appointment-status-badge");
     if (!badge) return;
 
-    const statusConfig: Record<string, { text: string; classes: string }> = {
+    const statusConfig = {
       pending: { text: "Pending", classes: "bg-yellow-100 text-yellow-800" },
       confirmed: { text: "Confirmed", classes: "bg-green-100 text-green-800" },
       cancelled: { text: "Cancelled", classes: "bg-red-100 text-red-800" },
@@ -664,17 +992,14 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       classes: "bg-gray-100 text-gray-800",
     };
     badge.textContent = config.text;
-    badge.className = `px-3 py-1 rounded-full text-sm font-medium ${config.classes}`;
+    badge.className =
+      "px-3 py-1 rounded-full text-sm font-medium " + config.classes;
   }
 
-  function updateButtonStates(appointment: Appointment): void {
-    const editBtn = document.getElementById("edit-btn") as HTMLButtonElement;
-    const rescheduleBtn = document.getElementById(
-      "reschedule-btn",
-    ) as HTMLButtonElement;
-    const cancelBtn = document.getElementById(
-      "cancel-btn",
-    ) as HTMLButtonElement;
+  function updateButtonStates(appointment) {
+    const editBtn = document.getElementById("edit-btn");
+    const rescheduleBtn = document.getElementById("reschedule-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
 
     const canModify =
       appointment.can_be_cancelled &&
@@ -685,80 +1010,82 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     if (cancelBtn) cancelBtn.disabled = !canModify;
 
     // Update button styles for disabled state
-    [editBtn, rescheduleBtn, cancelBtn].forEach((btn) => {
+    [editBtn, rescheduleBtn, cancelBtn].forEach(function (btn) {
       if (btn && btn.disabled) {
         btn.classList.add("opacity-50", "cursor-not-allowed");
       }
     });
   }
 
-  function setupEventListeners(): void {
+  // Event listeners for single appointment management
+  function setupSingleAppointmentEventListeners() {
     // Edit button
-    document
-      .getElementById("edit-btn")
-      ?.addEventListener("click", showEditForm);
+    const editBtn = document.getElementById("edit-btn");
+    if (editBtn) editBtn.addEventListener("click", showEditForm);
 
     // Reschedule button
-    document
-      .getElementById("reschedule-btn")
-      ?.addEventListener("click", showRescheduleForm);
+    const rescheduleBtn = document.getElementById("reschedule-btn");
+    if (rescheduleBtn)
+      rescheduleBtn.addEventListener("click", showRescheduleForm);
 
     // Cancel appointment button
-    document
-      .getElementById("cancel-btn")
-      ?.addEventListener("click", showCancelConfirmation);
+    const cancelBtn = document.getElementById("cancel-btn");
+    if (cancelBtn) cancelBtn.addEventListener("click", showCancelConfirmation);
 
     // Edit form
-    document
-      .getElementById("edit-form")
-      ?.addEventListener("submit", handleEditSubmit);
-    document
-      .getElementById("cancel-edit-btn")
-      ?.addEventListener("click", hideEditForm);
+    const editForm = document.getElementById("edit-form");
+    if (editForm) editForm.addEventListener("submit", handleEditSubmit);
+
+    const cancelEditBtn = document.getElementById("cancel-edit-btn");
+    if (cancelEditBtn) cancelEditBtn.addEventListener("click", hideEditForm);
 
     // Reschedule form
-    document
-      .getElementById("cancel-reschedule-btn")
-      ?.addEventListener("click", hideRescheduleForm);
-    document
-      .getElementById("cancel-reschedule-no-slots-btn")
-      ?.addEventListener("click", hideRescheduleForm);
-    document
-      .getElementById("confirm-reschedule-btn")
-      ?.addEventListener("click", handleRescheduleConfirm);
+    const cancelRescheduleBtn = document.getElementById(
+      "cancel-reschedule-btn",
+    );
+    if (cancelRescheduleBtn)
+      cancelRescheduleBtn.addEventListener("click", hideRescheduleForm);
+
+    const cancelRescheduleNoSlotsBtn = document.getElementById(
+      "cancel-reschedule-no-slots-btn",
+    );
+    if (cancelRescheduleNoSlotsBtn)
+      cancelRescheduleNoSlotsBtn.addEventListener("click", hideRescheduleForm);
+
+    const confirmRescheduleBtn = document.getElementById(
+      "confirm-reschedule-btn",
+    );
+    if (confirmRescheduleBtn)
+      confirmRescheduleBtn.addEventListener("click", handleRescheduleConfirm);
 
     // Modal event listeners
-    document
-      .getElementById("modal-cancel-btn")
-      ?.addEventListener("click", hideConfirmationModal);
-    document
-      .getElementById("modal-confirm-btn")
-      ?.addEventListener("click", handleCancelAppointment);
+    const modalCancelBtn = document.getElementById("modal-cancel-btn");
+    if (modalCancelBtn)
+      modalCancelBtn.addEventListener("click", hideConfirmationModal);
+
+    const modalConfirmBtn = document.getElementById("modal-confirm-btn");
+    if (modalConfirmBtn)
+      modalConfirmBtn.addEventListener("click", handleCancelAppointment);
   }
 
-  function showCancelConfirmation(): void {
+  // Modal functions
+  function showCancelConfirmation() {
     const modal = document.getElementById("confirmation-modal");
-    modal?.classList.remove("hidden");
+    if (modal) modal.classList.remove("hidden");
   }
 
-  function hideConfirmationModal(): void {
+  function hideConfirmationModal() {
     const modal = document.getElementById("confirmation-modal");
-    modal?.classList.add("hidden");
+    if (modal) modal.classList.add("hidden");
   }
 
-  function showEditForm(): void {
+  // Form functions
+  function showEditForm() {
     if (!currentAppointment) return;
 
-    // Populate form with current data
-    const customerNameInput = document.getElementById(
-      "customer_name",
-    ) as HTMLInputElement;
-    const customerPhoneInput = document.getElementById(
-      "customer_phone",
-    ) as HTMLInputElement;
-    const customerNotesInput = document.getElementById(
-      "customer_notes_input",
-    ) as HTMLTextAreaElement;
+    const customerNameInput = document.getElementById("customer_name");
+    const customerPhoneInput = document.getElementById("customer_phone");
+    const customerNotesInput = document.getElementById("customer_notes_input");
 
     if (customerNameInput)
       customerNameInput.value = currentAppointment.customer_name || "";
@@ -767,211 +1094,207 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     if (customerNotesInput)
       customerNotesInput.value = currentAppointment.customer_notes || "";
 
-    // Show form
-    document.getElementById("edit-form-section")?.classList.remove("hidden");
-
-    // Scroll to form
-    document
-      .getElementById("edit-form-section")
-      ?.scrollIntoView({ behavior: "smooth" });
+    const editFormSection = document.getElementById("edit-form-section");
+    if (editFormSection) {
+      editFormSection.classList.remove("hidden");
+      editFormSection.scrollIntoView({ behavior: "smooth" });
+    }
   }
 
-  function hideEditForm(): void {
-    document.getElementById("edit-form-section")?.classList.add("hidden");
+  function hideEditForm() {
+    const editFormSection = document.getElementById("edit-form-section");
+    if (editFormSection) editFormSection.classList.add("hidden");
     clearMessage("form-message");
   }
 
-  async function showRescheduleForm(): Promise<void> {
+  function showRescheduleForm() {
     if (!currentAppointment) return;
 
-    // Show form
-    document
-      .getElementById("reschedule-form-section")
-      ?.classList.remove("hidden");
+    const rescheduleFormSection = document.getElementById(
+      "reschedule-form-section",
+    );
+    if (rescheduleFormSection) rescheduleFormSection.classList.remove("hidden");
 
-    // Reset state
     selectedSlot = null;
     updateRescheduleButton();
 
-    // Load available slots
-    try {
-      const slots = await loadAvailableSlots(currentAppointment.id);
-      displayAvailableSlots(slots);
-    } catch (error) {
-      console.error("Error loading slots:", error);
-      showMessage(
-        "reschedule-message",
-        "Failed to load available times",
-        "error",
-      );
-    }
+    loadAvailableSlots(currentAppointment.id)
+      .then(function (slots) {
+        displayAvailableSlots(slots);
+      })
+      .catch(function (error) {
+        console.error("Error loading slots:", error);
+        showMessage(
+          "reschedule-message",
+          "Failed to load available times",
+          "error",
+        );
+      });
 
-    // Scroll to form
-    document
-      .getElementById("reschedule-form-section")
-      ?.scrollIntoView({ behavior: "smooth" });
+    if (rescheduleFormSection)
+      rescheduleFormSection.scrollIntoView({ behavior: "smooth" });
   }
 
-  function hideRescheduleForm(): void {
-    document.getElementById("reschedule-form-section")?.classList.add("hidden");
+  function hideRescheduleForm() {
+    const rescheduleFormSection = document.getElementById(
+      "reschedule-form-section",
+    );
+    if (rescheduleFormSection) rescheduleFormSection.classList.add("hidden");
     clearMessage("reschedule-message");
   }
 
-  async function handleEditSubmit(e: Event): Promise<void> {
+  function handleEditSubmit(e) {
     e.preventDefault();
     if (!currentAppointment || !customerEmail) return;
 
-    const saveBtn = document.getElementById(
-      "save-edit-btn",
-    ) as HTMLButtonElement;
-    const originalText = saveBtn?.textContent || "Save Changes";
+    const saveBtn = document.getElementById("save-edit-btn");
+    const originalText = saveBtn ? saveBtn.textContent : "Save Changes";
 
-    try {
-      if (saveBtn) {
-        saveBtn.textContent = "Saving...";
-        saveBtn.disabled = true;
-      }
-
-      const form = e.target as HTMLFormElement;
-      const formData = new FormData(form);
-
-      const updateData = {
-        email: customerEmail,
-        customer_name: formData.get("customer_name") as string,
-        customer_phone: formData.get("customer_phone") as string,
-        customer_notes: formData.get("customer_notes") as string,
-      };
-
-      const result = await updateAppointment(currentAppointment.id, updateData);
-      currentAppointment = result.appointment;
-
-      // Refresh display
-      displayAppointment(currentAppointment);
-      hideEditForm();
-
-      showMessage(
-        "global-message",
-        "Appointment updated successfully!",
-        "success",
-      );
-    } catch (error) {
-      console.error("Update error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to update appointment";
-      showMessage("form-message", errorMessage, "error");
-    } finally {
-      if (saveBtn) {
-        saveBtn.textContent = originalText;
-        saveBtn.disabled = false;
-      }
+    if (saveBtn) {
+      saveBtn.textContent = "Saving...";
+      saveBtn.disabled = true;
     }
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const updateData = {
+      email: customerEmail,
+      customer_name: formData.get("customer_name"),
+      customer_phone: formData.get("customer_phone"),
+      customer_notes: formData.get("customer_notes"),
+    };
+
+    updateAppointment(currentAppointment.id, updateData)
+      .then(function (result) {
+        currentAppointment = result.appointment;
+        displaySingleAppointment(currentAppointment);
+        hideEditForm();
+        showMessage(
+          "global-message",
+          "Appointment updated successfully!",
+          "success",
+        );
+      })
+      .catch(function (error) {
+        console.error("Update error:", error);
+        const errorMessage =
+          error && error.message
+            ? error.message
+            : "Failed to update appointment";
+        showMessage("form-message", errorMessage, "error");
+      })
+      .finally(function () {
+        if (saveBtn) {
+          saveBtn.textContent = originalText;
+          saveBtn.disabled = false;
+        }
+      });
   }
 
-  async function handleCancelAppointment(): Promise<void> {
+  function handleCancelAppointment() {
     if (!currentAppointment || !customerEmail) return;
 
-    const confirmBtn = document.getElementById(
-      "modal-confirm-btn",
-    ) as HTMLButtonElement;
+    const confirmBtn = document.getElementById("modal-confirm-btn");
     const confirmText = document.getElementById("modal-confirm-text");
-    const originalText = confirmText?.textContent || "Cancel Appointment";
+    const originalText = confirmText
+      ? confirmText.textContent
+      : "Cancel Appointment";
 
-    try {
-      if (confirmText) {
-        confirmText.textContent = "Cancelling...";
-      }
-      if (confirmBtn) {
-        confirmBtn.disabled = true;
-      }
+    if (confirmText) confirmText.textContent = "Cancelling...";
+    if (confirmBtn) confirmBtn.disabled = true;
 
-      await cancelAppointment(currentAppointment.id, customerEmail);
+    cancelAppointment(currentAppointment.id, customerEmail)
+      .then(function () {
+        hideConfirmationModal();
+        showMessage(
+          "global-message",
+          "Appointment cancelled successfully. Redirecting to your appointments...",
+          "success",
+        );
 
-      // Hide modal
-      hideConfirmationModal();
-
-      // Show cancelled state
-      showCancelledState();
-    } catch (error) {
-      console.error("Cancel error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to cancel appointment";
-
-      // Hide modal and show error
-      hideConfirmationModal();
-      showMessage("global-message", errorMessage, "error");
-    } finally {
-      if (confirmText) {
-        confirmText.textContent = originalText;
-      }
-      if (confirmBtn) {
-        confirmBtn.disabled = false;
-      }
-    }
+        setTimeout(function () {
+          window.location.href = "/calendar/appointment";
+        }, 2000);
+      })
+      .catch(function (error) {
+        console.error("Cancel error:", error);
+        const errorMessage =
+          error && error.message
+            ? error.message
+            : "Failed to cancel appointment";
+        hideConfirmationModal();
+        showMessage("global-message", errorMessage, "error");
+      })
+      .finally(function () {
+        if (confirmText) confirmText.textContent = originalText;
+        if (confirmBtn) confirmBtn.disabled = false;
+      });
   }
 
-  function displayAvailableSlots(slots: AvailableSlot[]): void {
+  function displayAvailableSlots(slots) {
     const slotsLoading = document.getElementById("slots-loading");
     const availableSlots = document.getElementById("available-slots");
     const noSlots = document.getElementById("no-slots");
     const slotsGrid = document.getElementById("slots-grid");
 
-    slotsLoading?.classList.add("hidden");
+    if (slotsLoading) slotsLoading.classList.add("hidden");
 
     if (slots.length === 0) {
-      noSlots?.classList.remove("hidden");
+      if (noSlots) noSlots.classList.remove("hidden");
       return;
     }
 
     if (!slotsGrid) return;
 
     // Group slots by date
-    const slotsByDate = slots.reduce(
-      (acc, slot) => {
-        if (!acc[slot.date]) acc[slot.date] = [];
-        acc[slot.date].push(slot);
-        return acc;
-      },
-      {} as Record<string, AvailableSlot[]>,
-    );
+    const slotsByDate = slots.reduce(function (acc, slot) {
+      if (!acc[slot.date]) acc[slot.date] = [];
+      acc[slot.date].push(slot);
+      return acc;
+    }, {});
 
     // Generate HTML for slots
-    slotsGrid.innerHTML = Object.entries(slotsByDate)
-      .map(([date, dateSlots]) => {
-        const formattedDate = new Date(date).toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        });
+    const slotElements = Object.entries(slotsByDate).map(function ([
+      date,
+      dateSlots,
+    ]) {
+      const formattedDate = new Date(date).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
 
-        const slotsHtml = dateSlots
-          .map(
-            (slot) => `
-        <button 
-          type="button" 
-          class="slot-btn w-full p-2 text-sm border border-gray-300 rounded hover:bg-teal-50 hover:border-teal-500 transition-colors"
-          data-slot='${JSON.stringify(slot)}'
-        >
-          ${formatTime(slot.start_time)}
-        </button>
-      `,
-          )
-          .join("");
+      const slotsHtml = dateSlots
+        .map(function (slot) {
+          return (
+            '<button type="button" class="slot-btn w-full p-2 text-sm border border-gray-300 rounded hover:bg-teal-50 hover:border-teal-500 transition-colors" data-slot=\'' +
+            JSON.stringify(slot) +
+            "'>" +
+            formatTime(slot.start_time) +
+            "</button>"
+          );
+        })
+        .join("");
 
-        return `
-        <div class="space-y-2">
-          <h4 class="font-medium text-gray-900">${formattedDate}</h4>
-          <div class="space-y-1">
-            ${slotsHtml}
-          </div>
-        </div>
-      `;
-      })
-      .join("");
+      return (
+        '<div class="space-y-2">' +
+        '<h4 class="font-medium text-gray-900">' +
+        formattedDate +
+        "</h4>" +
+        '<div class="space-y-1">' +
+        slotsHtml +
+        "</div>" +
+        "</div>"
+      );
+    });
+
+    slotsGrid.innerHTML = slotElements.join("");
 
     // Add click listeners to slot buttons
-    slotsGrid.querySelectorAll(".slot-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        const slotData = (e.target as HTMLElement).getAttribute("data-slot");
+    slotsGrid.querySelectorAll(".slot-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        const slotData = e.target.getAttribute("data-slot");
         if (slotData) {
           selectedSlot = JSON.parse(slotData);
           updateSlotSelection();
@@ -980,20 +1303,18 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       });
     });
 
-    availableSlots?.classList.remove("hidden");
+    if (availableSlots) availableSlots.classList.remove("hidden");
   }
 
-  function updateSlotSelection(): void {
-    // Remove previous selection
-    document.querySelectorAll(".slot-btn").forEach((btn) => {
+  function updateSlotSelection() {
+    document.querySelectorAll(".slot-btn").forEach(function (btn) {
       btn.classList.remove("bg-teal-600", "text-white", "border-teal-600");
       btn.classList.add("border-gray-300");
     });
 
-    // Add selection to current slot
     if (selectedSlot) {
       const selectedBtn = document.querySelector(
-        `[data-slot='${JSON.stringify(selectedSlot)}']`,
+        "[data-slot='" + JSON.stringify(selectedSlot) + "']",
       );
       if (selectedBtn) {
         selectedBtn.classList.add(
@@ -1006,72 +1327,69 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     }
   }
 
-  function updateRescheduleButton(): void {
-    const confirmBtn = document.getElementById(
-      "confirm-reschedule-btn",
-    ) as HTMLButtonElement;
+  function updateRescheduleButton() {
+    const confirmBtn = document.getElementById("confirm-reschedule-btn");
     if (confirmBtn) {
       confirmBtn.disabled = !selectedSlot;
     }
   }
 
-  async function handleRescheduleConfirm(): Promise<void> {
+  function handleRescheduleConfirm() {
     if (!currentAppointment || !customerEmail || !selectedSlot) return;
 
-    const confirmBtn = document.getElementById(
-      "confirm-reschedule-btn",
-    ) as HTMLButtonElement;
-    const originalText = confirmBtn?.textContent || "Confirm Reschedule";
+    const confirmBtn = document.getElementById("confirm-reschedule-btn");
+    const originalText = confirmBtn
+      ? confirmBtn.textContent
+      : "Confirm Reschedule";
 
-    try {
-      if (confirmBtn) {
-        confirmBtn.textContent = "Rescheduling...";
-        confirmBtn.disabled = true;
-      }
-
-      const updateData = {
-        email: customerEmail,
-        date: selectedSlot.date,
-        start_time: selectedSlot.start_time,
-      };
-
-      const result = await updateAppointment(currentAppointment.id, updateData);
-      currentAppointment = result.appointment;
-
-      // Refresh display
-      displayAppointment(currentAppointment);
-      hideRescheduleForm();
-
-      showMessage(
-        "global-message",
-        "Appointment rescheduled successfully!",
-        "success",
-      );
-    } catch (error) {
-      console.error("Reschedule error:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to reschedule appointment";
-      showMessage("reschedule-message", errorMessage, "error");
-    } finally {
-      if (confirmBtn) {
-        confirmBtn.textContent = originalText;
-        confirmBtn.disabled = false;
-      }
+    if (confirmBtn) {
+      confirmBtn.textContent = "Rescheduling...";
+      confirmBtn.disabled = true;
     }
+
+    const updateData = {
+      email: customerEmail,
+      date: selectedSlot.date,
+      start_time: selectedSlot.start_time.substring(0, 5), // Remove seconds to fix ":00" error
+    };
+
+    updateAppointment(currentAppointment.id, updateData)
+      .then(function (result) {
+        currentAppointment = result.appointment;
+        displaySingleAppointment(currentAppointment);
+        hideRescheduleForm();
+        showMessage(
+          "global-message",
+          "Appointment rescheduled successfully!",
+          "success",
+        );
+      })
+      .catch(function (error) {
+        console.error("Reschedule error:", error);
+        const errorMessage =
+          error && error.message
+            ? error.message
+            : "Failed to reschedule appointment";
+        showMessage("reschedule-message", errorMessage, "error");
+      })
+      .finally(function () {
+        if (confirmBtn) {
+          confirmBtn.textContent = originalText;
+          confirmBtn.disabled = false;
+        }
+      });
   }
 
   // Utility functions
-  function updateElement(id: string, text: string): void {
+  function updateElement(id, text) {
     const element = document.getElementById(id);
     if (element) {
       element.textContent = text;
     }
   }
 
-  function formatTime(timeString: string): string {
-    const time = new Date(`2000-01-01T${timeString}`);
+  function formatTime(timeString) {
+    const time = new Date("2000-01-01T" + timeString);
     return time.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
@@ -1079,11 +1397,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     });
   }
 
-  function showMessage(
-    elementId: string,
-    message: string,
-    type: "success" | "error" | "info",
-  ): void {
+  function showMessage(elementId, message, type) {
     const messageEl = document.getElementById(elementId);
     if (!messageEl) return;
 
@@ -1093,19 +1407,19 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       info: "bg-blue-50 text-blue-700 border-blue-200",
     };
 
-    messageEl.className = `p-4 rounded-md border ${typeClasses[type]} mb-4`;
+    messageEl.className =
+      "p-4 rounded-md border " + typeClasses[type] + " mb-4";
     messageEl.textContent = message;
     messageEl.classList.remove("hidden");
 
-    // Auto-hide success/info messages
     if (type !== "error") {
-      setTimeout(() => {
+      setTimeout(function () {
         messageEl.classList.add("hidden");
       }, 5000);
     }
   }
 
-  function clearMessage(elementId: string): void {
+  function clearMessage(elementId) {
     const messageEl = document.getElementById(elementId);
     if (messageEl) {
       messageEl.classList.add("hidden");
@@ -1113,38 +1427,39 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   }
 
   // API functions
-  async function loadAppointment(
-    appointmentId: string,
-    email: string,
-  ): Promise<Appointment> {
+  async function loadSingleAppointment(appointmentId, email) {
     const API_BASE = window.location.origin.includes("localhost")
       ? "http://localhost:8000"
       : "https://corrison.corrisonapi.com";
 
     const response = await fetch(
-      `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/?email=${encodeURIComponent(email)}`,
+      API_BASE +
+        "/api/v1/calendar/appointment/" +
+        appointmentId +
+        "/?email=" +
+        encodeURIComponent(email),
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(function () {
+        return {};
+      });
       throw new Error(
-        errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        errorData.error ||
+          "HTTP " + response.status + ": " + response.statusText,
       );
     }
 
     return response.json();
   }
 
-  async function updateAppointment(
-    appointmentId: number,
-    updateData: Record<string, any>,
-  ): Promise<ApiResponse> {
+  async function updateAppointment(appointmentId, updateData) {
     const API_BASE = window.location.origin.includes("localhost")
       ? "http://localhost:8000"
       : "https://corrison.corrisonapi.com";
 
     const response = await fetch(
-      `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/update/`,
+      API_BASE + "/api/v1/calendar/appointment/" + appointmentId + "/update/",
       {
         method: "PATCH",
         headers: {
@@ -1155,47 +1470,48 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(function () {
+        return {};
+      });
       throw new Error(
-        errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        errorData.error ||
+          "HTTP " + response.status + ": " + response.statusText,
       );
     }
 
     return response.json();
   }
 
-  async function cancelAppointment(
-    appointmentId: number,
-    email: string,
-  ): Promise<ApiResponse> {
+  async function cancelAppointment(appointmentId, email) {
     const API_BASE = window.location.origin.includes("localhost")
       ? "http://localhost:8000"
       : "https://corrison.corrisonapi.com";
 
     const response = await fetch(
-      `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/cancel/`,
+      API_BASE + "/api/v1/calendar/appointment/" + appointmentId + "/cancel/",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email }),
       },
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(function () {
+        return {};
+      });
       throw new Error(
-        errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        errorData.error ||
+          "HTTP " + response.status + ": " + response.statusText,
       );
     }
 
     return response.json();
   }
 
-  async function loadAvailableSlots(
-    appointmentId: number,
-  ): Promise<AvailableSlot[]> {
+  async function loadAvailableSlots(appointmentId) {
     if (!customerEmail) throw new Error("Email not available");
 
     const API_BASE = window.location.origin.includes("localhost")
@@ -1203,13 +1519,20 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       : "https://corrison.corrisonapi.com";
 
     const response = await fetch(
-      `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/available-slots/?email=${encodeURIComponent(customerEmail)}`,
+      API_BASE +
+        "/api/v1/calendar/appointment/" +
+        appointmentId +
+        "/available-slots/?email=" +
+        encodeURIComponent(customerEmail),
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json().catch(function () {
+        return {};
+      });
       throw new Error(
-        errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+        errorData.error ||
+          "HTTP " + response.status + ": " + response.statusText,
       );
     }
 
