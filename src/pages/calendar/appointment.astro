@@ -1,0 +1,1105 @@
+---
+// src/pages/calendar/appointment.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import DashboardNav from "../../components/dashboard/DashboardNav.astro";
+// This page will handle appointment management via URL parameters
+// Example: /calendar/appointment?id=123&email=user@example.com
+---
+
+<BaseLayout>
+  <title slot="title">Manage Appointment – Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content="View, edit, or cancel your appointment. Make changes to your booking details or reschedule to a new time."
+  />
+
+  <!-- Dashboard Navigation -->
+  <DashboardNav currentPage="customer-appointments" />
+  <!-- Main Content -->
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Page Header -->
+    <section>
+      <div class="container mx-auto px-4 py-12">
+        <div class="max-w-4xl mx-auto">
+          <h1 class="text-3xl font-semibold text-gray-900 mb-4">
+            Manage Your Appointment
+          </h1>
+          <p class="text-xl text-gray-600">
+            View your appointment details, make changes, or cancel if needed.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="container bg-white mx-auto px-4 py-12">
+      <!-- Loading State -->
+      <div id="loading-state" class="text-center py-16">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
+        >
+        </div>
+        <p class="text-gray-600">Loading your appointment...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="text-center py-16 hidden">
+        <svg
+          class="h-16 w-16 mx-auto text-red-300 mb-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+          ></path>
+        </svg>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">
+          Appointment Not Found
+        </h2>
+        <p id="error-message" class="text-gray-600 mb-6">
+          The appointment could not be found or the email doesn't match.
+        </p>
+        <a
+          href="/calendar/"
+          class="inline-block bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+        >
+          Book New Appointment
+        </a>
+      </div>
+
+      <!-- Appointment Content (Hidden initially) -->
+      <div id="appointment-content" class="hidden max-w-4xl mx-auto">
+        <!-- Success/Info Messages -->
+        <div id="global-message" class="hidden mb-6"></div>
+
+        <!-- Appointment Details Card -->
+        <div class="bg-white shadow-sm rounded-lg mb-8">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">
+                  Appointment Details
+                </h2>
+                <p class="text-sm text-gray-600">
+                  Review your appointment information below.
+                </p>
+              </div>
+              <div
+                id="appointment-status-badge"
+                class="px-3 py-1 rounded-full text-sm font-medium"
+              >
+                <!-- Status badge will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Service Information -->
+              <div class="space-y-4">
+                <div>
+                  <h3
+                    class="text-sm font-medium text-gray-500 uppercase tracking-wide"
+                  >
+                    Service
+                  </h3>
+                  <p
+                    id="service-name"
+                    class="mt-1 text-lg font-medium text-gray-900"
+                  >
+                    -
+                  </p>
+                </div>
+                <div>
+                  <h3
+                    class="text-sm font-medium text-gray-500 uppercase tracking-wide"
+                  >
+                    Provider
+                  </h3>
+                  <p
+                    id="provider-name"
+                    class="mt-1 text-lg font-medium text-gray-900"
+                  >
+                    -
+                  </p>
+                </div>
+                <div>
+                  <h3
+                    class="text-sm font-medium text-gray-500 uppercase tracking-wide"
+                  >
+                    Duration
+                  </h3>
+                  <p
+                    id="duration"
+                    class="mt-1 text-lg font-medium text-gray-900"
+                  >
+                    -
+                  </p>
+                </div>
+              </div>
+
+              <!-- Appointment Time -->
+              <div class="space-y-4">
+                <div>
+                  <h3
+                    class="text-sm font-medium text-gray-500 uppercase tracking-wide"
+                  >
+                    Date
+                  </h3>
+                  <p
+                    id="appointment-date"
+                    class="mt-1 text-lg font-medium text-gray-900"
+                  >
+                    -
+                  </p>
+                </div>
+                <div>
+                  <h3
+                    class="text-sm font-medium text-gray-500 uppercase tracking-wide"
+                  >
+                    Time
+                  </h3>
+                  <p
+                    id="appointment-time"
+                    class="mt-1 text-lg font-medium text-gray-900"
+                  >
+                    -
+                  </p>
+                </div>
+                <div id="payment-info" class="hidden">
+                  <h3
+                    class="text-sm font-medium text-gray-500 uppercase tracking-wide"
+                  >
+                    Payment
+                  </h3>
+                  <p
+                    id="payment-amount"
+                    class="mt-1 text-lg font-medium text-gray-900"
+                  >
+                    -
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Customer Notes -->
+            <div
+              id="notes-section"
+              class="mt-6 pt-6 border-t border-gray-200 hidden"
+            >
+              <h3
+                class="text-sm font-medium text-gray-500 uppercase tracking-wide"
+              >
+                Your Notes
+              </h3>
+              <p id="customer-notes" class="mt-1 text-gray-900">-</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div
+              class="mt-8 pt-6 border-t border-gray-200 flex flex-wrap gap-3"
+            >
+              <button
+                id="edit-btn"
+                class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+              >
+                Edit Details
+              </button>
+              <button
+                id="reschedule-btn"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+              >
+                Reschedule
+              </button>
+              <button
+                id="cancel-btn"
+                class="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+              >
+                Cancel Appointment
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Form (Hidden initially) -->
+        <div
+          id="edit-form-section"
+          class="bg-white shadow-sm rounded-lg mb-8 hidden"
+        >
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Edit Appointment Details
+            </h2>
+            <p class="text-sm text-gray-600">
+              Update your contact information and notes.
+            </p>
+          </div>
+
+          <form id="edit-form" class="p-6 space-y-6">
+            <!-- Form Messages -->
+            <div id="form-message" class="hidden"></div>
+
+            <!-- Customer Name -->
+            <div>
+              <label
+                for="customer_name"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="customer_name"
+                name="customer_name"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            <!-- Phone Number -->
+            <div>
+              <label
+                for="customer_phone"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                id="customer_phone"
+                name="customer_phone"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                placeholder="Enter your phone number"
+              />
+            </div>
+
+            <!-- Customer Notes -->
+            <div>
+              <label
+                for="customer_notes_input"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Notes
+              </label>
+              <textarea
+                id="customer_notes_input"
+                name="customer_notes"
+                rows="4"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                placeholder="Any special requests or information..."></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div
+              class="flex justify-end space-x-3 pt-6 border-t border-gray-200"
+            >
+              <button
+                type="button"
+                id="cancel-edit-btn"
+                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                id="save-edit-btn"
+                class="px-4 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Reschedule Form (Hidden initially) -->
+        <div
+          id="reschedule-form-section"
+          class="bg-white shadow-sm rounded-lg mb-8 hidden"
+        >
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">
+              Reschedule Appointment
+            </h2>
+            <p class="text-sm text-gray-600">
+              Select a new date and time for your appointment.
+            </p>
+          </div>
+
+          <div class="p-6">
+            <!-- Reschedule Messages -->
+            <div id="reschedule-message" class="hidden mb-6"></div>
+
+            <!-- Loading available slots -->
+            <div id="slots-loading" class="text-center py-8">
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-700 mx-auto mb-2"
+              >
+              </div>
+              <p class="text-gray-600">Loading available times...</p>
+            </div>
+
+            <!-- Available slots grid -->
+            <div id="available-slots" class="hidden">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">
+                Available Times
+              </h3>
+              <div
+                id="slots-grid"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"
+              >
+                <!-- Slots will be populated by JavaScript -->
+              </div>
+
+              <div
+                class="flex justify-end space-x-3 pt-6 border-t border-gray-200"
+              >
+                <button
+                  type="button"
+                  id="cancel-reschedule-btn"
+                  class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  id="confirm-reschedule-btn"
+                  disabled
+                  class="px-4 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Confirm Reschedule
+                </button>
+              </div>
+            </div>
+
+            <!-- No slots available -->
+            <div id="no-slots" class="hidden text-center py-8">
+              <p class="text-gray-600 mb-4">
+                No available times found for rescheduling.
+              </p>
+              <button
+                type="button"
+                id="cancel-reschedule-no-slots-btn"
+                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Back to Appointment
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  interface Appointment {
+    id: number;
+    appointment_type_name: string;
+    calendar_user_name: string;
+    customer_name: string;
+    customer_phone?: string;
+    customer_email: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    duration_minutes: number;
+    status: string;
+    customer_notes?: string;
+    payment_status?: string;
+    payment_amount?: number;
+    can_be_cancelled: boolean;
+  }
+
+  interface AvailableSlot {
+    date: string;
+    start_time: string;
+    end_time: string;
+    appointment_type_id: number;
+  }
+
+  interface ApiResponse {
+    success: boolean;
+    message: string;
+    appointment: Appointment;
+  }
+
+  let currentAppointment: Appointment | null = null;
+  let selectedSlot: AvailableSlot | null = null;
+  let customerEmail: string | null = null;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("🔍 Initializing Appointment Management page...");
+
+    // Get URL parameters - now from query string instead of path
+    const urlParams = new URLSearchParams(window.location.search);
+    customerEmail = urlParams.get("email");
+    const appointmentId = urlParams.get("id");
+
+    if (!customerEmail || !appointmentId) {
+      showError(
+        "Invalid appointment link. Please check your email for the correct link.",
+      );
+      return;
+    }
+
+    initializePage(appointmentId, customerEmail);
+  });
+
+  async function initializePage(
+    appointmentId: string,
+    email: string,
+  ): Promise<void> {
+    try {
+      console.log("📅 Loading appointment:", { appointmentId, email });
+
+      const appointment = await loadAppointment(appointmentId, email);
+      currentAppointment = appointment;
+
+      displayAppointment(appointment);
+      setupEventListeners();
+      showAppointmentContent();
+    } catch (error) {
+      console.error("❌ Error loading appointment:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load appointment";
+      showError(errorMessage);
+    } finally {
+      hideLoadingState();
+    }
+  }
+
+  function hideLoadingState(): void {
+    const loadingElement = document.getElementById("loading-state");
+    loadingElement?.classList.add("hidden");
+  }
+
+  function showError(message: string): void {
+    const errorElement = document.getElementById("error-state");
+    const errorMessageElement = document.getElementById("error-message");
+
+    if (errorMessageElement) {
+      errorMessageElement.textContent = message;
+    }
+
+    errorElement?.classList.remove("hidden");
+  }
+
+  function showAppointmentContent(): void {
+    const appointmentElement = document.getElementById("appointment-content");
+    appointmentElement?.classList.remove("hidden");
+  }
+
+  function displayAppointment(appointment: Appointment): void {
+    // Update status badge
+    updateStatusBadge(appointment.status);
+
+    // Update appointment details
+    updateElement("service-name", appointment.appointment_type_name);
+    updateElement("provider-name", appointment.calendar_user_name);
+    updateElement("duration", `${appointment.duration_minutes} minutes`);
+
+    // Format and display date/time
+    const appointmentDate = new Date(
+      `${appointment.date}T${appointment.start_time}`,
+    );
+    updateElement(
+      "appointment-date",
+      appointmentDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+    );
+
+    updateElement(
+      "appointment-time",
+      `${formatTime(appointment.start_time)} - ${formatTime(appointment.end_time)}`,
+    );
+
+    // Show payment info if applicable
+    if (appointment.payment_amount && appointment.payment_amount > 0) {
+      const paymentInfo = document.getElementById("payment-info");
+      paymentInfo?.classList.remove("hidden");
+      updateElement(
+        "payment-amount",
+        `$${appointment.payment_amount} (${appointment.payment_status || "N/A"})`,
+      );
+    }
+
+    // Show notes if present
+    if (appointment.customer_notes) {
+      const notesSection = document.getElementById("notes-section");
+      notesSection?.classList.remove("hidden");
+      updateElement("customer-notes", appointment.customer_notes);
+    }
+
+    // Update button states based on appointment status
+    updateButtonStates(appointment);
+  }
+
+  function updateStatusBadge(status: string): void {
+    const badge = document.getElementById("appointment-status-badge");
+    if (!badge) return;
+
+    const statusConfig: Record<string, { text: string; classes: string }> = {
+      pending: { text: "Pending", classes: "bg-yellow-100 text-yellow-800" },
+      confirmed: { text: "Confirmed", classes: "bg-green-100 text-green-800" },
+      cancelled: { text: "Cancelled", classes: "bg-red-100 text-red-800" },
+      completed: { text: "Completed", classes: "bg-blue-100 text-blue-800" },
+      no_show: { text: "No Show", classes: "bg-gray-100 text-gray-800" },
+    };
+
+    const config = statusConfig[status] || {
+      text: status,
+      classes: "bg-gray-100 text-gray-800",
+    };
+    badge.textContent = config.text;
+    badge.className = `px-3 py-1 rounded-full text-sm font-medium ${config.classes}`;
+  }
+
+  function updateButtonStates(appointment: Appointment): void {
+    const editBtn = document.getElementById("edit-btn") as HTMLButtonElement;
+    const rescheduleBtn = document.getElementById(
+      "reschedule-btn",
+    ) as HTMLButtonElement;
+    const cancelBtn = document.getElementById(
+      "cancel-btn",
+    ) as HTMLButtonElement;
+
+    const canModify =
+      appointment.can_be_cancelled &&
+      !["cancelled", "completed", "no_show"].includes(appointment.status);
+
+    if (editBtn) editBtn.disabled = !canModify;
+    if (rescheduleBtn) rescheduleBtn.disabled = !canModify;
+    if (cancelBtn) cancelBtn.disabled = !canModify;
+
+    // Update button styles for disabled state
+    [editBtn, rescheduleBtn, cancelBtn].forEach((btn) => {
+      if (btn && btn.disabled) {
+        btn.classList.add("opacity-50", "cursor-not-allowed");
+      }
+    });
+  }
+
+  function setupEventListeners(): void {
+    // Edit button
+    document
+      .getElementById("edit-btn")
+      ?.addEventListener("click", showEditForm);
+
+    // Reschedule button
+    document
+      .getElementById("reschedule-btn")
+      ?.addEventListener("click", showRescheduleForm);
+
+    // Cancel appointment button
+    document
+      .getElementById("cancel-btn")
+      ?.addEventListener("click", handleCancelAppointment);
+
+    // Edit form
+    document
+      .getElementById("edit-form")
+      ?.addEventListener("submit", handleEditSubmit);
+    document
+      .getElementById("cancel-edit-btn")
+      ?.addEventListener("click", hideEditForm);
+
+    // Reschedule form
+    document
+      .getElementById("cancel-reschedule-btn")
+      ?.addEventListener("click", hideRescheduleForm);
+    document
+      .getElementById("cancel-reschedule-no-slots-btn")
+      ?.addEventListener("click", hideRescheduleForm);
+    document
+      .getElementById("confirm-reschedule-btn")
+      ?.addEventListener("click", handleRescheduleConfirm);
+  }
+
+  function showEditForm(): void {
+    if (!currentAppointment) return;
+
+    // Populate form with current data
+    const customerNameInput = document.getElementById(
+      "customer_name",
+    ) as HTMLInputElement;
+    const customerPhoneInput = document.getElementById(
+      "customer_phone",
+    ) as HTMLInputElement;
+    const customerNotesInput = document.getElementById(
+      "customer_notes_input",
+    ) as HTMLTextAreaElement;
+
+    if (customerNameInput)
+      customerNameInput.value = currentAppointment.customer_name || "";
+    if (customerPhoneInput)
+      customerPhoneInput.value = currentAppointment.customer_phone || "";
+    if (customerNotesInput)
+      customerNotesInput.value = currentAppointment.customer_notes || "";
+
+    // Show form
+    document.getElementById("edit-form-section")?.classList.remove("hidden");
+
+    // Scroll to form
+    document
+      .getElementById("edit-form-section")
+      ?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function hideEditForm(): void {
+    document.getElementById("edit-form-section")?.classList.add("hidden");
+    clearMessage("form-message");
+  }
+
+  async function showRescheduleForm(): Promise<void> {
+    if (!currentAppointment) return;
+
+    // Show form
+    document
+      .getElementById("reschedule-form-section")
+      ?.classList.remove("hidden");
+
+    // Reset state
+    selectedSlot = null;
+    updateRescheduleButton();
+
+    // Load available slots
+    try {
+      const slots = await loadAvailableSlots(currentAppointment.id);
+      displayAvailableSlots(slots);
+    } catch (error) {
+      console.error("Error loading slots:", error);
+      showMessage(
+        "reschedule-message",
+        "Failed to load available times",
+        "error",
+      );
+    }
+
+    // Scroll to form
+    document
+      .getElementById("reschedule-form-section")
+      ?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function hideRescheduleForm(): void {
+    document.getElementById("reschedule-form-section")?.classList.add("hidden");
+    clearMessage("reschedule-message");
+  }
+
+  async function handleEditSubmit(e: Event): Promise<void> {
+    e.preventDefault();
+    if (!currentAppointment || !customerEmail) return;
+
+    const saveBtn = document.getElementById(
+      "save-edit-btn",
+    ) as HTMLButtonElement;
+    const originalText = saveBtn?.textContent || "Save Changes";
+
+    try {
+      if (saveBtn) {
+        saveBtn.textContent = "Saving...";
+        saveBtn.disabled = true;
+      }
+
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      const updateData = {
+        email: customerEmail,
+        customer_name: formData.get("customer_name") as string,
+        customer_phone: formData.get("customer_phone") as string,
+        customer_notes: formData.get("customer_notes") as string,
+      };
+
+      const result = await updateAppointment(currentAppointment.id, updateData);
+      currentAppointment = result.appointment;
+
+      // Refresh display
+      displayAppointment(currentAppointment);
+      hideEditForm();
+
+      showMessage(
+        "global-message",
+        "Appointment updated successfully!",
+        "success",
+      );
+    } catch (error) {
+      console.error("Update error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update appointment";
+      showMessage("form-message", errorMessage, "error");
+    } finally {
+      if (saveBtn) {
+        saveBtn.textContent = originalText;
+        saveBtn.disabled = false;
+      }
+    }
+  }
+
+  async function handleCancelAppointment(): Promise<void> {
+    if (!currentAppointment || !customerEmail) return;
+
+    if (
+      !confirm(
+        "Are you sure you want to cancel this appointment? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    const cancelBtn = document.getElementById(
+      "cancel-btn",
+    ) as HTMLButtonElement;
+    const originalText = cancelBtn?.textContent || "Cancel Appointment";
+
+    try {
+      if (cancelBtn) {
+        cancelBtn.textContent = "Cancelling...";
+        cancelBtn.disabled = true;
+      }
+
+      const result = await cancelAppointment(
+        currentAppointment.id,
+        customerEmail,
+      );
+      currentAppointment = result.appointment;
+
+      // Refresh display
+      displayAppointment(currentAppointment);
+
+      showMessage(
+        "global-message",
+        "Appointment cancelled successfully",
+        "success",
+      );
+    } catch (error) {
+      console.error("Cancel error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to cancel appointment";
+      showMessage("global-message", errorMessage, "error");
+    } finally {
+      if (cancelBtn) {
+        cancelBtn.textContent = originalText;
+        cancelBtn.disabled = false;
+      }
+    }
+  }
+
+  function displayAvailableSlots(slots: AvailableSlot[]): void {
+    const slotsLoading = document.getElementById("slots-loading");
+    const availableSlots = document.getElementById("available-slots");
+    const noSlots = document.getElementById("no-slots");
+    const slotsGrid = document.getElementById("slots-grid");
+
+    slotsLoading?.classList.add("hidden");
+
+    if (slots.length === 0) {
+      noSlots?.classList.remove("hidden");
+      return;
+    }
+
+    if (!slotsGrid) return;
+
+    // Group slots by date
+    const slotsByDate = slots.reduce(
+      (acc, slot) => {
+        if (!acc[slot.date]) acc[slot.date] = [];
+        acc[slot.date].push(slot);
+        return acc;
+      },
+      {} as Record<string, AvailableSlot[]>,
+    );
+
+    // Generate HTML for slots
+    slotsGrid.innerHTML = Object.entries(slotsByDate)
+      .map(([date, dateSlots]) => {
+        const formattedDate = new Date(date).toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        });
+
+        const slotsHtml = dateSlots
+          .map(
+            (slot) => `
+        <button 
+          type="button" 
+          class="slot-btn w-full p-2 text-sm border border-gray-300 rounded hover:bg-teal-50 hover:border-teal-500 transition-colors"
+          data-slot='${JSON.stringify(slot)}'
+        >
+          ${formatTime(slot.start_time)}
+        </button>
+      `,
+          )
+          .join("");
+
+        return `
+        <div class="space-y-2">
+          <h4 class="font-medium text-gray-900">${formattedDate}</h4>
+          <div class="space-y-1">
+            ${slotsHtml}
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
+    // Add click listeners to slot buttons
+    slotsGrid.querySelectorAll(".slot-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const slotData = (e.target as HTMLElement).getAttribute("data-slot");
+        if (slotData) {
+          selectedSlot = JSON.parse(slotData);
+          updateSlotSelection();
+          updateRescheduleButton();
+        }
+      });
+    });
+
+    availableSlots?.classList.remove("hidden");
+  }
+
+  function updateSlotSelection(): void {
+    // Remove previous selection
+    document.querySelectorAll(".slot-btn").forEach((btn) => {
+      btn.classList.remove("bg-teal-600", "text-white", "border-teal-600");
+      btn.classList.add("border-gray-300");
+    });
+
+    // Add selection to current slot
+    if (selectedSlot) {
+      const selectedBtn = document.querySelector(
+        `[data-slot='${JSON.stringify(selectedSlot)}']`,
+      );
+      if (selectedBtn) {
+        selectedBtn.classList.add(
+          "bg-teal-600",
+          "text-white",
+          "border-teal-600",
+        );
+        selectedBtn.classList.remove("border-gray-300");
+      }
+    }
+  }
+
+  function updateRescheduleButton(): void {
+    const confirmBtn = document.getElementById(
+      "confirm-reschedule-btn",
+    ) as HTMLButtonElement;
+    if (confirmBtn) {
+      confirmBtn.disabled = !selectedSlot;
+    }
+  }
+
+  async function handleRescheduleConfirm(): Promise<void> {
+    if (!currentAppointment || !customerEmail || !selectedSlot) return;
+
+    const confirmBtn = document.getElementById(
+      "confirm-reschedule-btn",
+    ) as HTMLButtonElement;
+    const originalText = confirmBtn?.textContent || "Confirm Reschedule";
+
+    try {
+      if (confirmBtn) {
+        confirmBtn.textContent = "Rescheduling...";
+        confirmBtn.disabled = true;
+      }
+
+      const updateData = {
+        email: customerEmail,
+        date: selectedSlot.date,
+        start_time: selectedSlot.start_time,
+      };
+
+      const result = await updateAppointment(currentAppointment.id, updateData);
+      currentAppointment = result.appointment;
+
+      // Refresh display
+      displayAppointment(currentAppointment);
+      hideRescheduleForm();
+
+      showMessage(
+        "global-message",
+        "Appointment rescheduled successfully!",
+        "success",
+      );
+    } catch (error) {
+      console.error("Reschedule error:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to reschedule appointment";
+      showMessage("reschedule-message", errorMessage, "error");
+    } finally {
+      if (confirmBtn) {
+        confirmBtn.textContent = originalText;
+        confirmBtn.disabled = false;
+      }
+    }
+  }
+
+  // Utility functions
+  function updateElement(id: string, text: string): void {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = text;
+    }
+  }
+
+  function formatTime(timeString: string): string {
+    const time = new Date(`2000-01-01T${timeString}`);
+    return time.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
+  function showMessage(
+    elementId: string,
+    message: string,
+    type: "success" | "error" | "info",
+  ): void {
+    const messageEl = document.getElementById(elementId);
+    if (!messageEl) return;
+
+    const typeClasses = {
+      success: "bg-green-50 text-green-700 border-green-200",
+      error: "bg-red-50 text-red-700 border-red-200",
+      info: "bg-blue-50 text-blue-700 border-blue-200",
+    };
+
+    messageEl.className = `p-4 rounded-md border ${typeClasses[type]} mb-4`;
+    messageEl.textContent = message;
+    messageEl.classList.remove("hidden");
+
+    // Auto-hide success/info messages
+    if (type !== "error") {
+      setTimeout(() => {
+        messageEl.classList.add("hidden");
+      }, 5000);
+    }
+  }
+
+  function clearMessage(elementId: string): void {
+    const messageEl = document.getElementById(elementId);
+    if (messageEl) {
+      messageEl.classList.add("hidden");
+    }
+  }
+
+  // API functions
+  async function loadAppointment(
+    appointmentId: string,
+    email: string,
+  ): Promise<Appointment> {
+    const API_BASE = window.location.origin.includes("localhost")
+      ? "http://localhost:8000"
+      : "https://corrison.corrisonapi.com";
+
+    const response = await fetch(
+      `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/?email=${encodeURIComponent(email)}`,
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+      );
+    }
+
+    return response.json();
+  }
+
+  async function updateAppointment(
+    appointmentId: number,
+    updateData: Record<string, any>,
+  ): Promise<ApiResponse> {
+    const API_BASE = window.location.origin.includes("localhost")
+      ? "http://localhost:8000"
+      : "https://corrison.corrisonapi.com";
+
+    const response = await fetch(
+      `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/update/`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+      );
+    }
+
+    return response.json();
+  }
+
+  async function cancelAppointment(
+    appointmentId: number,
+    email: string,
+  ): Promise<ApiResponse> {
+    const API_BASE = window.location.origin.includes("localhost")
+      ? "http://localhost:8000"
+      : "https://corrison.corrisonapi.com";
+
+    const response = await fetch(
+      `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/cancel/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+      );
+    }
+
+    return response.json();
+  }
+
+  async function loadAvailableSlots(
+    appointmentId: number,
+  ): Promise<AvailableSlot[]> {
+    if (!customerEmail) throw new Error("Email not available");
+
+    const API_BASE = window.location.origin.includes("localhost")
+      ? "http://localhost:8000"
+      : "https://corrison.corrisonapi.com";
+
+    const response = await fetch(
+      `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/available-slots/?email=${encodeURIComponent(customerEmail)}`,
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP ${response.status}: ${response.statusText}`,
+      );
+    }
+
+    return response.json();
+  }
+</script>
