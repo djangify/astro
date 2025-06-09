@@ -248,6 +248,7 @@ export interface CourseLesson {
   slug: string;
   content: string;
   video_url?: string;
+  youtube_url?: string;
   duration_minutes: number;
   order: number;
   is_free: boolean;
