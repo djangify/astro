@@ -13,14 +13,22 @@ import type {
   Appointment,
   AvailabilitySlot,
   CourseLesson,
-
   CalendarUser
 } from "../types";
+
 const API = "https://corrison.corrisonapi.com";
 
 async function check<T>(res: Response, what: string): Promise<T> {
   if (!res.ok) throw new Error(`Failed to fetch ${what}`);
   return res.json();
+}
+
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('access_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
 }
 
 /** Blogs live under /api/v1/blog/posts/ on your DRF router */
@@ -100,41 +108,72 @@ export function fetchCourse(slug: string): Promise<Course> {
 }
 
 export function fetchUserCourses(): Promise<CourseEnrollment[]> {
-  return fetch(`${API}/api/v1/courses/enrollments/`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+  return fetch(`${API}/api/v1/courses/my_courses/`, {
+    headers: getAuthHeaders(),
   }).then(r => check<CourseEnrollment[]>(r, "user courses"));
 }
 
 export function enrollInCourse(courseId: number): Promise<CourseEnrollment> {
   return fetch(`${API}/api/v1/courses/${courseId}/enroll/`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check<CourseEnrollment>(r, "course enrollment"));
 }
 
 export function fetchLessonProgress(enrollmentId: number): Promise<LessonProgress[]> {
   return fetch(`${API}/api/v1/courses/enrollments/${enrollmentId}/progress/`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check<LessonProgress[]>(r, "lesson progress"));
 }
 
 export function updateLessonProgress(lessonId: number, completed: boolean): Promise<LessonProgress> {
   return fetch(`${API}/api/v1/courses/lessons/${lessonId}/progress/`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ completed }),
   }).then(r => check<LessonProgress>(r, "lesson progress update"));
 }
+
+export async function fetchCourseLessons(courseSlug: string): Promise<CourseLesson[]> {
+  const response = await fetch(`${API}/api/v1/courses/${courseSlug}/lessons/`);
+  if (!response.ok) throw new Error(`Failed to fetch lessons for course ${courseSlug}`);
+  return response.json();
+}
+
+/** NEW: Saved Courses API */
+export function saveCourse(courseSlug: string): Promise<{ message: string; saved: boolean }> {
+  return fetch(`${API}/api/v1/courses/${courseSlug}/save_course/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  }).then(r => check(r, "save course"));
+}
+
+export function unsaveCourse(courseSlug: string): Promise<{ message: string; saved: boolean }> {
+  return fetch(`${API}/api/v1/courses/${courseSlug}/unsave_course/`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  }).then(r => check(r, "unsave course"));
+}
+
+export function fetchSavedCourses(): Promise<{ id: number; course: Course; created_at: string }[]> {
+  return fetch(`${API}/api/v1/courses/my_saved/`, {
+    headers: getAuthHeaders(),
+  }).then(r => check(r, "saved courses"));
+}
+
+/** Helper function to toggle save state */
+export async function toggleCourseSave(courseSlug: string, currentlySaved: boolean): Promise<boolean> {
+  try {
+    const result = currentlySaved
+      ? await unsaveCourse(courseSlug)
+      : await saveCourse(courseSlug);
+    return result.saved;
+  } catch (error) {
+    console.error('Error toggling course save:', error);
+    throw error;
+  }
+}
+
 /** NEW: Appointments API - Public endpoints */
 export function fetchCalendarUser(username: string): Promise<{
   username: string;
@@ -230,37 +269,27 @@ export function cancelCustomerAppointment(appointmentId: number, email: string):
 /** NEW: Appointments API - Authenticated endpoints */
 export function fetchUserAppointments(): Promise<Appointment[]> {
   return fetch(`${API}/api/v1/appointments/appointments/`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check<Appointment[]>(r, "user appointments"));
 }
 
 export function fetchUserAppointment(appointmentId: number): Promise<Appointment> {
   return fetch(`${API}/api/v1/appointments/appointments/${appointmentId}/`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check<Appointment>(r, "user appointment"));
 }
 
 export function cancelUserAppointment(appointmentId: number): Promise<Appointment> {
   return fetch(`${API}/api/v1/appointments/appointments/${appointmentId}/cancel/`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check<Appointment>(r, "appointment cancellation"));
 }
 
 export function confirmAppointment(appointmentId: number): Promise<Appointment> {
   return fetch(`${API}/api/v1/appointments/appointments/${appointmentId}/confirm/`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check<Appointment>(r, "appointment confirmation"));
 }
 
@@ -277,9 +306,7 @@ export function fetchUserCalendarProfile(): Promise<{
   booking_instructions: string;
 }> {
   return fetch(`${API}/api/v1/appointments/profiles/`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check(r, "calendar profile"));
 }
 
@@ -293,19 +320,14 @@ export function updateCalendarProfile(profileData: {
 }): Promise<any> {
   return fetch(`${API}/api/v1/appointments/profiles/`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(profileData),
   }).then(r => check(r, "calendar profile update"));
 }
 
 export function fetchAppointmentTypes(): Promise<AppointmentType[]> {
   return fetch(`${API}/api/v1/appointments/appointment-types/`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check<AppointmentType[]>(r, "appointment types"));
 }
 
@@ -320,10 +342,7 @@ export function createAppointmentType(typeData: {
 }): Promise<AppointmentType> {
   return fetch(`${API}/api/v1/appointments/appointment-types/`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(typeData),
   }).then(r => check<AppointmentType>(r, "appointment type creation"));
 }
@@ -331,10 +350,7 @@ export function createAppointmentType(typeData: {
 export function updateAppointmentType(typeId: number, typeData: Partial<AppointmentType>): Promise<AppointmentType> {
   return fetch(`${API}/api/v1/appointments/appointment-types/${typeId}/`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(typeData),
   }).then(r => check<AppointmentType>(r, "appointment type update"));
 }
@@ -342,9 +358,7 @@ export function updateAppointmentType(typeId: number, typeData: Partial<Appointm
 export function deleteAppointmentType(typeId: number): Promise<void> {
   return fetch(`${API}/api/v1/appointments/appointment-types/${typeId}/`, {
     method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => {
     if (!r.ok) throw new Error('Failed to delete appointment type');
   });
@@ -352,9 +366,7 @@ export function deleteAppointmentType(typeId: number): Promise<void> {
 
 export function fetchAvailability(): Promise<AvailabilitySlot[]> {
   return fetch(`${API}/api/v1/appointments/availability/`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => check<AvailabilitySlot[]>(r, "availability slots"));
 }
 
@@ -369,10 +381,7 @@ export function createAvailability(availabilityData: {
 }): Promise<AvailabilitySlot> {
   return fetch(`${API}/api/v1/appointments/availability/`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(availabilityData),
   }).then(r => check<AvailabilitySlot>(r, "availability creation"));
 }
@@ -380,10 +389,7 @@ export function createAvailability(availabilityData: {
 export function updateAvailability(availabilityId: number, availabilityData: Partial<AvailabilitySlot>): Promise<AvailabilitySlot> {
   return fetch(`${API}/api/v1/appointments/availability/${availabilityId}/`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(availabilityData),
   }).then(r => check<AvailabilitySlot>(r, "availability update"));
 }
@@ -391,13 +397,12 @@ export function updateAvailability(availabilityId: number, availabilityData: Par
 export function deleteAvailability(availabilityId: number): Promise<void> {
   return fetch(`${API}/api/v1/appointments/availability/${availabilityId}/`, {
     method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-    },
+    headers: getAuthHeaders(),
   }).then(r => {
     if (!r.ok) throw new Error('Failed to delete availability slot');
   });
 }
+
 /** NEW: Fetch available calendar users */
 export function fetchAvailableCalendars(): Promise<{
   username: string;
@@ -406,10 +411,4 @@ export function fetchAvailableCalendars(): Promise<{
 }[]> {
   return fetch(`${API}/api/v1/appointments-booking/api/public/available/`)
     .then(r => check(r, "available calendars"));
-}
-
-export async function fetchCourseLessons(courseSlug: string): Promise<CourseLesson[]> {
-  const response = await fetch(`https://corrison.corrisonapi.com/api/v1/courses/${courseSlug}/lessons/`);
-  if (!response.ok) throw new Error(`Failed to fetch lessons for course ${courseSlug}`);
-  return response.json();
 }

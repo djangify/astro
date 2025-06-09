@@ -99,10 +99,10 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
           </div>
         </div>
 
-        <!-- Quick Stats -->
+        <!-- Quick Stats - Fixed to display horizontally -->
         <div
           id="appointment-stats"
-          class="hidden grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="flex items-center">
@@ -226,19 +226,56 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
           </div>
         </div>
 
-        <!-- Upcoming Appointments -->
-        <div id="upcoming-appointments" class="hidden mb-8">
+        <!-- All Appointments with Filters -->
+        <div id="appointments-section" class="hidden mb-8">
           <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-semibold text-gray-900">
-                Upcoming Appointments
-              </h2>
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900">
+                  My Appointments
+                </h2>
+
+                <!-- Filters -->
+                <div class="flex items-center space-x-4">
+                  <select
+                    id="status-filter"
+                    class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="upcoming">Upcoming</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+
+                  <button
+                    onclick="refreshAppointments()"
+                    class="p-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="Refresh"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      ></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="p-6">
-              <div id="upcoming-list" class="space-y-4">
-                <!-- Upcoming appointments will be populated here -->
+              <div id="appointments-list" class="space-y-4">
+                <!-- All appointments will be populated here -->
               </div>
-              <div id="no-upcoming" class="hidden text-center py-8">
+              <div id="no-appointments" class="hidden text-center py-8">
                 <svg
                   class="w-12 h-12 mx-auto mb-4 text-gray-300"
                   fill="none"
@@ -253,10 +290,10 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
                   ></path>
                 </svg>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">
-                  No Upcoming Appointments
+                  No Appointments Found
                 </h3>
                 <p class="text-gray-600 mb-4">
-                  You don't have any appointments scheduled in the near future.
+                  You don't have any appointments that match the current filter.
                 </p>
                 <a
                   href="/calendar"
@@ -267,19 +304,6 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Main Appointments List -->
-        <div id="appointments-list-container" class="hidden">
-          <AppointmentList
-            title="All Appointments"
-            showFilters={true}
-            showPagination={true}
-            variant="default"
-            isPublic={false}
-            emptyMessage="No appointments found"
-            emptyDescription="You haven't booked any appointments yet."
-          />
         </div>
       </div>
     </main>
@@ -294,6 +318,8 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
 
     // Global variables
     let allAppointments: any[] = [];
+    let filteredAppointments: any[] = [];
+    let currentFilter = "upcoming";
 
     // Initialize page
     initializePage();
@@ -315,7 +341,7 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
 
         console.log("✅ User authenticated, loading appointments...");
         await loadAppointments();
-        await loadUpcomingAppointments();
+        applyFilters(); // Apply default filter
         showContent();
       } catch (error) {
         console.error("❌ Error initializing page:", error);
@@ -363,52 +389,91 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
 
         allAppointments = await response.json();
         updateStats();
+
+        // Set up filter event listener
+        const statusFilter = document.getElementById(
+          "status-filter",
+        ) as HTMLSelectElement;
+        if (statusFilter) {
+          statusFilter.value = currentFilter;
+          statusFilter.addEventListener("change", applyFilters);
+        }
       } catch (error) {
         console.error("Error loading appointments:", error);
         throw error;
       }
     }
 
-    // Load upcoming appointments
-    async function loadUpcomingAppointments(): Promise<void> {
+    // Apply filters and render appointments
+    function applyFilters(): void {
+      const statusFilter = document.getElementById(
+        "status-filter",
+      ) as HTMLSelectElement;
+      currentFilter = statusFilter?.value || "upcoming";
+
       const now = new Date();
-      const upcoming = allAppointments
-        .filter((appointment: any) => {
-          const appointmentDate = new Date(
-            `${appointment.date}T${appointment.start_time}`,
-          );
-          return (
-            appointmentDate > now &&
-            (appointment.status === "confirmed" ||
-              appointment.status === "pending")
-          );
-        })
-        .sort((a: any, b: any) => {
-          const dateA = new Date(`${a.date}T${a.start_time}`);
-          const dateB = new Date(`${b.date}T${b.start_time}`);
-          return dateA.getTime() - dateB.getTime();
-        })
-        .slice(0, 3); // Show only next 3
 
-      const upcomingList = document.getElementById("upcoming-list");
-      const noUpcoming = document.getElementById("no-upcoming");
+      filteredAppointments = allAppointments.filter((appointment: any) => {
+        const appointmentDate = new Date(
+          `${appointment.date}T${appointment.start_time}`,
+        );
 
-      if (upcoming.length === 0) {
-        if (upcomingList) upcomingList.classList.add("hidden");
-        if (noUpcoming) noUpcoming.classList.remove("hidden");
+        switch (currentFilter) {
+          case "upcoming":
+            return (
+              appointmentDate > now &&
+              (appointment.status === "confirmed" ||
+                appointment.status === "pending")
+            );
+          case "confirmed":
+            return appointment.status === "confirmed";
+          case "pending":
+            return appointment.status === "pending";
+          case "completed":
+            return appointment.status === "completed";
+          case "cancelled":
+            return appointment.status === "cancelled";
+          default:
+            return true; // 'all' or empty filter
+        }
+      });
+
+      // Sort by date and time
+      filteredAppointments.sort((a: any, b: any) => {
+        const dateA = new Date(`${a.date}T${a.start_time}`);
+        const dateB = new Date(`${b.date}T${b.start_time}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      renderAppointments();
+    }
+
+    // Render filtered appointments
+    function renderAppointments(): void {
+      const appointmentsList = document.getElementById("appointments-list");
+      const noAppointments = document.getElementById("no-appointments");
+
+      if (filteredAppointments.length === 0) {
+        if (appointmentsList) appointmentsList.classList.add("hidden");
+        if (noAppointments) noAppointments.classList.remove("hidden");
       } else {
-        if (noUpcoming) noUpcoming.classList.add("hidden");
-        if (upcomingList) {
-          upcomingList.classList.remove("hidden");
-          upcomingList.innerHTML = upcoming
-            .map((appointment: any) => renderUpcomingAppointment(appointment))
+        if (noAppointments) noAppointments.classList.add("hidden");
+        if (appointmentsList) {
+          appointmentsList.classList.remove("hidden");
+          appointmentsList.innerHTML = filteredAppointments
+            .map((appointment: any) => renderAppointmentCard(appointment))
             .join("");
         }
       }
     }
 
-    // Render upcoming appointment
-    function renderUpcomingAppointment(appointment: any): string {
+    // Load upcoming appointments
+    async function loadUpcomingAppointments(): Promise<void> {
+      // This function is no longer needed as we use filters instead
+    }
+
+    // Render appointment card (replaces renderUpcomingAppointment)
+    function renderAppointmentCard(appointment: any): string {
       const statusColors: Record<string, string> = {
         confirmed: "bg-green-100 text-green-800",
         pending: "bg-yellow-100 text-yellow-800",
@@ -438,7 +503,8 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
               ${getStatusText(appointment.status)}
             </span>
             
-              href="/calendar/appointments/${appointment.id}"
+            <a
+              href="/calendar/appointment/?id=${appointment.id}&email=${encodeURIComponent(appointment.customer_email)}"
               class="text-teal-600 hover:text-teal-800 text-sm font-medium"
             >
               View Details
@@ -478,6 +544,69 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
       if (confirmedElement) confirmedElement.textContent = confirmed.toString();
       if (pendingElement) pendingElement.textContent = pending.toString();
       if (monthElement) monthElement.textContent = thisMonth.toString();
+    }
+
+    // Cancel appointment function (no browser modal)
+    (window as any).cancelAppointment = async function (
+      appointmentId: number,
+    ): Promise<void> {
+      // Show custom confirmation instead of browser confirm
+      showConfirmation(
+        "Cancel Appointment",
+        "Are you sure you want to cancel this appointment?",
+        async () => {
+          await performCancelAppointment(appointmentId);
+        },
+      );
+    };
+
+    // Perform the actual cancellation
+    async function performCancelAppointment(
+      appointmentId: number,
+    ): Promise<void> {
+      try {
+        const token = localStorage.getItem("access_token");
+        const authState = authStore.getState();
+
+        if (!token || !authState.user?.email) {
+          throw new Error("Authentication required");
+        }
+
+        const API_BASE = window.location.origin.includes("localhost")
+          ? "http://localhost:8000"
+          : "https://corrison.corrisonapi.com";
+
+        const response = await fetch(
+          `${API_BASE}/api/v1/calendar/appointment/${appointmentId}/cancel/`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: authState.user.email,
+            }),
+          },
+        );
+
+        if (response.ok) {
+          showSuccess("Appointment cancelled successfully");
+          // Refresh appointments
+          await loadAppointments();
+          applyFilters(); // Re-apply current filter
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to cancel appointment");
+        }
+      } catch (error) {
+        console.error("Error cancelling appointment:", error);
+        showError(
+          error instanceof Error
+            ? error.message
+            : "Failed to cancel appointment",
+        );
+      }
     }
 
     // Utility functions
@@ -522,42 +651,52 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
 
     function showContent(): void {
       const statsElement = document.getElementById("appointment-stats");
-      const upcomingElement = document.getElementById("upcoming-appointments");
-      const listElement = document.getElementById(
-        "appointments-list-container",
+      const appointmentsElement = document.getElementById(
+        "appointments-section",
       );
       const authElement = document.getElementById("auth-check");
 
       if (statsElement) statsElement.classList.remove("hidden");
-      if (upcomingElement) upcomingElement.classList.remove("hidden");
-      if (listElement) listElement.classList.remove("hidden");
+      if (appointmentsElement) appointmentsElement.classList.remove("hidden");
       if (authElement) authElement.classList.add("hidden");
     }
 
     function hideContent(): void {
       const statsElement = document.getElementById("appointment-stats");
-      const upcomingElement = document.getElementById("upcoming-appointments");
-      const listElement = document.getElementById(
-        "appointments-list-container",
+      const appointmentsElement = document.getElementById(
+        "appointments-section",
       );
 
       if (statsElement) statsElement.classList.add("hidden");
-      if (upcomingElement) upcomingElement.classList.add("hidden");
-      if (listElement) listElement.classList.add("hidden");
+      if (appointmentsElement) appointmentsElement.classList.add("hidden");
     }
 
     function showError(message: string): void {
-      // Create error notification
+      showNotification(message, "error");
+    }
+
+    function showSuccess(message: string): void {
+      showNotification(message, "success");
+    }
+
+    function showNotification(
+      message: string,
+      type: "success" | "error" = "error",
+    ): void {
+      // Create notification
       const notification = document.createElement("div");
-      notification.className =
-        "fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm bg-red-100 text-red-800 border border-red-200";
+      notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+        type === "success"
+          ? "bg-green-100 text-green-800 border border-green-200"
+          : "bg-red-100 text-red-800 border border-red-200"
+      }`;
 
       notification.innerHTML = `
         <div class="flex items-center">
           <div class="flex-1">
             <p class="text-sm font-medium">${message}</p>
           </div>
-          <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-red-400 hover:text-red-600">
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-4 ${type === "success" ? "text-green-400 hover:text-green-600" : "text-red-400 hover:text-red-600"}">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -574,6 +713,67 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
       }, 5000);
     }
 
+    // Custom confirmation dialog (replaces browser confirm)
+    function showConfirmation(
+      title: string,
+      message: string,
+      onConfirm: () => void,
+    ): void {
+      const modal = document.createElement("div");
+      modal.className = "fixed inset-0 z-50 overflow-y-auto";
+      modal.innerHTML = `
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onclick="closeModal()"></div>
+          
+          <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">${title}</h3>
+            <p class="text-sm text-gray-600 mb-6">${message}</p>
+            
+            <div class="flex justify-end space-x-3">
+              <button
+                onclick="closeModal()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onclick="confirmAction()"
+                class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add modal functions
+      (window as any).closeModal = () => {
+        modal.remove();
+      };
+
+      (window as any).confirmAction = () => {
+        onConfirm();
+        modal.remove();
+      };
+
+      document.body.appendChild(modal);
+    }
+
+    // Global refresh function
+    (window as any).refreshAppointments = async function () {
+      const authState = authStore.getState();
+      if (authState.isAuthenticated) {
+        try {
+          await loadAppointments();
+          applyFilters();
+        } catch (error) {
+          console.error("Error refreshing appointments:", error);
+          showError("Failed to refresh appointments");
+        }
+      }
+    };
+
     // Subscribe to auth changes
     authStore.subscribe(() => {
       const newAuthState = authStore.getState();
@@ -585,13 +785,13 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
       }
     });
 
-    // Global refresh function for AppointmentList component
+    // Legacy functions for compatibility
     (window as any).refreshUserAppointments = async function () {
       const authState = authStore.getState();
       if (authState.isAuthenticated) {
         try {
           await loadAppointments();
-          await loadUpcomingAppointments();
+          applyFilters();
         } catch (error) {
           console.error("Error refreshing appointments:", error);
           showError("Failed to refresh appointments");
@@ -599,9 +799,9 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
       }
     };
 
-    // Export for use by AppointmentList component
+    // Export for use by components
     (window as any).getUserAppointments = function () {
-      return allAppointments;
+      return filteredAppointments; // Return filtered appointments instead of all
     };
   });
 </script>
@@ -613,6 +813,12 @@ import AppointmentList from "../../components/calendar/AppointmentList.astro";
   }
 
   /* Ensure stats cards are responsive */
+  @media (max-width: 1024px) {
+    #appointment-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   @media (max-width: 768px) {
     #appointment-stats {
       grid-template-columns: repeat(2, 1fr);
