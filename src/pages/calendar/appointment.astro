@@ -728,8 +728,9 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       ? "http://localhost:8000"
       : "https://corrison.corrisonapi.com";
 
+    // FIXED: Use the correct customer appointments endpoint
     const response = await fetch(
-      API_BASE + "/api/v1/appointments/appointments/",
+      API_BASE + "/api/v1/my-appointments/", // CHANGED from "/api/v1/appointments/appointments/"
       {
         headers: {
           Authorization: "Bearer " + token,
@@ -751,11 +752,11 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     const appointmentsGrid = document.getElementById("appointments-grid");
     if (!appointmentsGrid) return;
 
-    // Sort appointments by date/time (newest first)
+    // Sort appointments by date/time (MOST RECENT FIRST - FIXED SORTING)
     const sortedAppointments = allAppointments.slice().sort(function (a, b) {
       const dateA = new Date(a.date + "T" + a.start_time);
       const dateB = new Date(b.date + "T" + b.start_time);
-      return dateB.getTime() - dateA.getTime();
+      return dateA.getTime() - dateB.getTime(); // CHANGED: removed the minus sign to show most recent first
     });
 
     const appointmentCards = sortedAppointments.map(function (appointment) {

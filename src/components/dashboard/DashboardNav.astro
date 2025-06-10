@@ -26,6 +26,9 @@ const getIcon = (iconName: string) => {
     calendar: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
     </svg>`,
+    manage: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+    </svg>`,
     shopping: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"></path>
     </svg>`,
@@ -265,7 +268,7 @@ const getIcon = (iconName: string) => {
   import { authStore } from "../../stores/authStore";
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Define all navigation items
+    // Define all navigation items - FIXED NAMING AND ROUTING
     const allNavItems = [
       {
         label: "Overview",
@@ -279,11 +282,13 @@ const getIcon = (iconName: string) => {
         icon: "user",
         id: "profile",
       },
+      // CUSTOMER APPOINTMENTS - All users can see their own appointments
       {
-        label: "Appointments",
+        label: "My Appointments", // Renamed from "Appointments" for clarity
         href: "/calendar/appointment",
-        icon: "calendar",
+        icon: "appointments", // Using different icon
         id: "customer-appointments",
+        // NO permission requirement - all users can see their own appointments
       },
       {
         label: "My Courses",
@@ -309,12 +314,13 @@ const getIcon = (iconName: string) => {
         icon: "settings",
         id: "settings",
       },
+      // STAFF/ADMIN APPOINTMENTS MANAGEMENT - Only for staff/superuser
       {
-        label: "My Appointments",
+        label: "Manage Calendar", // Renamed from "My Appointments" for clarity
         href: "/calendar/my-appointments",
-        icon: "calendar",
+        icon: "manage", // Using different icon to distinguish
         id: "manage-appointments",
-        requiresStaffOrSuperuser: true, // New property to mark staff-only items
+        requiresStaffOrSuperuser: true, // Only staff/superuser can manage calendar
       },
     ];
 
@@ -337,6 +343,9 @@ const getIcon = (iconName: string) => {
         calendar: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
         </svg>`,
+        manage: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+        </svg>`,
         shopping: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"></path>
         </svg>`,
@@ -353,12 +362,20 @@ const getIcon = (iconName: string) => {
       const state = authStore.getState();
       const user = state.user;
 
-      if (!user) return allNavItems;
+      if (!user)
+        return allNavItems.filter((item) => !item.requiresStaffOrSuperuser);
 
       // Check if user is staff or superuser
-      // Use bracket notation to avoid TypeScript errors for properties that might not be in the interface
+      // Use bracket notation to access properties that might not be in the interface
       const isStaffOrSuperuser =
         (user as any).is_staff || (user as any).is_superuser;
+
+      console.log("User permissions:", {
+        username: user.username,
+        is_staff: (user as any).is_staff,
+        is_superuser: (user as any).is_superuser,
+        isStaffOrSuperuser,
+      });
 
       // Filter items based on permissions
       return allNavItems.filter((item) => {
@@ -374,6 +391,15 @@ const getIcon = (iconName: string) => {
     function renderNavigation() {
       const currentPage = getPageId(); // Get current page from URL or other method
       const visibleNavItems = getVisibleNavItems();
+
+      console.log(
+        "Rendering navigation with items:",
+        visibleNavItems.map((item) => ({
+          label: item.label,
+          href: item.href,
+          requiresStaff: item.requiresStaffOrSuperuser,
+        })),
+      );
 
       renderDesktopNavigation(visibleNavItems, currentPage);
       renderMobileNavigation(visibleNavItems, currentPage);

@@ -231,13 +231,33 @@ const { selectedDate } = Astro.props;
   class CalendarView {
     constructor(selectedDate = null) {
       this.currentDate = new Date();
-      this.selectedDate = selectedDate ? new Date(selectedDate) : null;
+      this.selectedDate = selectedDate
+        ? this.parseLocalDate(selectedDate)
+        : null;
       this.availableSlots = new Map(); // Map of date string to slots array
       this.calendarUser = null;
       this.appointmentTypes = [];
       this.selectedSlot = null; // Store selected slot for booking
 
       this.init();
+    }
+
+    // Helper function to parse dates in local timezone
+    parseLocalDate(dateString) {
+      if (typeof dateString === "string") {
+        // Parse date string as local date (avoid timezone conversion)
+        const [year, month, day] = dateString.split("-").map(Number);
+        return new Date(year, month - 1, day); // month is 0-based in JS
+      }
+      return new Date(dateString);
+    }
+
+    // Helper function to format date as YYYY-MM-DD in local timezone
+    formatLocalDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
 
     async init() {
@@ -302,12 +322,12 @@ const { selectedDate } = Astro.props;
         ? "http://localhost:8000"
         : "https://corrison.corrisonapi.com";
 
-      // Calculate date range for the month
+      // Calculate date range for the month using local dates
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0); // Last day of month
 
-      const startDateStr = startDate.toISOString().split("T")[0];
-      const endDateStr = endDate.toISOString().split("T")[0];
+      const startDateStr = this.formatLocalDate(startDate);
+      const endDateStr = this.formatLocalDate(endDate);
 
       if (this.appointmentTypes.length === 0) {
         console.warn("No appointment types available");
@@ -329,7 +349,7 @@ const { selectedDate } = Astro.props;
 
           // Group slots by date
           slots.forEach((slot) => {
-            const dateKey = slot.date;
+            const dateKey = slot.date; // Keep as string to avoid conversion
             if (!allSlots.has(dateKey)) {
               allSlots.set(dateKey, []);
             }
@@ -361,6 +381,14 @@ const { selectedDate } = Astro.props;
       const daysInMonth = lastDay.getDate();
       const startingDayOfWeek = firstDay.getDay();
 
+      // Get today in local timezone
+      const today = new Date();
+      const todayLocal = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
+
       // Add empty cells for days before month starts
       for (let i = 0; i < startingDayOfWeek; i++) {
         const emptyCell = document.createElement("div");
@@ -371,9 +399,9 @@ const { selectedDate } = Astro.props;
       // Add cells for each day of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        const dateStr = date.toISOString().split("T")[0];
+        const dateStr = this.formatLocalDate(date);
         const isToday = this.isToday(date);
-        const isPast = date < new Date().setHours(0, 0, 0, 0);
+        const isPast = date < todayLocal;
         const hasSlots = this.availableSlots.has(dateStr);
         const isSelected =
           this.selectedDate && this.isSameDate(date, this.selectedDate);
@@ -414,7 +442,8 @@ const { selectedDate } = Astro.props;
     }
 
     selectDate(dateStr) {
-      this.selectedDate = new Date(dateStr);
+      // Parse the date string properly to avoid timezone issues
+      this.selectedDate = this.parseLocalDate(dateStr);
       this.renderCalendarGrid(); // Re-render to show selection
       this.showDateDetails(dateStr);
     }
@@ -429,7 +458,8 @@ const { selectedDate } = Astro.props;
       if (!dateDetails || !selectedDateTitle || !availableSlotsContainer)
         return;
 
-      const date = new Date(dateStr);
+      // Parse date properly to avoid timezone shift
+      const date = this.parseLocalDate(dateStr);
       selectedDateTitle.textContent = `Available Times - ${date.toLocaleDateString(
         "en-US",
         {
@@ -508,6 +538,17 @@ const { selectedDate } = Astro.props;
       });
     }
 
+    formatDateForDisplay(dateString) {
+      // Parse date string properly to avoid timezone issues
+      const date = this.parseLocalDate(dateString);
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+
     setupEventListeners() {
       // Month navigation
       const prevButton = document.getElementById("prev-month");
@@ -582,7 +623,12 @@ const { selectedDate } = Astro.props;
 
     isToday(date) {
       const today = new Date();
-      return this.isSameDate(date, today);
+      const todayLocal = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
+      return this.isSameDate(date, todayLocal);
     }
 
     isSameDate(date1, date2) {
