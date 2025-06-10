@@ -1,0 +1,1120 @@
+---
+// src/pages/ecommerce/[slug].astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+
+// Since this is a demo, we'll handle product loading client-side
+// In a real app, you might want to fetch some basic product data here
+
+export async function getStaticPaths() {
+  // Return empty array for demo - products will be loaded dynamically
+  return [];
+}
+
+const { slug } = Astro.params;
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">Product Details – Corrison Ecommerce</title>
+  <meta
+    slot="head"
+    name="description"
+    content="View detailed product information, images, specifications, and purchase options."
+  />
+
+  <div class="min-h-screen bg-gray-50">
+    <!-- Loading State -->
+    <div id="loading-state" class="container mx-auto px-4 py-16">
+      <div class="max-w-6xl mx-auto">
+        <div class="animate-pulse">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Image skeleton -->
+            <div class="space-y-4">
+              <div class="bg-gray-200 rounded-lg h-96"></div>
+              <div class="grid grid-cols-4 gap-2">
+                <div class="bg-gray-200 rounded h-20"></div>
+                <div class="bg-gray-200 rounded h-20"></div>
+                <div class="bg-gray-200 rounded h-20"></div>
+                <div class="bg-gray-200 rounded h-20"></div>
+              </div>
+            </div>
+            <!-- Content skeleton -->
+            <div class="space-y-6">
+              <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+              <div class="h-6 bg-gray-200 rounded w-1/2"></div>
+              <div class="space-y-2">
+                <div class="h-4 bg-gray-200 rounded"></div>
+                <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                <div class="h-4 bg-gray-200 rounded w-4/6"></div>
+              </div>
+              <div class="h-12 bg-gray-200 rounded w-32"></div>
+              <div class="h-12 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Content -->
+    <div id="product-content" class="hidden">
+      <!-- Breadcrumb -->
+      <nav class="bg-white border-b border-gray-200">
+        <div class="container mx-auto px-4 py-4">
+          <ol class="flex items-center space-x-2 text-sm">
+            <li>
+              <a href="/" class="text-gray-500 hover:text-gray-700">Home</a>
+            </li>
+            <li><span class="text-gray-300">/</span></li>
+            <li>
+              <a href="/ecommerce" class="text-gray-500 hover:text-gray-700"
+                >Shop</a
+              >
+            </li>
+            <li><span class="text-gray-300">/</span></li>
+            <li>
+              <a
+                href="/ecommerce/products"
+                class="text-gray-500 hover:text-gray-700">Products</a
+              >
+            </li>
+            <li><span class="text-gray-300">/</span></li>
+            <li id="breadcrumb-category" class="hidden">
+              <a href="#" class="text-gray-500 hover:text-gray-700"></a>
+              <span class="text-gray-300 ml-2">/</span>
+            </li>
+            <li class="text-gray-900 font-medium" id="breadcrumb-product">
+              Product
+            </li>
+          </ol>
+        </div>
+      </nav>
+
+      <div class="container mx-auto px-4 py-12">
+        <div class="max-w-6xl mx-auto">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Product Images -->
+            <div class="space-y-4">
+              <!-- Main Image -->
+              <div
+                class="relative bg-white rounded-xl overflow-hidden shadow-lg"
+              >
+                <img
+                  id="main-image"
+                  src="/api/placeholder/600/600"
+                  alt="Product Image"
+                  class="w-full h-96 object-cover"
+                  onload="(function(img) { img.style.opacity = '1'; })(this)"
+                  style="opacity:0; transition: opacity 0.3s ease-in-out;"
+                />
+
+                <!-- Product Type Badge -->
+                <div class="absolute top-4 left-4">
+                  <span
+                    id="product-type-badge"
+                    class="px-3 py-1 text-sm font-semibold rounded-full"
+                  >
+                    <!-- Will be populated by JS -->
+                  </span>
+                </div>
+
+                <!-- Sale Badge -->
+                <div id="sale-badge" class="absolute top-4 right-4 hidden">
+                  <span
+                    class="px-3 py-1 text-sm font-bold bg-red-500 text-white rounded-full"
+                  >
+                    SALE
+                  </span>
+                </div>
+
+                <!-- Image Navigation -->
+                <div
+                  id="image-nav"
+                  class="absolute inset-y-0 left-0 right-0 flex items-center justify-between p-4 opacity-0 hover:opacity-100 transition-opacity"
+                >
+                  <button
+                    id="prev-image"
+                    class="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-all"
+                  >
+                    <svg
+                      class="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                  </button>
+                  <button
+                    id="next-image"
+                    class="bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75 transition-all"
+                  >
+                    <svg
+                      class="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Thumbnail Images -->
+              <div id="thumbnail-container" class="grid grid-cols-4 gap-2">
+                <!-- Thumbnails will be populated by JS -->
+              </div>
+
+              <!-- Product Gallery Modal Trigger -->
+              <button
+                id="gallery-trigger"
+                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg transition-colors font-medium"
+              >
+                <svg
+                  class="w-5 h-5 inline mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                View Gallery
+              </button>
+            </div>
+
+            <!-- Product Info -->
+            <div class="space-y-6">
+              <!-- Product Title & Category -->
+              <div>
+                <div id="category-tag" class="hidden mb-2">
+                  <span
+                    class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium"
+                  ></span>
+                </div>
+                <h1
+                  id="product-title"
+                  class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4"
+                >
+                  Product Title
+                </h1>
+              </div>
+
+              <!-- Price -->
+              <div class="flex items-center space-x-4">
+                <div id="price-container">
+                  <span
+                    id="current-price"
+                    class="text-4xl font-bold text-gray-900"
+                  >
+                    $0.00
+                  </span>
+                  <span
+                    id="original-price"
+                    class="text-2xl text-gray-500 line-through ml-3 hidden"
+                  >
+                    $0.00
+                  </span>
+                </div>
+                <div id="savings-badge" class="hidden">
+                  <span
+                    class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold"
+                  >
+                    Save <span id="savings-amount">$0</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Product Description -->
+              <div class="prose prose-gray max-w-none">
+                <p
+                  id="product-description"
+                  class="text-lg text-gray-600 leading-relaxed"
+                >
+                  Loading product description...
+                </p>
+              </div>
+
+              <!-- Product Features/Specifications -->
+              <div id="product-features" class="hidden">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                  Key Features
+                </h3>
+                <ul id="features-list" class="space-y-2">
+                  <!-- Features will be populated by JS -->
+                </ul>
+              </div>
+
+              <!-- Digital Product Info -->
+              <div
+                id="digital-info"
+                class="hidden bg-purple-50 border border-purple-200 rounded-lg p-4"
+              >
+                <div class="flex items-start">
+                  <svg
+                    class="w-6 h-6 text-purple-600 mt-1 mr-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                    ></path>
+                  </svg>
+                  <div>
+                    <h4 class="font-semibold text-purple-900 mb-1">
+                      Digital Download
+                    </h4>
+                    <p class="text-purple-700 text-sm">
+                      Instant access after purchase. Download links valid for <span
+                        id="download-days">30</span
+                      > days. Maximum <span id="download-limit">5</span> downloads
+                      allowed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Physical Product Info -->
+              <div
+                id="physical-info"
+                class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4"
+              >
+                <div class="flex items-start">
+                  <svg
+                    class="w-6 h-6 text-blue-600 mt-1 mr-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                    ></path>
+                  </svg>
+                  <div>
+                    <h4 class="font-semibold text-blue-900 mb-1">
+                      Physical Product
+                    </h4>
+                    <p class="text-blue-700 text-sm">
+                      Ships within 1-2 business days. Free shipping on orders
+                      over $50.
+                    </p>
+                    <div id="product-specs" class="mt-2 text-xs text-blue-600">
+                      <!-- Product specs will be populated by JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stock Status -->
+              <div id="stock-status" class="flex items-center space-x-2">
+                <div id="stock-indicator" class="w-3 h-3 rounded-full"></div>
+                <span id="stock-text" class="text-sm font-medium"
+                  >Checking availability...</span
+                >
+              </div>
+
+              <!-- Variant Selection (if applicable) -->
+              <div id="variant-selection" class="hidden space-y-4">
+                <h3 class="text-lg font-semibold text-gray-900">Options</h3>
+                <div id="variant-options">
+                  <!-- Variant options will be populated by JS -->
+                </div>
+              </div>
+
+              <!-- Quantity & Add to Cart -->
+              <div class="space-y-4">
+                <div class="flex items-center space-x-4">
+                  <label class="text-sm font-medium text-gray-700"
+                    >Quantity:</label
+                  >
+                  <div
+                    class="flex items-center border border-gray-300 rounded-lg"
+                  >
+                    <button
+                      id="decrease-qty"
+                      class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M20 12H4"></path>
+                      </svg>
+                    </button>
+                    <input
+                      type="number"
+                      id="quantity-input"
+                      value="1"
+                      min="1"
+                      max="10"
+                      class="w-16 px-3 py-2 text-center border-0 focus:ring-0"
+                    />
+                    <button
+                      id="increase-qty"
+                      class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="space-y-3">
+                  <button
+                    id="add-to-cart-btn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  >
+                    <svg
+                      class="w-5 h-5 inline mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"
+                      ></path>
+                    </svg>
+                    Add to Cart
+                  </button>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <button
+                      id="wishlist-btn"
+                      class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <svg
+                        class="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                        ></path>
+                      </svg>
+                      Wishlist
+                    </button>
+
+                    <button
+                      id="share-btn"
+                      class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <svg
+                        class="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                        ></path>
+                      </svg>
+                      Share
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Trust Signals -->
+              <div class="border-t pt-6">
+                <div
+                  class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-600"
+                >
+                  <div class="flex items-center">
+                    <svg
+                      class="w-5 h-5 text-green-500 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      ></path>
+                    </svg>
+                    Secure Payment
+                  </div>
+                  <div class="flex items-center">
+                    <svg
+                      class="w-5 h-5 text-blue-500 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                    </svg>
+                    Easy Returns
+                  </div>
+                  <div class="flex items-center">
+                    <svg
+                      class="w-5 h-5 text-purple-500 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      ></path>
+                    </svg>
+                    24/7 Support
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Related Products -->
+          <section id="related-products" class="mt-20">
+            <h2 class="text-2xl font-bold text-gray-900 mb-8">
+              Related Products
+            </h2>
+            <div
+              id="related-products-grid"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            >
+              <!-- Related products will be loaded here -->
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" class="hidden container mx-auto px-4 py-16">
+      <div class="max-w-lg mx-auto text-center">
+        <div class="text-6xl mb-4">😞</div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Product Not Found</h1>
+        <p class="text-gray-600 mb-8">
+          The product you're looking for doesn't exist or may have been removed.
+        </p>
+        <div class="space-x-4">
+          <a
+            href="/ecommerce/products"
+            class="inline-block bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Browse Products
+          </a>
+          <a
+            href="/ecommerce"
+            class="inline-block border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Back to Shop
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script>
+  // Define types
+  interface Product {
+    slug: string;
+    name: string;
+    description?: string;
+    price: number;
+    sale_price?: number;
+    main_image?: string;
+    featured_image?: string;
+    images?: Array<{ image: string } | string>;
+    category?:
+      | {
+          name: string;
+          slug: string;
+        }
+      | string;
+    product_type: "digital" | "physical";
+    in_stock: boolean;
+    stock_qty?: number;
+    download_expiry_days?: number;
+    download_limit?: number;
+    weight?: number;
+    dimensions?: string;
+  }
+
+  interface Elements {
+    [key: string]: HTMLElement | null;
+  }
+
+  const API_BASE_URL: string = "https://corrison.corrisonapi.com/api/v1";
+  const slug: string = window.location.pathname.split("/").pop() || "";
+  let currentProduct: Product | null = null;
+  let currentImageIndex: number = 0;
+  let productImages: string[] = [];
+
+  // DOM elements with proper typing
+  const elements: Elements = {
+    loadingState: document.getElementById("loading-state"),
+    productContent: document.getElementById("product-content"),
+    errorState: document.getElementById("error-state"),
+    mainImage: document.getElementById("main-image"),
+    productTitle: document.getElementById("product-title"),
+    productDescription: document.getElementById("product-description"),
+    currentPrice: document.getElementById("current-price"),
+    originalPrice: document.getElementById("original-price"),
+    saleBadge: document.getElementById("sale-badge"),
+    savingsBadge: document.getElementById("savings-badge"),
+    savingsAmount: document.getElementById("savings-amount"),
+    productTypeBadge: document.getElementById("product-type-badge"),
+    categoryTag: document.getElementById("category-tag"),
+    breadcrumbCategory: document.getElementById("breadcrumb-category"),
+    breadcrumbProduct: document.getElementById("breadcrumb-product"),
+    stockIndicator: document.getElementById("stock-indicator"),
+    stockText: document.getElementById("stock-text"),
+    digitalInfo: document.getElementById("digital-info"),
+    physicalInfo: document.getElementById("physical-info"),
+    downloadDays: document.getElementById("download-days"),
+    downloadLimit: document.getElementById("download-limit"),
+    productSpecs: document.getElementById("product-specs"),
+    quantityInput: document.getElementById("quantity-input"),
+    addToCartBtn: document.getElementById("add-to-cart-btn"),
+    wishlistBtn: document.getElementById("wishlist-btn"),
+    shareBtn: document.getElementById("share-btn"),
+    thumbnailContainer: document.getElementById("thumbnail-container"),
+    imageNav: document.getElementById("image-nav"),
+    prevImageBtn: document.getElementById("prev-image"),
+    nextImageBtn: document.getElementById("next-image"),
+    galleryTrigger: document.getElementById("gallery-trigger"),
+    relatedProductsGrid: document.getElementById("related-products-grid"),
+  };
+
+  // Load product data
+  async function loadProduct(): Promise<void> {
+    try {
+      const response: Response = await fetch(
+        `${API_BASE_URL}/products/${slug}/`,
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const product: Product = await response.json();
+      currentProduct = product;
+
+      renderProduct(product);
+      loadRelatedProducts(
+        typeof product.category === "object"
+          ? product.category?.slug
+          : undefined,
+      );
+
+      elements.loadingState?.classList.add("hidden");
+      elements.productContent?.classList.remove("hidden");
+    } catch (error) {
+      console.error("Error loading product:", error);
+      elements.loadingState?.classList.add("hidden");
+      elements.errorState?.classList.remove("hidden");
+    }
+  }
+
+  // Render product information
+  function renderProduct(product: Product): void {
+    // Update page title
+    document.title = `${product.name} – Corrison Ecommerce`;
+
+    // Basic info
+    if (elements.productTitle) elements.productTitle.textContent = product.name;
+    if (elements.breadcrumbProduct)
+      elements.breadcrumbProduct.textContent = product.name;
+    if (elements.productDescription)
+      elements.productDescription.textContent =
+        product.description || "No description available.";
+
+    // Category
+    if (
+      product.category &&
+      elements.categoryTag &&
+      elements.breadcrumbCategory
+    ) {
+      const categoryName: string =
+        typeof product.category === "object"
+          ? product.category.name || ""
+          : product.category || "";
+      const categorySpan: HTMLElement | null =
+        elements.categoryTag.querySelector("span");
+      if (categorySpan) categorySpan.textContent = categoryName;
+      elements.categoryTag.classList.remove("hidden");
+
+      const categoryLink: HTMLAnchorElement | null =
+        elements.breadcrumbCategory.querySelector("a");
+      if (categoryLink) {
+        categoryLink.textContent = categoryName;
+        const categorySlug: string =
+          typeof product.category === "object"
+            ? product.category.slug || ""
+            : "";
+        categoryLink.href = `/ecommerce/products?category=${categorySlug}`;
+      }
+      elements.breadcrumbCategory.classList.remove("hidden");
+    }
+
+    // Pricing
+    const currentPrice: number = product.sale_price || product.price;
+    const originalPrice: number | null = product.sale_price
+      ? product.price
+      : null;
+
+    if (elements.currentPrice) {
+      elements.currentPrice.textContent = `$${parseFloat(currentPrice.toString()).toFixed(2)}`;
+    }
+
+    if (
+      originalPrice &&
+      elements.originalPrice &&
+      elements.saleBadge &&
+      elements.savingsBadge &&
+      elements.savingsAmount
+    ) {
+      elements.originalPrice.textContent = `$${parseFloat(originalPrice.toString()).toFixed(2)}`;
+      elements.originalPrice.classList.remove("hidden");
+      elements.saleBadge.classList.remove("hidden");
+
+      const savings: number = originalPrice - currentPrice;
+      elements.savingsAmount.textContent = `$${savings.toFixed(2)}`;
+      elements.savingsBadge.classList.remove("hidden");
+    }
+
+    // Product type
+    const isDigital: boolean = product.product_type === "digital";
+    if (elements.productTypeBadge) {
+      elements.productTypeBadge.textContent = isDigital
+        ? "📱 Digital Download"
+        : "📦 Physical Product";
+      elements.productTypeBadge.className = `px-3 py-1 text-sm font-semibold rounded-full ${
+        isDigital
+          ? "bg-purple-100 text-purple-800"
+          : "bg-blue-100 text-blue-800"
+      }`;
+    }
+
+    // Show appropriate info section
+    if (isDigital && elements.digitalInfo) {
+      elements.digitalInfo.classList.remove("hidden");
+      if (product.download_expiry_days && elements.downloadDays) {
+        elements.downloadDays.textContent =
+          product.download_expiry_days.toString();
+      }
+      if (product.download_limit && elements.downloadLimit) {
+        elements.downloadLimit.textContent = product.download_limit.toString();
+      }
+    } else if (elements.physicalInfo) {
+      elements.physicalInfo.classList.remove("hidden");
+
+      // Add product specs
+      const specs: string[] = [];
+      if (product.weight) specs.push(`Weight: ${product.weight}kg`);
+      if (product.dimensions) specs.push(`Dimensions: ${product.dimensions}`);
+
+      if (specs.length > 0 && elements.productSpecs) {
+        elements.productSpecs.textContent = specs.join(" • ");
+      }
+    }
+
+    // Stock status
+    updateStockStatus(product);
+
+    // Images
+    setupProductImages(product);
+
+    // Update max quantity based on stock
+    if (product.stock_qty && product.stock_qty > 0 && elements.quantityInput) {
+      (elements.quantityInput as HTMLInputElement).max = Math.min(
+        product.stock_qty,
+        10,
+      ).toString();
+    }
+  }
+
+  // Update stock status
+  function updateStockStatus(product: Product): void {
+    const inStock: boolean =
+      product.in_stock &&
+      (product.stock_qty
+        ? product.stock_qty > 0
+        : false || product.product_type === "digital");
+
+    if (
+      inStock &&
+      elements.stockIndicator &&
+      elements.stockText &&
+      elements.addToCartBtn
+    ) {
+      elements.stockIndicator.className = "w-3 h-3 rounded-full bg-green-500";
+      elements.stockText.textContent =
+        product.product_type === "digital"
+          ? "Available for download"
+          : product.stock_qty && product.stock_qty > 10
+            ? "In Stock"
+            : `${product.stock_qty || 0} left in stock`;
+      elements.stockText.className = "text-sm font-medium text-green-600";
+      (elements.addToCartBtn as HTMLButtonElement).disabled = false;
+    } else if (
+      elements.stockIndicator &&
+      elements.stockText &&
+      elements.addToCartBtn
+    ) {
+      elements.stockIndicator.className = "w-3 h-3 rounded-full bg-red-500";
+      elements.stockText.textContent = "Out of Stock";
+      elements.stockText.className = "text-sm font-medium text-red-600";
+      (elements.addToCartBtn as HTMLButtonElement).disabled = true;
+      elements.addToCartBtn.textContent = "Out of Stock";
+    }
+  }
+
+  // Setup product images
+  function setupProductImages(product: Product): void {
+    productImages = [];
+
+    // Add main image
+    if (product.main_image) {
+      productImages.push(product.main_image);
+    }
+
+    // Add additional images if available
+    if (product.images && Array.isArray(product.images)) {
+      productImages.push(
+        ...product.images.map((img: { image: string } | string) =>
+          typeof img === "object" ? img.image : img,
+        ),
+      );
+    }
+
+    // Fallback to placeholder if no images
+    if (productImages.length === 0) {
+      productImages.push("/api/placeholder/600/600");
+    }
+
+    // Set main image
+    if (elements.mainImage) {
+      (elements.mainImage as HTMLImageElement).src = productImages[0];
+      (elements.mainImage as HTMLImageElement).alt = product.name;
+    }
+
+    // Setup thumbnails if multiple images
+    if (productImages.length > 1) {
+      renderThumbnails();
+      elements.imageNav?.classList.remove("hidden");
+    }
+  }
+
+  // Render thumbnail images
+  function renderThumbnails(): void {
+    if (elements.thumbnailContainer) {
+      elements.thumbnailContainer.innerHTML = productImages
+        .map(
+          (image: string, index: number) => `
+          <button 
+            class="relative overflow-hidden rounded-lg border-2 transition-all ${
+              index === currentImageIndex
+                ? "border-blue-500"
+                : "border-gray-200 hover:border-gray-300"
+            }"
+            onclick="selectImage(${index})"
+          >
+            <img 
+              src="${image}" 
+              alt="Product image ${index + 1}" 
+              class="w-full h-20 object-cover"
+              onerror="this.src='/api/placeholder/100/100'"
+            >
+          </button>
+        `,
+        )
+        .join("");
+    }
+  }
+
+  // Image navigation functions
+  function selectImage(index: number): void {
+    currentImageIndex = index;
+    if (elements.mainImage) {
+      (elements.mainImage as HTMLImageElement).src = productImages[index];
+    }
+    renderThumbnails();
+  }
+
+  // Make selectImage globally available
+  (window as any).selectImage = selectImage;
+
+  // Load related products
+  async function loadRelatedProducts(categorySlug?: string): Promise<void> {
+    if (!categorySlug || !elements.relatedProductsGrid) return;
+
+    try {
+      const response: Response = await fetch(
+        `${API_BASE_URL}/products/?category=${categorySlug}&limit=4`,
+      );
+      if (!response.ok) return;
+
+      const data: any = await response.json();
+      const products: Product[] = (data.results || data).filter(
+        (p: Product) => p.slug !== slug,
+      );
+
+      if (products.length > 0) {
+        elements.relatedProductsGrid.innerHTML = products
+          .map((product: Product) => {
+            const imageUrl: string =
+              product.main_image ||
+              product.featured_image ||
+              "/api/placeholder/300/300";
+            const price: number = product.sale_price || product.price;
+
+            return `
+              <div class="group bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all cursor-pointer"
+                   onclick="window.location.href='/ecommerce/${product.slug}'">
+                <div class="relative h-48 overflow-hidden">
+                  <img src="${imageUrl}" 
+                       alt="${product.name}" 
+                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                       onerror="this.src='/api/placeholder/300/300'">
+                  <div class="absolute top-2 left-2">
+                    <span class="px-2 py-1 text-xs font-semibold rounded ${
+                      product.product_type === "digital"
+                        ? "bg-purple-100 text-purple-800"
+                        : "bg-blue-100 text-blue-800"
+                    }">
+                      ${product.product_type === "digital" ? "📱" : "📦"}
+                    </span>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <h3 class="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-2">
+                    ${product.name}
+                  </h3>
+                  <div class="flex items-center justify-between">
+                    <span class="text-lg font-bold text-gray-900">
+                      $${parseFloat(price.toString()).toFixed(2)}
+                    </span>
+                    <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                      View
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+    } catch (error) {
+      console.error("Error loading related products:", error);
+    }
+  }
+
+  // Event listeners
+  function setupEventListeners(): void {
+    // Quantity controls
+    const decreaseBtn: HTMLElement | null =
+      document.getElementById("decrease-qty");
+    const increaseBtn: HTMLElement | null =
+      document.getElementById("increase-qty");
+
+    decreaseBtn?.addEventListener("click", () => {
+      const quantityInput = elements.quantityInput as HTMLInputElement;
+      if (quantityInput) {
+        const qty: number = parseInt(quantityInput.value);
+        if (qty > 1) quantityInput.value = (qty - 1).toString();
+      }
+    });
+
+    increaseBtn?.addEventListener("click", () => {
+      const quantityInput = elements.quantityInput as HTMLInputElement;
+      if (quantityInput) {
+        const qty: number = parseInt(quantityInput.value);
+        const max: number = parseInt(quantityInput.max);
+        if (qty < max) quantityInput.value = (qty + 1).toString();
+      }
+    });
+
+    // Image navigation
+    elements.prevImageBtn?.addEventListener("click", () => {
+      const prevIndex: number =
+        currentImageIndex > 0
+          ? currentImageIndex - 1
+          : productImages.length - 1;
+      selectImage(prevIndex);
+    });
+
+    elements.nextImageBtn?.addEventListener("click", () => {
+      const nextIndex: number =
+        currentImageIndex < productImages.length - 1
+          ? currentImageIndex + 1
+          : 0;
+      selectImage(nextIndex);
+    });
+
+    // Add to cart
+    elements.addToCartBtn?.addEventListener("click", () => {
+      if (currentProduct && elements.quantityInput) {
+        const quantity: number = parseInt(
+          (elements.quantityInput as HTMLInputElement).value,
+        );
+        addToCart(currentProduct, quantity);
+      }
+    });
+
+    // Wishlist
+    elements.wishlistBtn?.addEventListener("click", () => {
+      if (currentProduct) toggleWishlist(currentProduct);
+    });
+
+    // Share
+    elements.shareBtn?.addEventListener("click", () => {
+      if (currentProduct) shareProduct(currentProduct);
+    });
+
+    // Gallery trigger
+    elements.galleryTrigger?.addEventListener("click", () => {
+      // Simple implementation - could be enhanced with a modal
+      window.open(productImages[currentImageIndex], "_blank");
+    });
+  }
+
+  // Cart functions
+  function addToCart(product: Product, quantity: number): void {
+    // Simulate add to cart
+    const cartButton = elements.addToCartBtn as HTMLButtonElement;
+    if (!cartButton) return;
+
+    const originalText: string | null = cartButton.textContent;
+
+    cartButton.textContent = "Adding...";
+    cartButton.disabled = true;
+
+    window.setTimeout(() => {
+      cartButton.textContent = "✓ Added to Cart";
+      cartButton.classList.remove("bg-blue-600", "hover:bg-blue-700");
+      cartButton.classList.add("bg-green-600");
+
+      window.setTimeout(() => {
+        cartButton.textContent = originalText;
+        cartButton.disabled = false;
+        cartButton.classList.remove("bg-green-600");
+        cartButton.classList.add("bg-blue-600", "hover:bg-blue-700");
+      }, 2000);
+    }, 1000);
+
+    console.log(`Added ${quantity}x ${product.name} to cart`);
+  }
+
+  function toggleWishlist(product: Product): void {
+    const button: HTMLElement | null = elements.wishlistBtn;
+    if (!button) return;
+
+    const isInWishlist: boolean = button.classList.contains("text-red-600");
+
+    if (isInWishlist) {
+      button.classList.remove("text-red-600", "bg-red-50");
+      button.classList.add("text-gray-700");
+      button.innerHTML = `
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+          </svg>
+          Wishlist
+        `;
+      console.log(`Removed ${product.name} from wishlist`);
+    } else {
+      button.classList.add("text-red-600", "bg-red-50");
+      button.classList.remove("text-gray-700");
+      button.innerHTML = `
+          <svg class="w-5 h-5 mr-2" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+          </svg>
+          In Wishlist
+        `;
+      console.log(`Added ${product.name} to wishlist`);
+    }
+  }
+
+  function shareProduct(product: Product): void {
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: product.description,
+        url: window.location.href,
+      });
+    } else {
+      // Fallback to clipboard
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        const button: HTMLElement | null = elements.shareBtn;
+        if (!button) return;
+
+        const originalText: string = button.innerHTML;
+        button.innerHTML = `
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Copied
+          `;
+        window.setTimeout(() => {
+          button.innerHTML = originalText;
+        }, 2000);
+      });
+    }
+  }
+
+  // Initialize
+  document.addEventListener("DOMContentLoaded", () => {
+    setupEventListeners();
+    loadProduct();
+  });
+</script>
