@@ -819,7 +819,6 @@ const featuredCourses = courses.filter((course) => course.is_featured);
       // Check if user is authenticated
       const authToken = localStorage.getItem("access_token");
       if (!authToken) {
-        // Redirect to login
         window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
         return;
       }
@@ -841,7 +840,7 @@ const featuredCourses = courses.filter((course) => course.is_featured);
         const endpoint = isSaved ? "unsave_course" : "save_course";
 
         const response = await fetch(
-          `/api/v1/courses/${courseSlug}/${endpoint}/`,
+          `https://corrison.corrisonapi.com/api/v1/courses/${courseSlug}/${endpoint}/`,
           {
             method: method,
             headers: {

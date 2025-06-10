@@ -429,6 +429,32 @@ if (!course) {
                 </div>
               </div>
 
+              <div class="flex items-center justify-center space-x-3 mt-4">
+                <button
+                  id="save-course-btn"
+                  onclick="toggleSaveCourse()"
+                  class="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:border-teal-300 hover:bg-gray-50 transition-colors"
+                  data-course-slug=""
+                  data-saved="false"
+                >
+                  <svg
+                    id="save-icon"
+                    class="h-5 w-5 mr-2 text-gray-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.518 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                    ></path>
+                  </svg>
+                  <span id="save-text">Save for Later</span>
+                </button>
+              </div>
+
               <!-- Course Features -->
               <div class="mt-6 pt-6 border-t border-gray-200">
                 <h4 class="font-semibold text-gray-900 mb-3">
@@ -714,6 +740,174 @@ if (!course) {
       }
     };
   });
+</script>
+<script is:inline>
+  // Course save functionality
+  let courseData = {
+    slug: "",
+    is_saved: false,
+  };
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Get course data from hidden div
+    const courseDataEl = document.querySelector("[data-course-id]");
+    if (courseDataEl) {
+      courseData.slug = window.location.pathname.split("/").pop();
+      initializeSaveButton();
+    }
+  });
+
+  async function initializeSaveButton() {
+    const saveBtn = document.getElementById("save-course-btn");
+    if (!saveBtn) return;
+
+    // Set course slug
+    saveBtn.setAttribute("data-course-slug", courseData.slug);
+
+    // Check if user is authenticated and get save status
+    const authToken = localStorage.getItem("access_token");
+    if (!authToken) {
+      // User not logged in - show login prompt on click
+      return;
+    }
+
+    try {
+      // Fetch course details with authentication to get is_saved status
+      const response = await fetch(
+        `https://corrison.corrisonapi.com/api/v1/courses/${courseData.slug}/`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (response.ok) {
+        const course = await response.json();
+        courseData.is_saved = course.is_saved || false;
+        updateSaveButtonUI(courseData.is_saved);
+      }
+    } catch (error) {
+      console.error("Error fetching course save status:", error);
+    }
+  }
+
+  function updateSaveButtonUI(isSaved) {
+    const saveBtn = document.getElementById("save-course-btn");
+    const saveIcon = document.getElementById("save-icon");
+    const saveText = document.getElementById("save-text");
+
+    if (!saveBtn || !saveIcon || !saveText) return;
+
+    saveBtn.setAttribute("data-saved", isSaved.toString());
+
+    if (isSaved) {
+      saveIcon.className = "h-5 w-5 mr-2 text-yellow-500 fill-current";
+      saveText.textContent = "Saved";
+      saveBtn.className =
+        "flex items-center px-4 py-2 border border-yellow-300 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors";
+    } else {
+      saveIcon.className = "h-5 w-5 mr-2 text-gray-600";
+      saveText.textContent = "Save for Later";
+      saveBtn.className =
+        "flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:border-teal-300 hover:bg-gray-50 transition-colors";
+    }
+  }
+
+  async function toggleSaveCourse() {
+    const authToken = localStorage.getItem("access_token");
+    if (!authToken) {
+      window.location.href = `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      return;
+    }
+
+    const saveBtn = document.getElementById("save-course-btn");
+    const saveIcon = document.getElementById("save-icon");
+
+    if (!saveBtn || !saveIcon) return;
+
+    const isSaved = saveBtn.getAttribute("data-saved") === "true";
+    const method = isSaved ? "DELETE" : "POST";
+    const endpoint = isSaved ? "unsave_course" : "save_course";
+
+    // Show loading state
+    const originalIcon = saveIcon.innerHTML;
+    saveIcon.innerHTML =
+      '<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" fill="none"/>';
+    saveIcon.className = "h-5 w-5 mr-2 text-gray-400 animate-spin";
+    saveBtn.disabled = true;
+
+    try {
+      const response = await fetch(
+        `https://corrison.corrisonapi.com/api/v1/courses/${courseData.slug}/${endpoint}/`,
+        {
+          method: method,
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        courseData.is_saved = result.saved;
+        updateSaveButtonUI(courseData.is_saved);
+
+        // Show success notification
+        showNotification(
+          result.message ||
+            (courseData.is_saved
+              ? "Course saved!"
+              : "Course removed from saved list"),
+          "success",
+        );
+      } else {
+        throw new Error("Failed to update course save status");
+      }
+    } catch (error) {
+      console.error("Error toggling course save:", error);
+      showNotification("Failed to update course. Please try again.", "error");
+
+      // Restore original state
+      saveIcon.innerHTML = originalIcon;
+      updateSaveButtonUI(courseData.is_saved);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  }
+
+  function showNotification(message, type = "info") {
+    const notification = document.createElement("div");
+    const className =
+      type === "success"
+        ? "bg-green-100 text-green-800 border border-green-200"
+        : type === "error"
+          ? "bg-red-100 text-red-800 border border-red-200"
+          : "bg-blue-100 text-blue-800 border border-blue-200";
+
+    notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${className}`;
+    notification.innerHTML = `
+      <div class="flex items-center">
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-current opacity-50 hover:opacity-100">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      if (notification.parentElement) {
+        notification.remove();
+      }
+    }, 3000);
+  }
 </script>
 <!-- Hidden data attributes for JavaScript -->
 <div
