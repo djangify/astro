@@ -209,6 +209,12 @@ class AuthStore {
     if (!this.state.user) return '';
     return `${this.state.user.first_name} ${this.state.user.last_name}`.trim() || this.state.user.username;
   }
+
+  // Get user's first name
+  getUserFirstName(): string {
+    if (!this.state.user) return '';
+    return this.state.user.first_name?.trim() || '';
+  }
 }
 
 // Create and export singleton instance

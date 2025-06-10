@@ -22,8 +22,11 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
       <section>
         <div class="container mx-auto px-4 py-12">
           <div class="max-w-4xl mx-auto">
-            <h1 class="text-3xl font-semibold text-gray-900 mb-4">
-              Welcome back!
+            <h1
+              class="text-3xl font-semibold text-gray-900 mb-4"
+              id="dashboard-welcome"
+            >
+              Hello!
             </h1>
             <p class="text-xl text-gray-600">
               Here's what's happening with your account today.
@@ -69,7 +72,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
         <div
           class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-8"
         >
-          <!-- Courses Progress -->
+          <!-- Active Courses -->
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="flex items-center">
               <div
@@ -101,7 +104,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
             </div>
           </div>
 
-          <!-- Course Progress -->
+          <!-- Upcoming Appointments -->
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div class="flex items-center">
               <div
@@ -117,16 +120,17 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
                 </svg>
               </div>
               <div class="ml-4">
-                <p class="text-sm text-gray-600">Avg. Progress</p>
+                <p class="text-sm text-gray-600">Upcoming Appointments</p>
                 <p
                   class="text-2xl font-semibold text-gray-900"
-                  id="avg-progress"
+                  id="upcoming-appointments-count"
                 >
-                  0%
+                  0
                 </p>
               </div>
             </div>
@@ -148,7 +152,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
                   ></path>
                 </svg>
               </div>
@@ -197,7 +201,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
           class="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
         >
           <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <a
               href="/courses"
               class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:shadow-sm transition-all"
@@ -219,6 +223,30 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                 <h4 class="font-medium text-gray-900">Browse Courses</h4>
                 <p class="text-sm text-gray-600">
                   Discover new learning opportunities
+                </p>
+              </div>
+            </a>
+
+            <a
+              href="/shop"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:shadow-sm transition-all"
+            >
+              <svg
+                class="w-8 h-8 text-teal-600 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+              </svg>
+              <div>
+                <h4 class="font-medium text-gray-900">Browse Shop</h4>
+                <p class="text-sm text-gray-600">
+                  Explore our products and services
                 </p>
               </div>
             </a>
@@ -274,6 +302,34 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
             </a>
 
             <a
+              href="/auth/settings"
+              class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:shadow-sm transition-all"
+            >
+              <svg
+                class="w-8 h-8 text-teal-600 mr-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                ></path>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <div>
+                <h4 class="font-medium text-gray-900">Update Settings</h4>
+                <p class="text-sm text-gray-600">Configure your preferences</p>
+              </div>
+            </a>
+
+            <a
               href="/support"
               class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-teal-300 hover:shadow-sm transition-all"
             >
@@ -298,78 +354,52 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
           </div>
         </div>
 
-        <!-- My Courses Section -->
+        <!-- My Courses and Products Section -->
         <section class="mb-8">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold text-gray-900">My Courses</h2>
-            <a
-              href="/courses/my-courses"
-              class="text-teal-700 hover:text-teal-800 font-medium text-sm"
-            >
-              View All →
-            </a>
-          </div>
-
-          <div
-            id="dashboard-courses"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            <!-- Loading state -->
-            <div class="dashboard-courses-loading">
-              <div class="bg-white rounded-lg shadow-sm p-6">
-                <div class="animate-pulse">
-                  <div class="h-4 bg-gray-200 rounded mb-3"></div>
-                  <div class="h-6 bg-gray-200 rounded mb-4"></div>
-                  <div class="h-2 bg-gray-200 rounded mb-2"></div>
-                  <div class="h-8 bg-gray-200 rounded"></div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- My Courses -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-medium text-gray-900">My Courses</h3>
+                  <a
+                    href="/courses/my-courses"
+                    class="text-teal-700 hover:text-teal-800 font-medium text-sm"
+                  >
+                    View All →
+                  </a>
                 </div>
               </div>
-            </div>
-          </div>
+              <div class="p-6">
+                <div id="dashboard-courses" class="space-y-4">
+                  <!-- Loading state -->
+                  <div class="dashboard-courses-loading">
+                    <div class="animate-pulse space-y-3">
+                      <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gray-200 rounded"></div>
+                        <div class="flex-1">
+                          <div class="h-4 bg-gray-200 rounded mb-2"></div>
+                          <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+                        </div>
+                      </div>
+                      <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gray-200 rounded"></div>
+                        <div class="flex-1">
+                          <div class="h-4 bg-gray-200 rounded mb-2"></div>
+                          <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-          <!-- Empty state for courses -->
-          <div id="no-courses" class="hidden text-center py-12">
-            <svg
-              class="h-12 w-12 mx-auto text-gray-300 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              ></path>
-            </svg>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">
-              No Courses Yet
-            </h3>
-            <p class="text-gray-500 mb-4">Start learning with our courses</p>
-            <a
-              href="/courses"
-              class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-4 py-2 rounded-lg transition-colors"
-            >
-              Browse Courses
-            </a>
-          </div>
-        </section>
-
-        <!-- Recent Activity Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Recent Courses -->
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
-            </div>
-            <div class="p-6">
-              <div id="recent-courses-list" class="space-y-4">
-                <div class="text-center py-8 text-gray-500">
+                <!-- Empty state for courses -->
+                <div id="no-courses" class="hidden text-center py-8">
                   <svg
-                    class="w-12 h-12 mx-auto mb-4 text-gray-300"
+                    class="h-12 w-12 mx-auto text-gray-300 mb-4"
                     fill="none"
-                    stroke="currentColor"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path
                       stroke-linecap="round"
@@ -378,51 +408,159 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                       d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                     ></path>
                   </svg>
-                  <p>No recent activity yet</p>
+                  <h4 class="text-lg font-medium text-gray-900 mb-2">
+                    No Courses Yet
+                  </h4>
+                  <p class="text-gray-500 mb-4">
+                    Start learning with our courses
+                  </p>
                   <a
                     href="/courses"
-                    class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
+                    class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-4 py-2 rounded-lg transition-colors"
                   >
-                    Start Learning →
+                    Browse Courses
                   </a>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Upcoming Events -->
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h3 class="text-lg font-medium text-gray-900">Upcoming Events</h3>
-            </div>
-            <div class="p-6">
-              <div id="upcoming-events-list" class="space-y-4">
-                <div class="text-center py-8 text-gray-500">
+            <!-- My Products -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-medium text-gray-900">My Products</h3>
+                  <a
+                    href="/auth/orders"
+                    class="text-teal-700 hover:text-teal-800 font-medium text-sm"
+                  >
+                    View All →
+                  </a>
+                </div>
+              </div>
+              <div class="p-6">
+                <div id="dashboard-products" class="space-y-4">
+                  <!-- Loading state -->
+                  <div class="dashboard-products-loading">
+                    <div class="animate-pulse space-y-3">
+                      <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gray-200 rounded"></div>
+                        <div class="flex-1">
+                          <div class="h-4 bg-gray-200 rounded mb-2"></div>
+                          <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+                        </div>
+                      </div>
+                      <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gray-200 rounded"></div>
+                        <div class="flex-1">
+                          <div class="h-4 bg-gray-200 rounded mb-2"></div>
+                          <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Empty state for products -->
+                <div id="no-products" class="hidden text-center py-8">
                   <svg
-                    class="w-12 h-12 mx-auto mb-4 text-gray-300"
+                    class="h-12 w-12 mx-auto text-gray-300 mb-4"
                     fill="none"
-                    stroke="currentColor"
                     viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    ></path>
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                   </svg>
-                  <p>No upcoming events</p>
+                  <h4 class="text-lg font-medium text-gray-900 mb-2">
+                    No Products Yet
+                  </h4>
+                  <p class="text-gray-500 mb-4">
+                    Explore our shop and products
+                  </p>
                   <a
-                    href="/calendar"
-                    class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
+                    href="/shop"
+                    class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-4 py-2 rounded-lg transition-colors"
                   >
-                    View Calendar →
+                    Browse Shop
                   </a>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        <!-- Recent Activity Section (Full Width) -->
+        <section class="mb-8">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-medium text-gray-900">
+                  Recent Activity
+                </h3>
+                <span class="text-sm text-gray-500"
+                  >Latest updates and changes</span
+                >
+              </div>
+            </div>
+            <div class="p-6">
+              <div id="recent-activity-list" class="space-y-4">
+                <!-- Loading state -->
+                <div class="recent-activity-loading">
+                  <div class="animate-pulse space-y-4">
+                    <div class="flex items-center space-x-4">
+                      <div class="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                      <div class="flex-1">
+                        <div class="h-4 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+                      </div>
+                      <div class="w-20 h-3 bg-gray-200 rounded"></div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                      <div class="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                      <div class="flex-1">
+                        <div class="h-4 bg-gray-200 rounded mb-2"></div>
+                        <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+                      </div>
+                      <div class="w-20 h-3 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty state for activity -->
+              <div id="no-activity" class="hidden text-center py-12">
+                <svg
+                  class="w-12 h-12 mx-auto text-gray-300 mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                <h4 class="text-lg font-medium text-gray-900 mb-2">
+                  No Recent Activity
+                </h4>
+                <p class="text-gray-500 mb-4">
+                  Activity will appear here as you use the site
+                </p>
+                <a
+                  href="/courses"
+                  class="mt-2 inline-block text-teal-600 hover:text-teal-500 font-medium"
+                >
+                  Start Exploring →
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -491,8 +629,13 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
       // Update welcome message
       const fullName = authStore.getUserFullName();
+      const firstName = authStore.getUserFirstName(); // You'll need to add this method
       if (welcomeHeading) {
-        welcomeHeading.textContent = `Welcome back, ${fullName}!`;
+        if (firstName && firstName.trim()) {
+          welcomeHeading.textContent = `Hello ${firstName}!`;
+        } else {
+          welcomeHeading.textContent = "Hello!";
+        }
       }
 
       // Show/hide email verification alert
@@ -516,19 +659,29 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
         }
       }
 
-      // Load dashboard data including courses
+      // Load dashboard data including courses and products
       loadDashboardData();
     }
 
     async function loadDashboardData() {
-      // Load courses and update stats
-      await loadDashboardCourses();
+      // Load courses, products, and activity
+      await Promise.all([
+        loadDashboardCourses(),
+        loadDashboardProducts(),
+        loadRecentActivity(),
+      ]);
 
-      // Update other stats (events, etc.)
+      // Update other stats (appointments, events, etc.)
       const upcomingEventsCount = document.getElementById(
         "upcoming-events-count",
       );
+      const upcomingAppointmentsCount = document.getElementById(
+        "upcoming-appointments-count",
+      );
+
       if (upcomingEventsCount) upcomingEventsCount.textContent = "0";
+      if (upcomingAppointmentsCount)
+        upcomingAppointmentsCount.textContent = "0";
     }
 
     async function loadDashboardCourses() {
@@ -541,11 +694,12 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
         const activeCoursesCount = document.getElementById(
           "active-courses-count",
         );
-        const avgProgress = document.getElementById("avg-progress");
 
         if (userCourses.length === 0) {
           if (coursesContainer) {
-            coursesContainer.style.display = "none";
+            coursesContainer
+              .querySelector(".dashboard-courses-loading")
+              ?.classList.add("hidden");
           }
           if (noCourses) {
             noCourses.classList.remove("hidden");
@@ -553,7 +707,6 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
           // Update stats
           if (activeCoursesCount) activeCoursesCount.textContent = "0";
-          if (avgProgress) avgProgress.textContent = "0%";
           return;
         }
 
@@ -561,16 +714,8 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
         if (activeCoursesCount)
           activeCoursesCount.textContent = userCourses.length.toString();
 
-        // Calculate average progress
-        const totalProgress = userCourses.reduce(
-          (sum, enrollment) => sum + (enrollment.progress_percentage || 0),
-          0,
-        );
-        const averageProgress = Math.round(totalProgress / userCourses.length);
-        if (avgProgress) avgProgress.textContent = `${averageProgress}%`;
-
-        // Show only first 3 courses for dashboard
-        const recentCourses = userCourses.slice(0, 3);
+        // Show only first 4 courses for dashboard in compact format
+        const recentCourses = userCourses.slice(0, 4);
 
         if (coursesContainer) {
           coursesContainer.innerHTML = recentCourses
@@ -579,61 +724,107 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
               const progressData = enrollment.progress_percentage || 0;
 
               return `
-              <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                <div class="p-6">
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-teal-600 text-sm font-medium">${courseData.category ? courseData.category.name : "Course"}</span>
-                    ${
-                      progressData === 100
-                        ? '<span class="text-green-600 text-xs font-medium">Completed</span>'
-                        : ""
-                    }
-                  </div>
-                  
-                  <h3 class="font-semibold text-gray-900 mb-3 line-clamp-2">${courseData.title}</h3>
-                  
-                  <div class="mb-4">
-                    <div class="flex justify-between text-sm mb-1">
-                      <span class="text-gray-600">Progress</span>
-                      <span class="text-gray-900 font-medium">${progressData}%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                      <div class="bg-teal-700 h-2 rounded-full transition-all duration-300" style="width: ${progressData}%"></div>
-                    </div>
-                  </div>
-                  
-                  <a
-                    href="/courses/${courseData.slug}/dashboard"
-                    class="block w-full text-center bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-                  >
-                    ${progressData > 0 ? "Continue" : "Start Course"}
-                  </a>
+              <div class="flex items-center space-x-3 p-3 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors">
+                <div class="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                  </svg>
                 </div>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-medium text-gray-900 truncate">${courseData.title}</h4>
+                  <div class="flex items-center space-x-2 mt-1">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2">
+                      <div class="bg-teal-600 h-2 rounded-full" style="width: ${progressData}%"></div>
+                    </div>
+                    <span class="text-xs text-gray-500 font-medium">${progressData}%</span>
+                  </div>
+                </div>
+                <a href="/courses/${courseData.slug}/dashboard" class="text-teal-600 hover:text-teal-700 text-sm font-medium">
+                  ${progressData > 0 ? "Continue" : "Start"}
+                </a>
               </div>
             `;
             })
             .join("");
         }
-
-        // Hide loading state
-        if (coursesContainer) {
-          const loadingElement = coursesContainer.querySelector(
-            ".dashboard-courses-loading",
-          );
-          if (loadingElement && loadingElement instanceof HTMLElement) {
-            loadingElement.style.display = "none";
-          }
-        }
       } catch (error) {
         console.error("Error loading dashboard courses:", error);
 
-        // Show fallback
         const coursesContainer = document.getElementById("dashboard-courses");
         if (coursesContainer) {
           coursesContainer.innerHTML = `
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
+            <div class="text-center py-6">
               <p class="text-gray-500">Unable to load courses</p>
               <a href="/courses" class="text-teal-700 hover:text-teal-800 text-sm">Browse Courses →</a>
+            </div>
+          `;
+        }
+      }
+    }
+
+    async function loadDashboardProducts() {
+      try {
+        // This would fetch user's purchased products
+        // const api = await import("../../lib/api");
+        // const userProducts = await api.fetchUserProducts();
+
+        const productsContainer = document.getElementById("dashboard-products");
+        const noProducts = document.getElementById("no-products");
+
+        // For now, show empty state (you'll need to implement the API call)
+        if (productsContainer) {
+          productsContainer
+            .querySelector(".dashboard-products-loading")
+            ?.classList.add("hidden");
+        }
+        if (noProducts) {
+          noProducts.classList.remove("hidden");
+        }
+      } catch (error) {
+        console.error("Error loading dashboard products:", error);
+
+        const productsContainer = document.getElementById("dashboard-products");
+        if (productsContainer) {
+          productsContainer.innerHTML = `
+            <div class="text-center py-6">
+              <p class="text-gray-500">Unable to load products</p>
+              <a href="/shop" class="text-teal-700 hover:text-teal-800 text-sm">Browse Shop →</a>
+            </div>
+          `;
+        }
+      }
+    }
+
+    async function loadRecentActivity() {
+      try {
+        // This would fetch recent activity data
+        // const api = await import("../../lib/api");
+        // const recentActivity = await api.fetchRecentActivity();
+
+        const activityContainer = document.getElementById(
+          "recent-activity-list",
+        );
+        const noActivity = document.getElementById("no-activity");
+
+        // For now, show empty state (you'll need to implement the API call)
+        if (activityContainer) {
+          activityContainer
+            .querySelector(".recent-activity-loading")
+            ?.classList.add("hidden");
+        }
+        if (noActivity) {
+          noActivity.classList.remove("hidden");
+        }
+      } catch (error) {
+        console.error("Error loading recent activity:", error);
+
+        const activityContainer = document.getElementById(
+          "recent-activity-list",
+        );
+        if (activityContainer) {
+          activityContainer.innerHTML = `
+            <div class="text-center py-8">
+              <p class="text-gray-500">Unable to load activity</p>
             </div>
           `;
         }
