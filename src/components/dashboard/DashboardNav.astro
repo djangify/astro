@@ -7,58 +7,6 @@ export interface Props {
 
 const { currentPage = "", className = "" } = Astro.props;
 
-const navItems = [
-  {
-    label: "Overview",
-    href: "/auth/dashboard",
-    icon: "dashboard",
-    id: "dashboard",
-  },
-  {
-    label: "Profile",
-    href: "/auth/profile",
-    icon: "user",
-    id: "profile",
-  },
-  {
-    label: "Appointments",
-    href: "/calendar/appointment",
-    icon: "calendar",
-    id: "customer-appointments",
-  },
-  {
-    label: "My Courses",
-    href: "/courses/my-courses",
-    icon: "book",
-    id: "courses",
-  },
-
-  {
-    label: "Calendar",
-    href: "/calendar",
-    icon: "calendar",
-    id: "calendar",
-  },
-  {
-    label: "Orders",
-    href: "/orders",
-    icon: "shopping",
-    id: "orders",
-  },
-  {
-    label: "Settings",
-    href: "/auth/settings",
-    icon: "settings",
-    id: "settings",
-  },
-  {
-    label: "My Appointments",
-    href: "/calendar/my-appointments",
-    icon: "calendar",
-    id: "manage-appointments",
-  },
-];
-
 // Helper function to get SVG icons
 const getIcon = (iconName: string) => {
   const icons: Record<string, string> = {
@@ -76,7 +24,7 @@ const getIcon = (iconName: string) => {
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
     </svg>`,
     calendar: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
     </svg>`,
     shopping: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"></path>
@@ -110,28 +58,8 @@ const getIcon = (iconName: string) => {
 
     <!-- Navigation Links -->
     <div class="flex-1 flex flex-col overflow-y-auto">
-      <nav class="flex-1 px-3 py-4 space-y-1">
-        {
-          navItems.map((item) => {
-            const isActive = currentPage === item.id;
-            const baseClasses =
-              "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors";
-            const activeClasses =
-              "bg-teal-50 text-teal-700 border-r-2 border-teal-700";
-            const inactiveClasses =
-              "text-gray-700 hover:text-teal-700 hover:bg-gray-50";
-            const classes = isActive
-              ? `${baseClasses} ${activeClasses}`
-              : `${baseClasses} ${inactiveClasses}`;
-
-            return (
-              <a href={item.href} class={classes}>
-                <span class="mr-3" set:html={getIcon(item.icon)} />
-                {item.label}
-              </a>
-            );
-          })
-        }
+      <nav class="flex-1 px-3 py-4 space-y-1" id="desktop-nav-links">
+        <!-- Navigation items will be populated by JavaScript -->
       </nav>
 
       <!-- Bottom section with Logout -->
@@ -257,99 +185,78 @@ const getIcon = (iconName: string) => {
       id="mobile-dashboard-menu"
       class="hidden border-t border-gray-200 bg-gray-50"
     >
-      <nav class="px-4 py-2 space-y-1">
-        {
-          navItems.map((item) => {
-            const isActive = currentPage === item.id;
-            const baseClasses =
-              "block px-3 py-2 text-sm font-medium rounded-md transition-colors";
-            const activeClasses = "bg-teal-100 text-teal-700";
-            const inactiveClasses =
-              "text-gray-700 hover:text-teal-700 hover:bg-white";
-            const classes = isActive
-              ? `${baseClasses} ${activeClasses}`
-              : `${baseClasses} ${inactiveClasses}`;
-
-            return (
-              <a href={item.href} class={classes}>
-                <span class="inline-flex items-center">
-                  <span class="mr-3" set:html={getIcon(item.icon)} />
-                  {item.label}
-                </span>
-              </a>
-            );
-          })
-        }
-
-        <div class="border-t border-gray-200 pt-2 mt-2">
-          <a
-            href="/support"
-            class="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-white rounded-md transition-colors"
-          >
-            <span class="inline-flex items-center">
-              <svg
-                class="w-5 h-5 mr-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
-                ></path>
-              </svg>
-              Help & Support
-            </span>
-          </a>
-
-          <a
-            href="/"
-            class="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-white rounded-md transition-colors"
-          >
-            <span class="inline-flex items-center">
-              <svg
-                class="w-5 h-5 mr-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                ></path>
-              </svg>
-              Back to Site
-            </span>
-          </a>
-
-          <!-- Mobile Logout Button -->
-          <button
-            id="mobile-logout-button"
-            class="block w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
-          >
-            <span class="inline-flex items-center">
-              <svg
-                class="w-5 h-5 mr-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                ></path>
-              </svg>
-              <span id="mobile-logout-text">Sign Out</span>
-            </span>
-          </button>
-        </div>
+      <nav class="px-4 py-2 space-y-1" id="mobile-nav-links">
+        <!-- Navigation items will be populated by JavaScript -->
       </nav>
+
+      <div class="border-t border-gray-200 pt-2 mt-2">
+        <a
+          href="/support"
+          class="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-white rounded-md transition-colors"
+        >
+          <span class="inline-flex items-center">
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+              ></path>
+            </svg>
+            Help & Support
+          </span>
+        </a>
+
+        <a
+          href="/"
+          class="block px-3 py-2 text-sm font-medium text-gray-700 hover:text-teal-700 hover:bg-white rounded-md transition-colors"
+        >
+          <span class="inline-flex items-center">
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            Back to Site
+          </span>
+        </a>
+
+        <!-- Mobile Logout Button -->
+        <button
+          id="mobile-logout-button"
+          class="block w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+        >
+          <span class="inline-flex items-center">
+            <svg
+              class="w-5 h-5 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              ></path>
+            </svg>
+            <span id="mobile-logout-text">Sign Out</span>
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </nav>
@@ -358,6 +265,191 @@ const getIcon = (iconName: string) => {
   import { authStore } from "../../stores/authStore";
 
   document.addEventListener("DOMContentLoaded", function () {
+    // Define all navigation items
+    const allNavItems = [
+      {
+        label: "Overview",
+        href: "/auth/dashboard",
+        icon: "dashboard",
+        id: "dashboard",
+      },
+      {
+        label: "Profile",
+        href: "/auth/profile",
+        icon: "user",
+        id: "profile",
+      },
+      {
+        label: "Appointments",
+        href: "/calendar/appointment",
+        icon: "calendar",
+        id: "customer-appointments",
+      },
+      {
+        label: "My Courses",
+        href: "/courses/my-courses",
+        icon: "book",
+        id: "courses",
+      },
+      {
+        label: "Calendar",
+        href: "/calendar",
+        icon: "calendar",
+        id: "calendar",
+      },
+      {
+        label: "Orders",
+        href: "/orders",
+        icon: "shopping",
+        id: "orders",
+      },
+      {
+        label: "Settings",
+        href: "/auth/settings",
+        icon: "settings",
+        id: "settings",
+      },
+      {
+        label: "My Appointments",
+        href: "/calendar/my-appointments",
+        icon: "calendar",
+        id: "manage-appointments",
+        requiresStaffOrSuperuser: true, // New property to mark staff-only items
+      },
+    ];
+
+    // Helper function to get SVG icons
+    const getIcon = (iconName: string) => {
+      const icons: Record<string, string> = {
+        dashboard: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-6 4h4"></path>
+        </svg>`,
+        user: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+        </svg>`,
+        book: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        </svg>`,
+        appointments: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>`,
+        calendar: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+        </svg>`,
+        shopping: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"></path>
+        </svg>`,
+        settings: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>`,
+      };
+      return icons[iconName] || icons.dashboard;
+    };
+
+    // Function to filter navigation items based on user permissions
+    function getVisibleNavItems() {
+      const state = authStore.getState();
+      const user = state.user;
+
+      if (!user) return allNavItems;
+
+      // Check if user is staff or superuser
+      // Use bracket notation to avoid TypeScript errors for properties that might not be in the interface
+      const isStaffOrSuperuser =
+        (user as any).is_staff || (user as any).is_superuser;
+
+      // Filter items based on permissions
+      return allNavItems.filter((item) => {
+        // If item requires staff/superuser and user is not, hide it
+        if (item.requiresStaffOrSuperuser && !isStaffOrSuperuser) {
+          return false;
+        }
+        return true;
+      });
+    }
+
+    // Function to render navigation items
+    function renderNavigation() {
+      const currentPage = getPageId(); // Get current page from URL or other method
+      const visibleNavItems = getVisibleNavItems();
+
+      renderDesktopNavigation(visibleNavItems, currentPage);
+      renderMobileNavigation(visibleNavItems, currentPage);
+    }
+
+    // Function to get current page ID (you might need to adjust this based on your routing)
+    function getPageId() {
+      const path = window.location.pathname;
+      if (path === "/auth/dashboard") return "dashboard";
+      if (path === "/auth/profile") return "profile";
+      if (path === "/calendar/appointment") return "customer-appointments";
+      if (path === "/courses/my-courses") return "courses";
+      if (path === "/calendar") return "calendar";
+      if (path === "/orders") return "orders";
+      if (path === "/auth/settings") return "settings";
+      if (path === "/calendar/my-appointments") return "manage-appointments";
+      return "";
+    }
+
+    // Render desktop navigation
+    function renderDesktopNavigation(navItems: any[], currentPage: string) {
+      const desktopNav = document.getElementById("desktop-nav-links");
+      if (!desktopNav) return;
+
+      desktopNav.innerHTML = navItems
+        .map((item) => {
+          const isActive = currentPage === item.id;
+          const baseClasses =
+            "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors";
+          const activeClasses =
+            "bg-teal-50 text-teal-700 border-r-2 border-teal-700";
+          const inactiveClasses =
+            "text-gray-700 hover:text-teal-700 hover:bg-gray-50";
+          const classes = isActive
+            ? `${baseClasses} ${activeClasses}`
+            : `${baseClasses} ${inactiveClasses}`;
+
+          return `
+          <a href="${item.href}" class="${classes}">
+            <span class="mr-3">${getIcon(item.icon)}</span>
+            ${item.label}
+          </a>
+        `;
+        })
+        .join("");
+    }
+
+    // Render mobile navigation
+    function renderMobileNavigation(navItems: any[], currentPage: string) {
+      const mobileNav = document.getElementById("mobile-nav-links");
+      if (!mobileNav) return;
+
+      mobileNav.innerHTML = navItems
+        .map((item) => {
+          const isActive = currentPage === item.id;
+          const baseClasses =
+            "block px-3 py-2 text-sm font-medium rounded-md transition-colors";
+          const activeClasses = "bg-teal-100 text-teal-700";
+          const inactiveClasses =
+            "text-gray-700 hover:text-teal-700 hover:bg-white";
+          const classes = isActive
+            ? `${baseClasses} ${activeClasses}`
+            : `${baseClasses} ${inactiveClasses}`;
+
+          return `
+          <a href="${item.href}" class="${classes}">
+            <span class="inline-flex items-center">
+              <span class="mr-3">${getIcon(item.icon)}</span>
+              ${item.label}
+            </span>
+          </a>
+        `;
+        })
+        .join("");
+    }
+
     // Mobile menu toggle functionality
     const mobileMenuButton = document.getElementById(
       "mobile-dashboard-menu-button",
@@ -381,12 +473,14 @@ const getIcon = (iconName: string) => {
       }
     });
 
-    // Initialize user info
+    // Initialize user info and navigation
     updateUserInfo();
+    renderNavigation();
 
     // Subscribe to auth state changes
     authStore.subscribe(() => {
       updateUserInfo();
+      renderNavigation(); // Re-render navigation when auth state changes
     });
 
     // Logout functionality for sidebar

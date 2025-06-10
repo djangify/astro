@@ -3,11 +3,9 @@ import UserMenu from "./auth/UserMenu.astro";
 
 const links = [
   { href: "/", label: "Home" },
-  { href: "/blog", label: "Blog" },
   { href: "/courses", label: "Courses" },
   { href: "/ecommerce", label: "Ecommerce" },
-  { href: "/calendar", label: "Book a Call" },
-  { href: "/linkhubs", label: "Demos" },
+  { href: "/calendar", label: "Calendar" },
 ];
 ---
 
@@ -21,16 +19,19 @@ const links = [
         >
           <span class="text-white text-xl font-bold italic">C</span>
         </div>
-        <span class="text-teal-700 font-bold text-xl">Corrison API</span>
+        <span class="text-teal-700 font-bold text-xl">
+          <span class="hidden sm:inline">Corrison API</span>
+          <span class="sm:hidden">Corrison</span>
+        </span>
       </a>
 
       <!-- Desktop Navigation -->
-      <nav class="hidden md:flex space-x-8">
+      <nav class="hidden md:flex space-x-4 lg:space-x-8">
         {
           links.map((link) => (
             <a
               href={link.href}
-              class="text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+              class="text-gray-700 hover:text-teal-700 font-medium transition-colors px-2 lg:px-3 py-2 rounded-md hover:bg-gray-50"
             >
               {link.label}
             </a>
@@ -39,23 +40,26 @@ const links = [
       </nav>
 
       <!-- Auth Section - DESKTOP ONLY -->
-      <div class="hidden md:flex items-center space-x-4">
+      <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
         <!-- Authenticated User Menu -->
         <div id="authenticated-section" class="hidden">
           <UserMenu />
         </div>
 
         <!-- Non-authenticated Buttons - DESKTOP ONLY -->
-        <div id="non-authenticated-section" class="flex items-center space-x-3">
+        <div
+          id="non-authenticated-section"
+          class="flex items-center space-x-2 lg:space-x-3"
+        >
           <a
             href="/auth/login"
-            class="text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+            class="text-gray-700 hover:text-teal-700 font-medium transition-colors px-2 lg:px-3 py-2 rounded-md hover:bg-gray-50"
           >
             Sign In
           </a>
           <a
             href="/auth/register"
-            class="bg-teal-600 text-white hover:bg-teal-700 font-medium px-4 py-2 rounded-md transition-colors"
+            class="bg-teal-600 text-white hover:bg-teal-700 font-medium px-3 lg:px-4 py-2 rounded-md transition-colors hidden lg:block"
           >
             Sign Up
           </a>
