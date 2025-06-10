@@ -16,16 +16,15 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   <div id="sidebar-nav" class="hidden">
     <DashboardNav currentPage="calendar" />
   </div>
-
   <main id="main-content" class="min-h-screen bg-gray-50">
     <!-- Page Header -->
     <section>
       <div class="container mx-auto px-4 py-12">
         <div class="max-w-4xl mx-auto">
-          <h1 class="text-3xl font-semibold text-gray-900 mb-4">
+          <h1 id="page-title" class="text-3xl font-semibold text-gray-900 mb-4">
             Book An Appointment
           </h1>
-          <p class="text-xl text-gray-600">
+          <p id="page-description" class="text-xl text-gray-600">
             Select your preferred date and time from our available slots.
           </p>
         </div>
@@ -123,8 +122,44 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   // Global calendar instance
   let currentCalendar = null;
 
+  // Load page settings
+  async function loadCalendarSettings() {
+    try {
+      const API_BASE = window.location.origin.includes("localhost")
+        ? "http://localhost:8000"
+        : "https://corrison.corrisonapi.com";
+
+      const response = await fetch(`${API_BASE}/api/v1/calendar-settings/`);
+      if (response.ok) {
+        const data = await response.json();
+        const settings = Array.isArray(data) ? data[0] : data;
+
+        if (settings.page_title) {
+          document.getElementById("page-title").textContent =
+            settings.page_title;
+        }
+        if (settings.page_description) {
+          document.getElementById("page-description").innerHTML =
+            settings.page_description;
+        }
+        if (settings.booking_instructions) {
+          document.getElementById("booking-instructions-text").innerHTML =
+            settings.booking_instructions;
+          document
+            .getElementById("booking-instructions")
+            .classList.remove("hidden");
+        }
+      }
+    } catch (error) {
+      // Keep defaults if API fails
+    }
+  }
+
   // Load calendar automatically
   window.loadCalendar = async function () {
+    // Load page settings when calendar loads
+    loadCalendarSettings();
+
     showState("loading");
 
     try {

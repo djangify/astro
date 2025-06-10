@@ -23,12 +23,24 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
         <section>
           <div class="container mx-auto px-4 py-12">
             <div class="max-w-4xl mx-auto">
-              <h1 class="text-3xl font-semibold text-gray-900 mb-4">
-                Order History
-              </h1>
-              <p class="text-xl text-gray-600">
-                Track your orders, view details, and manage your purchases.
-              </p>
+              <!-- Loading state for header content -->
+              <div id="header-loading" class="animate-pulse">
+                <div class="h-8 bg-gray-200 rounded mb-4 max-w-md"></div>
+                <div class="h-6 bg-gray-200 rounded max-w-lg"></div>
+              </div>
+
+              <!-- Actual header content (hidden initially) -->
+              <div id="header-content" class="hidden">
+                <h1
+                  id="page-title"
+                  class="text-3xl font-semibold text-gray-900 mb-4"
+                >
+                  Order History
+                </h1>
+                <p id="page-description" class="text-xl text-gray-600">
+                  Track your orders, view details, and manage your purchases.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -202,12 +214,10 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
   </div>
 </BaseLayout>
 
-<script>
-  import { authStore } from "../stores/authStore";
-
+<script is:inline>
   document.addEventListener("DOMContentLoaded", function () {
-    let allOrders: any[] = [];
-    let filteredOrders: any[] = [];
+    let allOrders = [];
+    let filteredOrders = [];
     let currentPage = 1;
     const ordersPerPage = 10;
 
@@ -215,10 +225,14 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
     initializePage();
 
     async function initializePage() {
-      try {
-        const state = authStore.getState();
+      // Initialize page settings first
+      await initializePageSettings();
 
-        if (!state.isAuthenticated) {
+      try {
+        // Check authentication
+        const isAuthenticated = checkAuthentication();
+
+        if (!isAuthenticated) {
           showNotAuthenticatedState();
           return;
         }
@@ -241,11 +255,85 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       }
     }
 
+    async function initializePageSettings() {
+      await loadOrderSettings();
+    }
+
+    async function loadOrderSettings() {
+      try {
+        const API_BASE = window.location.origin.includes("localhost")
+          ? "http://localhost:8000"
+          : "https://corrison.corrisonapi.com";
+
+        const response = await fetch(`${API_BASE}/api/v1/order-settings/`, {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Order Settings Response:", data);
+
+          // Handle both single object and array responses
+          const settings = Array.isArray(data) ? data[0] : data;
+          updateHeaderContent(settings);
+        } else {
+          console.error("Failed to load order settings:", response.status);
+          showDefaultHeaderContent();
+        }
+      } catch (error) {
+        console.error("Error loading order settings:", error);
+        showDefaultHeaderContent();
+      }
+    }
+
+    function updateHeaderContent(settings) {
+      const headerLoading = document.getElementById("header-loading");
+      const headerContent = document.getElementById("header-content");
+      const pageTitle = document.getElementById("page-title");
+      const pageDescription = document.getElementById("page-description");
+
+      if (settings) {
+        // Update title
+        if (pageTitle && settings.page_title) {
+          pageTitle.textContent = settings.page_title;
+        }
+
+        // Update description - use innerHTML for HTML content
+        if (pageDescription && settings.page_description) {
+          pageDescription.innerHTML = settings.page_description;
+        }
+      }
+
+      // Show actual content and hide loading
+      if (headerLoading) headerLoading.classList.add("hidden");
+      if (headerContent) headerContent.classList.remove("hidden");
+    }
+
+    function showDefaultHeaderContent() {
+      const headerLoading = document.getElementById("header-loading");
+      const headerContent = document.getElementById("header-content");
+
+      // Keep default content - no changes needed since fallback text is already in HTML
+
+      // Show actual content and hide loading
+      if (headerLoading) headerLoading.classList.add("hidden");
+      if (headerContent) headerContent.classList.remove("hidden");
+    }
+
+    function checkAuthentication() {
+      const token = localStorage.getItem("access_token");
+      return !!token;
+    }
+
     async function loadOrdersData() {
       try {
-        const API_BASE =
-          import.meta.env.PUBLIC_API_BASE_URL ||
-          "https://corrison.corrisonapi.com";
+        const API_BASE = window.location.origin.includes("localhost")
+          ? "http://localhost:8000"
+          : "https://corrison.corrisonapi.com";
         const token = localStorage.getItem("access_token");
 
         const response = await fetch(`${API_BASE}/api/v1/orders/`, {
@@ -292,7 +380,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
         completedOrdersEl.textContent = completedOrders.toString();
       if (pendingOrdersEl)
         pendingOrdersEl.textContent = pendingOrders.toString();
-      if (totalSpentEl) totalSpentEl.textContent = `${totalSpent.toFixed(2)}`;
+      if (totalSpentEl) totalSpentEl.textContent = `$${totalSpent.toFixed(2)}`;
     }
 
     function renderOrders() {
@@ -321,9 +409,9 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       updatePagination();
     }
 
-    function createOrderCard(order: any): string {
+    function createOrderCard(order) {
       const orderDate = new Date(order.created_at).toLocaleDateString();
-      const statusColors: Record<string, string> = {
+      const statusColors = {
         pending: "bg-yellow-100 text-yellow-800",
         processing: "bg-blue-100 text-blue-800",
         shipped: "bg-purple-100 text-purple-800",
@@ -348,7 +436,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
                 ${order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Unknown"}
               </span>
               <span class="text-lg font-bold text-gray-900">
-                ${parseFloat(order.total || 0).toFixed(2)}
+                $${parseFloat(order.total || 0).toFixed(2)}
               </span>
             </div>
           </div>
@@ -394,7 +482,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
                   ${order.items
                     .slice(0, 3)
                     .map(
-                      (item: any) => `
+                      (item) => `
                     <div class="flex justify-between items-center text-sm">
                       <span class="text-gray-900">${item.product_name || "Unknown Product"}</span>
                       <span class="text-gray-600">Qty: ${item.quantity || 0}</span>
@@ -455,12 +543,8 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
     }
 
     function applyFilters() {
-      const statusFilterEl = document.getElementById(
-        "status-filter",
-      ) as HTMLSelectElement;
-      const sortFilterEl = document.getElementById(
-        "sort-filter",
-      ) as HTMLSelectElement;
+      const statusFilterEl = document.getElementById("status-filter");
+      const sortFilterEl = document.getElementById("sort-filter");
 
       const statusFilter = statusFilterEl ? statusFilterEl.value : "all";
       const sortFilter = sortFilterEl ? sortFilterEl.value : "recent";
@@ -498,12 +582,8 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
     function updatePagination() {
       const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
       const pagination = document.getElementById("pagination");
-      const prevButton = document.getElementById(
-        "prev-page",
-      ) as HTMLButtonElement;
-      const nextButton = document.getElementById(
-        "next-page",
-      ) as HTMLButtonElement;
+      const prevButton = document.getElementById("prev-page");
+      const nextButton = document.getElementById("next-page");
       const pageInfo = document.getElementById("page-info");
 
       if (totalPages > 1) {
@@ -547,17 +627,17 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
     }
 
     // Global functions for order actions
-    (window as any).viewOrderDetails = function (orderNumber: string) {
+    window.viewOrderDetails = function (orderNumber) {
       window.location.href = `/orders/${orderNumber}`;
     };
 
-    (window as any).reorderItems = function (orderId: string) {
+    window.reorderItems = function (orderId) {
       // Implementation for reordering
       console.log("Reorder items for order:", orderId);
       alert("Reorder functionality coming soon!");
     };
 
-    (window as any).cancelOrder = function (orderId: string) {
+    window.cancelOrder = function (orderId) {
       if (confirm("Are you sure you want to cancel this order?")) {
         // Implementation for canceling order
         console.log("Cancel order:", orderId);
@@ -571,6 +651,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
     }
 
     function showNotAuthenticatedState() {
+      hideLoadingState();
       const notAuthenticatedState =
         document.getElementById("not-authenticated");
       if (notAuthenticatedState)
@@ -583,6 +664,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
     }
 
     function showEmptyState() {
+      hideLoadingState();
       const emptyState = document.getElementById("empty-state");
       if (emptyState) emptyState.classList.remove("hidden");
     }

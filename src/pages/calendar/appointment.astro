@@ -23,16 +23,27 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     <section>
       <div class="container mx-auto px-4 py-12">
         <div class="max-w-4xl mx-auto">
-          <h1 class="text-3xl font-semibold text-gray-900 mb-4">
-            Your Appointments
-          </h1>
-          <p class="text-xl text-gray-600">
-            View and manage all your appointments in one place.
-          </p>
+          <!-- Loading state for header content -->
+          <div id="header-loading" class="animate-pulse">
+            <div class="h-8 bg-gray-200 rounded mb-4 max-w-md"></div>
+            <div class="h-6 bg-gray-200 rounded max-w-lg"></div>
+          </div>
+
+          <!-- Actual header content (hidden initially) -->
+          <div id="header-content" class="hidden">
+            <h1
+              id="page-title"
+              class="text-3xl font-semibold text-gray-900 mb-4"
+            >
+              Your Appointments
+            </h1>
+            <p id="page-description" class="text-xl text-gray-600">
+              View and manage all your appointments in one place.
+            </p>
+          </div>
         </div>
       </div>
     </section>
-
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-12">
       <!-- Loading State -->
@@ -562,7 +573,10 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   let isAuthenticated = false;
 
   document.addEventListener("DOMContentLoaded", function () {
-    console.log("🔍 Initializing Appointments page...");
+    console.log("Initializing Appointments page...");
+
+    // Initialize page settings first
+    initializePageSettings();
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -589,6 +603,74 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     }
   });
 
+  // Add these new functions anywhere after your DOMContentLoaded block
+  async function initializePageSettings() {
+    await loadAppointmentSettings();
+  }
+
+  async function loadAppointmentSettings() {
+    try {
+      const API_BASE = window.location.origin.includes("localhost")
+        ? "http://localhost:8000"
+        : "https://corrison.corrisonapi.com";
+
+      const response = await fetch(`${API_BASE}/api/v1/appointment-settings/`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Appointment Settings Response:", data);
+
+        // Handle both single object and array responses
+        const settings = Array.isArray(data) ? data[0] : data;
+        updateHeaderContent(settings);
+      } else {
+        console.error("Failed to load appointment settings:", response.status);
+        showDefaultHeaderContent();
+      }
+    } catch (error) {
+      console.error("Error loading appointment settings:", error);
+      showDefaultHeaderContent();
+    }
+  }
+
+  function updateHeaderContent(settings) {
+    const headerLoading = document.getElementById("header-loading");
+    const headerContent = document.getElementById("header-content");
+    const pageTitle = document.getElementById("page-title");
+    const pageDescription = document.getElementById("page-description");
+
+    if (settings) {
+      // Update title
+      if (pageTitle && settings.page_title) {
+        pageTitle.textContent = settings.page_title;
+      }
+
+      // Update description - use innerHTML for HTML content
+      if (pageDescription && settings.page_description) {
+        pageDescription.innerHTML = settings.page_description;
+      }
+    }
+
+    // Show actual content and hide loading
+    if (headerLoading) headerLoading.classList.add("hidden");
+    if (headerContent) headerContent.classList.remove("hidden");
+  }
+
+  function showDefaultHeaderContent() {
+    const headerLoading = document.getElementById("header-loading");
+    const headerContent = document.getElementById("header-content");
+
+    // Show actual content and hide loading
+    if (headerLoading) headerLoading.classList.add("hidden");
+    if (headerContent) headerContent.classList.remove("hidden");
+  }
+
   function checkAuthentication() {
     const token = localStorage.getItem("access_token");
     return !!token;
@@ -597,7 +679,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
   // Initialize for authenticated users - load all their appointments
   async function initializeAuthenticatedAppointmentsList() {
     try {
-      console.log("📅 Loading authenticated user appointments...");
+      console.log("Loading authenticated user appointments...");
 
       await loadAllUserAppointments();
 
@@ -630,7 +712,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
   // Initialize for unauthenticated users
   async function initializeUnauthenticatedAppointmentsList() {
-    console.log("📅 User not authenticated - showing no appointments");
+    console.log("User not authenticated - showing no appointments");
     hideLoadingState();
     showNoAppointmentsState();
   }
@@ -661,9 +743,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     }
 
     allAppointments = await response.json();
-    console.log(
-      "✅ Loaded " + allAppointments.length + " appointments for user",
-    );
+    console.log("Loaded " + allAppointments.length + " appointments for user");
   }
 
   // Display appointments list
