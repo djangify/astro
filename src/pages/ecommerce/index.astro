@@ -10,6 +10,10 @@ const productsData = await response.json();
 const products = productsData.results || productsData;
 ---
 
+<script define:vars={{ products }}>
+  window.preloadedProducts = products;
+</script>
+
 <BaseLayout>
   <Header slot="header" />
   <title slot="title">Shop – Corrison Ecommerce Platform</title>
@@ -510,7 +514,6 @@ const products = productsData.results || productsData;
 
   <Footer slot="footer" />
 </BaseLayout>
-
 <script>
   // Define types
   interface Product {
@@ -532,6 +535,7 @@ const products = productsData.results || productsData;
     slug: string;
     name: string;
     description?: string;
+    image?: string;
   }
 
   interface ApiResponse<T> {
@@ -544,11 +548,9 @@ const products = productsData.results || productsData;
   style.textContent = `
       @keyframes fadeInUp {
         from {
-          opacity: 0;
           transform: translateY(30px);
         }
         to {
-          opacity: 1;
           transform: translateY(0);
         }
       }
@@ -602,12 +604,13 @@ const products = productsData.results || productsData;
         ]);
 
       if (productsResponse.ok && categoriesResponse.ok) {
-        const products: ApiResponse<Product> = await productsResponse.json();
+        const productsData: ApiResponse<Product> =
+          await productsResponse.json();
         const categories: ApiResponse<Category> =
           await categoriesResponse.json();
 
         const productsArray: Product[] =
-          products.results || (products as Product[]);
+          productsData.results || (productsData as Product[]);
         const categoriesArray: Category[] =
           categories.results || (categories as Category[]);
 
@@ -650,7 +653,7 @@ const products = productsData.results || productsData;
     }
   }
 
-  // Load featured products
+  // Load featured products using preloaded data
   async function loadFeaturedProducts(): Promise<void> {
     const loadingEl: HTMLElement | null =
       document.getElementById("featured-loading");
@@ -661,27 +664,35 @@ const products = productsData.results || productsData;
       document.getElementById("featured-error");
 
     try {
-      const response: Response = await fetch(
-        `${API_BASE_URL}/products/?ordering=-created_at&limit=6`,
-      );
+      // Use the products already fetched at build time
+      const allProducts = (window as any).preloadedProducts || [];
+      const featuredProducts = allProducts.slice(0, 6);
 
-      if (!response.ok) throw new Error("Failed to fetch");
-
-      const data: ApiResponse<Product> = await response.json();
-      const products: Product[] = data.results || (data as Product[]);
-
-      if (products.length === 0) {
+      if (featuredProducts.length === 0) {
         throw new Error("No products found");
+      }
+
+      // Helper function to get safe image URL
+      function getProductImageUrl(product: Product): string {
+        const imageUrl: string | undefined =
+          product.featured_image || product.main_image;
+        if (
+          !imageUrl ||
+          imageUrl === "null" ||
+          imageUrl === "" ||
+          imageUrl === undefined
+        ) {
+          return "/static/images/placeholder.png";
+        }
+        return imageUrl;
       }
 
       // Create masonry-style grid
       if (gridEl) {
-        gridEl.innerHTML = products
+        gridEl.innerHTML = featuredProducts
           .map((product: Product, index: number) => {
             const isLarge: boolean = index === 0 || index === 3;
-            const imageUrl =
-              product.main_image ||
-              "https://via.placeholder.com/400x300/e5e7eb/9ca3af?text=No+Image";
+            const imageUrl: string = getProductImageUrl(product);
             const price: number = product.sale_price || product.price;
             const originalPrice: number | null = product.sale_price
               ? product.price
@@ -692,11 +703,14 @@ const products = productsData.results || productsData;
                           bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl 
                           transform transition-all duration-300 hover:scale-105 cursor-pointer"
                    data-product-slug="${product.slug}">
-                <div class="relative overflow-hidden ${isLarge ? "h-64 lg:h-full" : "h-48"}">
+                
+                <!-- SIMPLIFIED IMAGE CONTAINER -->
+                <div class="relative ${isLarge ? "h-64 lg:h-full" : "h-48"}">
                   <img src="${imageUrl}" 
-                       alt="${product.name}" 
-                       class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                       onerror="this.src='https://via.placeholder.com/400x300/e5e7eb/6b7280?text=No+Image'">
+                    alt="${product.name}" 
+                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    onerror="this.src='/static/images/placeholder.png'"
+                    loading="lazy">
                   
                   <!-- Product Type Badge -->
                   <div class="absolute top-4 left-4">
@@ -723,10 +737,10 @@ const products = productsData.results || productsData;
                   }
 
                   <!-- Hover Overlay -->
-                  <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 
-                              transition-all duration-300 flex items-center justify-center">
+                  <div class="absolute inset-0 bg-transparent group-hover:bg-black group-hover:bg-opacity-30 
+                              transition-all duration-300 flex items-center justify-center pointer-events-none group-hover:pointer-events-auto">
                     <div class="transform translate-y-8 group-hover:translate-y-0 
-                                opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-auto">
                       <button class="bg-white text-gray-900 px-6 py-2 rounded-full font-semibold 
                                      hover:bg-gray-100 transition-colors mr-2">
                         View Details
@@ -754,13 +768,13 @@ const products = productsData.results || productsData;
                   <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                       <span class="text-2xl font-bold text-gray-900">
-                        ${parseFloat(price.toString()).toFixed(2)}
+                        $${parseFloat(price.toString()).toFixed(2)}
                       </span>
                       ${
                         originalPrice
                           ? `
                       <span class="text-lg text-gray-500 line-through">
-                        ${parseFloat(originalPrice.toString()).toFixed(2)}
+                        $${parseFloat(originalPrice.toString()).toFixed(2)}
                       </span>
                       `
                           : ""
@@ -800,16 +814,16 @@ const products = productsData.results || productsData;
       }
 
       // Show grid, hide loading
-      loadingEl?.classList.add("hidden");
-      gridEl?.classList.remove("hidden");
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (gridEl) gridEl.classList.remove("hidden");
     } catch (error) {
       console.log("Featured products loading failed:", error);
-      loadingEl?.classList.add("hidden");
-      errorEl?.classList.remove("hidden");
+      if (loadingEl) loadingEl.classList.add("hidden");
+      if (errorEl) errorEl.classList.remove("hidden");
     }
   }
 
-  // Load categories
+  // Load categories with images
   async function loadCategories(): Promise<void> {
     const loadingEl: HTMLElement | null =
       document.getElementById("categories-loading");
@@ -826,38 +840,65 @@ const products = productsData.results || productsData;
         data.results || (data as Category[])
       ).slice(0, 8);
 
+      // Debug: Check what image fields are available
+      console.log(
+        "Categories data:",
+        categories.slice(0, 2).map((cat) => ({
+          name: cat.name,
+          image: cat.image,
+          allFields: Object.keys(cat),
+        })),
+      );
+
+      // Helper function to get safe category image URL
+      function getCategoryImageUrl(category: Category): string {
+        // Check multiple possible image field names
+        const imageUrl =
+          category.image ||
+          (category as any).main_image ||
+          (category as any).featured_image ||
+          (category as any).category_image;
+
+        if (
+          imageUrl &&
+          imageUrl !== "null" &&
+          imageUrl !== "" &&
+          imageUrl !== undefined
+        ) {
+          return imageUrl;
+        }
+        return "/static/images/placeholder.png";
+      }
+
       if (categories.length > 0 && gridEl) {
         gridEl.innerHTML = categories
-          .map((category: Category, index: number) => {
-            const colors: string[] = [
-              "from-blue-500 to-blue-600",
-              "from-purple-500 to-purple-600",
-              "from-green-500 to-green-600",
-              "from-orange-500 to-orange-600",
-              "from-teal-500 to-teal-600",
-              "from-pink-500 to-pink-600",
-              "from-indigo-500 to-indigo-600",
-              "from-red-500 to-red-600",
-            ];
+          .map((category: Category) => {
+            const imageUrl: string = getCategoryImageUrl(category);
 
             return `
-              <div class="group cursor-pointer" onclick="window.location.href='/ecommerce/products?category=${category.slug}'">
-                <div class="bg-gradient-to-br ${colors[index % colors.length]} 
-                           rounded-xl p-8 text-white h-32 flex items-center justify-center 
-                           transform transition-all duration-300 hover:scale-105 hover:shadow-xl mb-4">
-                  <div class="text-center">
-                    <div class="text-3xl mb-2">🏷️</div>
-                    <h3 class="font-bold text-lg">${category.name}</h3>
-                  </div>
-                </div>
-                <div class="text-center">
-                  <h4 class="font-semibold text-gray-900 mb-1">${category.name}</h4>
-                  <p class="text-sm text-gray-600">
-                    ${category.description || "Explore our collection"}
-                  </p>
+            <div class="group cursor-pointer" onclick="window.location.href='/ecommerce/products?category=${category.slug}'">
+              <div class="relative rounded-xl overflow-hidden h-32 mb-4 transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <img src="${imageUrl}" 
+                  alt="${category.name}" 
+                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  onerror="console.log('Category image failed:', this.src); this.src='/static/images/placeholder.png'"
+                  onload="console.log('Category image loaded:', this.src)"
+                  loading="lazy"
+                  style="background-color: #f3f4f6;">
+                
+                <!-- Overlay -->
+                <div class="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
+                  <h3 class="font-bold text-lg text-white text-center px-4">${category.name}</h3>
                 </div>
               </div>
-            `;
+              <div class="text-center">
+                <h4 class="font-semibold text-gray-900 mb-1">${category.name}</h4>
+                <p class="text-sm text-gray-600">
+                  ${category.description || "Explore our collection"}
+                </p>
+              </div>
+            </div>
+          `;
           })
           .join("");
 
@@ -874,30 +915,34 @@ const products = productsData.results || productsData;
       console.log("Categories loading failed:", error);
       loadingEl?.classList.add("hidden");
 
-      // Show demo categories
+      // Show demo categories with placeholder images
       if (gridEl) {
         gridEl.innerHTML = `
-            <div class="text-center col-span-full py-8">
-              <p class="text-gray-600 mb-4">Demo categories (backend not connected)</p>
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-                ${["Electronics", "Clothing", "Books", "Home & Garden"]
-                  .map(
-                    (name: string, i: number) => `
-                  <div class="bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg p-4 text-white text-center">
-                    <div class="text-2xl mb-2">🏷️</div>
-                    <div class="font-semibold">${name}</div>
+          <div class="text-center col-span-full py-8">
+            <p class="text-gray-600 mb-4">Demo categories (backend not connected)</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+              ${["Electronics", "Clothing", "Books", "Home & Garden"]
+                .map(
+                  (name: string) => `
+                <div class="relative rounded-lg overflow-hidden h-24">
+                  <img src="/static/images/placeholder.png" 
+                    alt="${name}" 
+                    class="w-full h-full object-cover"
+                    style="background-color: #f3f4f6;">
+                  <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
+                    <div class="font-semibold text-white text-center">${name}</div>
                   </div>
-                `,
-                  )
-                  .join("")}
-              </div>
+                </div>
+              `,
+                )
+                .join("")}
             </div>
-          `;
+          </div>
+        `;
         gridEl.classList.remove("hidden");
       }
     }
   }
-
   // Smooth scrolling for anchor links
   document.querySelectorAll('a[href^="#"]').forEach((anchor: Element) => {
     anchor.addEventListener(
