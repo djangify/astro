@@ -8,11 +8,33 @@ import Footer from "../../components/Footer.astro";
 // In a real app, you might want to fetch some basic product data here
 
 export async function getStaticPaths() {
-  // Return empty array for demo - products will be loaded dynamically
-  return [];
+  try {
+    // Fetch products from your Django API
+    const response = await fetch(
+      "https://corrison.corrisonapi.com/api/v1/products/",
+    );
+
+    if (!response.ok) {
+      console.warn("Failed to fetch products for static paths, using fallback");
+      return [];
+    }
+
+    const data = await response.json();
+    const products = data.results || data;
+
+    // Generate paths for each product
+    return products.map((product: any) => ({
+      params: { slug: product.slug },
+      props: { product }, // Pass product data as props
+    }));
+  } catch (error) {
+    console.warn("Error fetching products for static paths:", error);
+    return [];
+  }
 }
 
 const { slug } = Astro.params;
+const { product: preloadedProduct } = Astro.props;
 ---
 
 <BaseLayout>
@@ -102,7 +124,7 @@ const { slug } = Astro.params;
               >
                 <img
                   id="main-image"
-                  src="/api/placeholder/600/600"
+                  src="https://via.placeholder.com/600x600/e5e7eb/6b7280?text=No+Image"
                   alt="Product Image"
                   class="w-full h-96 object-cover"
                   onload="(function(img) { img.style.opacity = '1'; })(this)"
@@ -563,7 +585,10 @@ const { slug } = Astro.params;
 
   <Footer slot="footer" />
 </BaseLayout>
-
+<!-- Pass preloaded product data to JavaScript -->
+<script is:inline define:vars={{ preloadedProduct }}>
+  window.preloadedProduct = preloadedProduct;
+</script>
 <script>
   // Define types
   interface Product {
@@ -639,6 +664,24 @@ const { slug } = Astro.params;
   // Load product data
   async function loadProduct(): Promise<void> {
     try {
+      // First try to use preloaded product data
+      const preloadedProduct = (window as any).preloadedProduct;
+
+      if (preloadedProduct) {
+        currentProduct = preloadedProduct;
+        renderProduct(preloadedProduct);
+        loadRelatedProducts(
+          typeof preloadedProduct.category === "object"
+            ? preloadedProduct.category?.slug
+            : undefined,
+        );
+
+        elements.loadingState?.classList.add("hidden");
+        elements.productContent?.classList.remove("hidden");
+        return;
+      }
+
+      // Fallback: fetch from API if no preloaded data
       const response: Response = await fetch(
         `${API_BASE_URL}/products/${slug}/`,
       );
@@ -840,7 +883,9 @@ const { slug } = Astro.params;
 
     // Fallback to placeholder if no images
     if (productImages.length === 0) {
-      productImages.push("/api/placeholder/600/600");
+      productImages.push(
+        "https://via.placeholder.com/600x600/e5e7eb/6b7280?text=No+Image",
+      );
     }
 
     // Set main image
@@ -874,7 +919,7 @@ const { slug } = Astro.params;
               src="${image}" 
               alt="Product image ${index + 1}" 
               class="w-full h-20 object-cover"
-              onerror="this.src='/api/placeholder/100/100'"
+              onerror="this.src='https://via.placeholder.com/100x100/e5e7eb/6b7280?text=No+Image'"
             >
           </button>
         `,
@@ -916,7 +961,7 @@ const { slug } = Astro.params;
             const imageUrl: string =
               product.main_image ||
               product.featured_image ||
-              "/api/placeholder/300/300";
+              "https://via.placeholder.com/300x300/e5e7eb/6b7280?text=No+Image";
             const price: number = product.sale_price || product.price;
 
             return `
@@ -926,7 +971,7 @@ const { slug } = Astro.params;
                   <img src="${imageUrl}" 
                        alt="${product.name}" 
                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                       onerror="this.src='/api/placeholder/300/300'">
+                       onerror="this.src='https://via.placeholder.com/300x300/e5e7eb/6b7280?text=No+Image'">
                   <div class="absolute top-2 left-2">
                     <span class="px-2 py-1 text-xs font-semibold rounded ${
                       product.product_type === "digital"
