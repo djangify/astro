@@ -57,6 +57,7 @@ export interface Page {
   hero_title?: string;
   hero_subtitle?: string;
   hero_image?: string;
+  hero_image_url?: string;
   hero_content?: string;
   hero_button_text?: string;
   hero_button_url?: string;

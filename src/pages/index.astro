@@ -9,6 +9,7 @@ import { getHeroicon } from "../lib/heroicons";
 
 // Fetch the "index" page record from Django
 const page: Page = await fetchPage("index");
+
 // Fetch all blog posts
 const posts: BlogPost[] = await fetchPosts();
 
@@ -62,23 +63,22 @@ const isLandingPage = page.page_type === "landing";
 							</div>
 
 							{/* Right Side - Image or Text */}
-							<div class="bg-slate-50 md:w-1/2">
-								{page.hero_right_content &&
-								page.hero_right_content.trim() !== "" ? (
-									<div class="bg-slate-50 p-6 rounded-lg">
+							<div class="md:w-1/2">
+								{page.hero_right_content ? (
+									<div class="p-6 rounded-lg">
 										<div class="prose max-w-none">
 											<div set:html={page.hero_right_content} />
 										</div>
 									</div>
-								) : page.hero_image_src ? (
+								) : page.hero_image ? (
 									<img
-										src={page.hero_image_src}
+										src={page.hero_image}
 										alt={page.hero_title}
-										class="rounded-lg"
+										class="rounded-lg w-full h-auto"
 										onerror="this.onerror=null; this.src='/static/images/placeholder.png';"
 									/>
 								) : (
-									<div class="bg-white p-6 rounded-lg">
+									<div class="p-6 rounded-lg">
 										<div class="prose max-w-none">
 											<img
 												src="/images/diane-com.webp"

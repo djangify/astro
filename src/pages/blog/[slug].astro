@@ -3,18 +3,50 @@ import type { BlogPost } from "../../types";
 import { fetchPosts } from "../../lib/api";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 
-// Generate all blog post routes at build time
+function fixImageUrls(htmlContent: string): string {
+  if (!htmlContent) return htmlContent;
+
+  return (
+    htmlContent
+      // Fix relative paths with ../../../../../
+      .replace(
+        /src="\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/media\//g,
+        'src="https://corrison.corrisonapi.com/media/',
+      )
+      // Fix paths that start with /media/
+      .replace(
+        /src="\/media\//g,
+        'src="https://corrison.corrisonapi.com/media/',
+      )
+      // Fix URLs that got converted to the frontend domain
+      .replace(
+        /src="https:\/\/corrisonapi\.com\/media\//g,
+        'src="https://corrison.corrisonapi.com/media/',
+      )
+      // Fix any other relative media paths
+      .replace(
+        /src="[\.\/]*media\//g,
+        'src="https://corrison.corrisonapi.com/media/',
+      )
+      // Ensure any existing correct URLs stay correct
+      .replace(
+        /src="https:\/\/corrison\.corrisonapi\.com\/media\//g,
+        'src="https://corrison.corrisonapi.com/media/',
+      )
+  );
+}
+
 export async function getStaticPaths() {
   const posts = await fetchPosts();
-
   return posts.map((post) => ({
     params: { slug: post.slug },
     props: { post },
   }));
 }
 
-// The post is now passed as a prop from getStaticPaths
 const { post } = Astro.props;
+
+const processedContent = fixImageUrls(post.content);
 ---
 
 <BaseLayout>
@@ -94,7 +126,7 @@ const { post } = Astro.props;
 
     <!-- Main content -->
     <div class="blog-content prose-lg max-w-none">
-      <div set:html={post.content} />
+      <div set:html={processedContent} />
     </div>
 
     <!-- YouTube video embed if present -->
