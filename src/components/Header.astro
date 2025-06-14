@@ -1,5 +1,6 @@
 ---
 import UserMenu from "./auth/UserMenu.astro";
+import CartIcon from "./CartIcon.astro";
 
 const links = [
   { href: "/", label: "Home" },
@@ -39,8 +40,11 @@ const links = [
         }
       </nav>
 
-      <!-- Auth Section - DESKTOP ONLY -->
+      <!-- Desktop Right Section: Cart + Auth -->
       <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
+        <!-- Cart Icon -->
+        <CartIcon />
+
         <!-- Authenticated User Menu -->
         <div id="authenticated-section" class="hidden">
           <UserMenu />
@@ -66,8 +70,12 @@ const links = [
         </div>
       </div>
 
-      <!-- Mobile Navigation Button -->
-      <div class="md:hidden">
+      <!-- Mobile Section: Cart + Menu Button -->
+      <div class="md:hidden flex items-center space-x-2">
+        <!-- Mobile Cart Icon -->
+        <CartIcon className="md:hidden" />
+
+        <!-- Mobile Navigation Button -->
         <button
           id="mobile-menu-button"
           type="button"
@@ -158,6 +166,15 @@ const links = [
           >
             Calendar
           </a>
+
+          <!-- Cart link for mobile authenticated users -->
+          <a
+            href="/cart"
+            class="block text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
+          >
+            My Cart
+          </a>
+
           <button
             id="mobile-logout-button"
             class="block w-full text-left text-gray-700 hover:text-teal-700 font-medium transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
