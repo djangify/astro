@@ -2,32 +2,21 @@
 // src/pages/blog/index.astro
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { fetchPosts } from "../../lib/api";
+import type { BlogPost } from "../../types";
 
-// Fetch all blog posts
+// Fetch all blog posts from Django API
 const allPosts = await fetchPosts();
 
 // Separate featured posts from regular posts
 const featuredPosts = allPosts.filter((post) => post.is_featured).slice(0, 3);
 const regularPosts = allPosts.filter((post) => !featuredPosts.includes(post));
 
-// Define a Post type for type safety
-type Post = {
-  is_featured: boolean;
-  slug: string;
-  title: string;
-  content?: string;
-  excerpt?: string;
-  featured_image?: string;
-  youtube_url?: string;
-};
-
 // Helper function to get post image
-const getPostImage = (post: Post) => {
+const getPostImage = (post: BlogPost) => {
   if (post.featured_image) {
     return post.featured_image;
   } else if (post.youtube_url) {
-    // This assumes your API returns the YouTube URL in a format that can be parsed
-    // You might need to adjust this based on your actual data structure
+    // Extract YouTube video ID and get thumbnail
     const videoId = post.youtube_url.match(
       /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/,
     )?.[1];

@@ -1,5 +1,5 @@
 ---
-// src/components/CartIcon.astro
+// src/components/CartIcon.astro - COMPLETE SOLUTION
 export interface Props {
   className?: string;
 }
@@ -34,7 +34,7 @@ const { className = "" } = Astro.props;
     <!-- Item Count Badge -->
     <span
       id="cart-count-badge"
-      class="absolute -top-1 -right-1 bg-teal-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+      class="absolute -top-1 -right-1 bg-teal-600 text-white text-xs font-bold rounded-full h-5 w-5 items-center justify-center hidden"
       aria-hidden="true"
     >
       0
@@ -170,52 +170,268 @@ const { className = "" } = Astro.props;
 </div>
 
 <script>
-  // CartIcon functionality will be handled by the cart.ts module
-  // This script just handles the dropdown toggle behavior
-  document.addEventListener("DOMContentLoaded", function () {
+  // COMPLETE CART INTEGRATION - This is the real fix!
+  let cartManager: any = null;
+  let cartSubscription: (() => void) | null = null;
+
+  document.addEventListener("DOMContentLoaded", async function () {
+    console.log("Initializing CartIcon component...");
+
+    // DOM Elements
     const cartButton = document.getElementById("cart-button");
     const cartDropdown = document.getElementById("cart-dropdown");
     const retryButton = document.getElementById("retry-cart-load");
 
-    // Toggle dropdown
-    cartButton?.addEventListener("click", function (e) {
-      e.stopPropagation();
-      cartDropdown?.classList.toggle("hidden");
+    // STEP 1: Initialize CartManager
+    await initializeCartManager();
 
-      // Load cart data when dropdown is opened
-      if (!cartDropdown?.classList.contains("hidden")) {
-        // This will be called from cart.ts
-        if (typeof window.cartManager !== "undefined") {
-          window.cartManager.loadCartData();
+    // STEP 2: Setup dropdown behavior
+    setupDropdownBehavior();
+
+    // STEP 3: Load initial cart data
+    if (cartManager) {
+      await cartManager.loadCartData();
+    }
+
+    console.log("CartIcon component initialized");
+
+    // Listen for cart updates from other pages
+    window.addEventListener("cartUpdated", (event) => {
+      console.log("CartIcon received cart update event");
+      if (cartManager) {
+        cartManager.loadCartData();
+      }
+    });
+
+    // Initialize CartManager and connect to cart system
+    async function initializeCartManager(): Promise<void> {
+      try {
+        // Import CartManager dynamically
+        const cartModule = await import("../lib/cart.ts");
+        cartManager = cartModule.CartManager.getInstance();
+
+        // Subscribe to cart updates
+        cartSubscription = cartManager.subscribe((cartData: any) => {
+          console.log("Cart updated in CartIcon:", cartData);
+          updateCartDisplay(cartData);
+        });
+
+        console.log("CartManager connected to CartIcon");
+      } catch (error) {
+        console.error("Failed to initialize CartManager in CartIcon:", error);
+        showErrorState();
+      }
+    }
+
+    // Update cart display when data changes
+    function updateCartDisplay(cartData: any): void {
+      if (!cartData) {
+        showEmptyState();
+        return;
+      }
+
+      const countBadge = document.getElementById("cart-count-badge");
+      const loadingEl = document.getElementById("cart-loading");
+      const emptyEl = document.getElementById("cart-empty");
+      const itemsEl = document.getElementById("cart-items");
+      const errorEl = document.getElementById("cart-error");
+
+      // Hide all states first
+      [loadingEl, emptyEl, itemsEl, errorEl].forEach((el) => {
+        el?.classList.add("hidden");
+      });
+
+      // Update count badge
+      if (countBadge) {
+        if (cartData.item_count > 0) {
+          countBadge.textContent = cartData.item_count.toString();
+          countBadge.classList.remove("hidden");
+          countBadge.classList.add("flex");
+        } else {
+          countBadge.classList.add("hidden");
+          countBadge.classList.remove("flex");
         }
       }
-    });
 
-    // Close dropdown when clicking outside
-    document.addEventListener("click", function (e) {
-      const target = e.target as HTMLElement;
+      // Show appropriate state
+      if (cartData.item_count === 0) {
+        emptyEl?.classList.remove("hidden");
+      } else {
+        itemsEl?.classList.remove("hidden");
+        renderCartItems(cartData);
+      }
+    }
+
+    // Render cart items in dropdown
+    function renderCartItems(cartData: any): void {
+      const itemsList = document.getElementById("cart-items-list");
+      const subtotalEl = document.getElementById("cart-subtotal");
+      const cartTypeIndicator = document.getElementById("cart-type-indicator");
+      const cartTypeIcon = document.getElementById("cart-type-icon");
+      const cartTypeText = document.getElementById("cart-type-text");
+
+      if (!cartData || !itemsList) return;
+
+      // Render items
+      if (cartData.items && cartData.items.length > 0) {
+        itemsList.innerHTML = cartData.items
+          .map(
+            (item: any) => `
+          <div class="flex items-center p-3 border-b border-gray-100 last:border-b-0">
+            <img 
+              src="${item.product.main_image || item.product.featured_image || "https://via.placeholder.com/60x60/e5e7eb/6b7280?text=No+Image"}" 
+              alt="${item.product.name}"
+              class="w-12 h-12 object-cover rounded"
+            >
+            <div class="flex-1 ml-3">
+              <h4 class="text-sm font-medium text-gray-900 line-clamp-1">${item.product.name}</h4>
+              <div class="flex items-center justify-between mt-1">
+                <span class="text-xs text-gray-500">Qty: ${item.quantity}</span>
+                <span class="text-sm font-semibold text-gray-900">$${(item.total_price || item.product.price * item.quantity).toFixed(2)}</span>
+              </div>
+            </div>
+            <button 
+              onclick="removeCartItem('${item.id}')" 
+              class="ml-2 text-gray-400 hover:text-red-500 transition-colors"
+              aria-label="Remove item"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        `,
+          )
+          .join("");
+      }
+
+      // Update subtotal
+      if (subtotalEl) {
+        subtotalEl.textContent = `$${cartData.subtotal.toFixed(2)}`;
+      }
+
+      // Update cart type indicator
       if (
-        cartDropdown &&
-        cartButton &&
-        !cartDropdown.contains(target) &&
-        !cartButton.contains(target)
+        cartData.cart_type &&
+        cartTypeIndicator &&
+        cartTypeIcon &&
+        cartTypeText
       ) {
-        cartDropdown.classList.add("hidden");
-      }
-    });
+        const isDigital = cartData.cart_type === "digital";
 
-    // Retry loading cart
-    retryButton?.addEventListener("click", function () {
-      if (typeof window.cartManager !== "undefined") {
-        window.cartManager.loadCartData();
-      }
-    });
+        cartTypeIcon.textContent = isDigital ? "Digital" : "Physical";
+        cartTypeText.textContent = isDigital
+          ? "Digital items only"
+          : "Physical items only";
 
-    // Close dropdown when pressing Escape key
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !cartDropdown?.classList.contains("hidden")) {
-        cartDropdown?.classList.add("hidden");
+        cartTypeIndicator.className = `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          isDigital
+            ? "bg-purple-100 text-purple-800"
+            : "bg-blue-100 text-blue-800"
+        }`;
+        cartTypeIndicator.classList.remove("hidden");
       }
-    });
+    }
+
+    // Show loading state
+    function showLoadingState(): void {
+      const loadingEl = document.getElementById("cart-loading");
+      const emptyEl = document.getElementById("cart-empty");
+      const itemsEl = document.getElementById("cart-items");
+      const errorEl = document.getElementById("cart-error");
+
+      [emptyEl, itemsEl, errorEl].forEach((el) => el?.classList.add("hidden"));
+      loadingEl?.classList.remove("hidden");
+    }
+
+    // Show empty state
+    function showEmptyState(): void {
+      const loadingEl = document.getElementById("cart-loading");
+      const emptyEl = document.getElementById("cart-empty");
+      const itemsEl = document.getElementById("cart-items");
+      const errorEl = document.getElementById("cart-error");
+      const countBadge = document.getElementById("cart-count-badge");
+
+      [loadingEl, itemsEl, errorEl].forEach((el) =>
+        el?.classList.add("hidden"),
+      );
+      emptyEl?.classList.remove("hidden");
+      countBadge?.classList.add("hidden");
+    }
+
+    // Show error state
+    function showErrorState(): void {
+      const loadingEl = document.getElementById("cart-loading");
+      const emptyEl = document.getElementById("cart-empty");
+      const itemsEl = document.getElementById("cart-items");
+      const errorEl = document.getElementById("cart-error");
+
+      [loadingEl, emptyEl, itemsEl].forEach((el) =>
+        el?.classList.add("hidden"),
+      );
+      errorEl?.classList.remove("hidden");
+    }
+
+    // Setup dropdown behavior
+    function setupDropdownBehavior(): void {
+      // Toggle dropdown
+      cartButton?.addEventListener("click", function (e) {
+        e.stopPropagation();
+        cartDropdown?.classList.toggle("hidden");
+
+        // Load cart data when dropdown is opened
+        if (!cartDropdown?.classList.contains("hidden") && cartManager) {
+          showLoadingState();
+          cartManager.loadCartData();
+        }
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", function (e) {
+        const target = e.target as HTMLElement;
+        if (
+          cartDropdown &&
+          cartButton &&
+          !cartDropdown.contains(target) &&
+          !cartButton.contains(target)
+        ) {
+          cartDropdown.classList.add("hidden");
+        }
+      });
+
+      // Retry loading cart
+      retryButton?.addEventListener("click", function () {
+        if (cartManager) {
+          showLoadingState();
+          cartManager.loadCartData();
+        }
+      });
+
+      // Close dropdown when pressing Escape key
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !cartDropdown?.classList.contains("hidden")) {
+          cartDropdown?.classList.add("hidden");
+        }
+      });
+    }
+
+    // Global function for removing cart items
+    (window as any).removeCartItem = async function (itemId: string) {
+      if (cartManager) {
+        showLoadingState();
+        const result = await cartManager.removeCartItem(itemId);
+        if (!result.success) {
+          console.error("Failed to remove item:", result.message);
+          showErrorState();
+        }
+      }
+    };
+  });
+
+  // Cleanup subscription when component is removed
+  window.addEventListener("beforeunload", () => {
+    if (cartSubscription) {
+      cartSubscription();
+    }
   });
 </script>

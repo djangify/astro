@@ -1,5 +1,7 @@
 // src/lib/cart.ts
 // Cart Management Module with Digital/Physical Type Enforcement
+// FIXED: Proper cart token vs auth token handling
+
 export interface Product {
   id: number;
   slug: string;
@@ -23,6 +25,7 @@ export interface Product {
   is_featured?: boolean;
   requires_shipping?: boolean;
 }
+
 export interface CartItem {
   id: string;
   product: Product;
@@ -104,12 +107,29 @@ export class CartManager {
     }
   }
 
-  // Get authorization headers
+  // Get authorization headers - FIXED: Uses both auth and cart tokens properly
   private getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
+    // For cart operations, we need user auth token for authentication
+    // AND cart token for cart identification
+    const userAuthToken = localStorage.getItem('access_token');
+    if (userAuthToken) {
+      headers['Authorization'] = `Bearer ${userAuthToken}`;
+    }
+
+    return headers;
+  }
+
+  // Get cart-specific headers (when cart token needs to be in Authorization header)
+  private getCartHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Some endpoints expect cart token in Authorization header
     if (this.cartToken) {
       headers['Authorization'] = `Bearer ${this.cartToken}`;
     }
@@ -122,7 +142,13 @@ export class CartManager {
     try {
       this.updateCartUI('loading');
 
-      const response = await fetch(`${this.apiBaseUrl}/cart/`, {
+      // Build URL with cart token as query parameter if available
+      let url = `${this.apiBaseUrl}/cart/`;
+      if (this.cartToken) {
+        url += `?cart_token=${this.cartToken}`;
+      }
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: this.getAuthHeaders(),
       });
@@ -135,9 +161,9 @@ export class CartManager {
 
       // Transform API response to CartData format
       this.cartData = {
-        cart_token: data.token || this.cartToken || '',
+        cart_token: data.cart_token || this.cartToken || '',
         items: data.items || [],
-        item_count: data.total_items || 0,
+        item_count: data.item_count || 0,
         subtotal: data.subtotal || 0,
         cart_type: this.determineCartType(data.items || []),
         has_digital_items: data.has_digital_items || false,
@@ -146,9 +172,9 @@ export class CartManager {
         requires_shipping: data.requires_shipping || false,
       };
 
-      // Save token if received
-      if (data.token) {
-        this.saveCartToken(data.token);
+      // Save cart token if received
+      if (data.cart_token) {
+        this.saveCartToken(data.cart_token);
       }
 
       this.updateCartUI('success');
@@ -176,7 +202,7 @@ export class CartManager {
     return items[0].product.product_type;
   }
 
-  // Add product to cart with type enforcement
+  // Add product to cart with type enforcement - FIXED: Proper token handling
   async addToCart(product: Product, quantity: number = 1): Promise<AddToCartResponse> {
     try {
       // First check if cart type allows this product
@@ -204,14 +230,22 @@ export class CartManager {
         }
       }
 
+      // Prepare request body
+      const requestBody: any = {
+        product: product.id,
+        quantity: quantity
+      };
+
+      // Include cart token in request body if available
+      if (this.cartToken) {
+        requestBody.cart_token = this.cartToken;
+      }
+
       // Use DRF CartItemViewSet.create endpoint
       const response = await fetch(`${this.apiBaseUrl}/items/`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({
-          product: product.id,
-          quantity: quantity
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -249,13 +283,20 @@ export class CartManager {
   // Update cart item quantity
   async updateCartItem(itemId: string, quantity: number): Promise<AddToCartResponse> {
     try {
+      const requestBody: any = {
+        quantity: quantity
+      };
+
+      // Include cart token if available
+      if (this.cartToken) {
+        requestBody.cart_token = this.cartToken;
+      }
+
       // Use DRF CartItemViewSet.update endpoint
       const response = await fetch(`${this.apiBaseUrl}/items/${itemId}/`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({
-          quantity: quantity
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -316,10 +357,18 @@ export class CartManager {
   // Clear entire cart
   async clearCart(): Promise<AddToCartResponse> {
     try {
+      const requestBody: any = {};
+
+      // Include cart token if available
+      if (this.cartToken) {
+        requestBody.cart_token = this.cartToken;
+      }
+
       // Use DRF CartViewSet.clear endpoint
       const response = await fetch(`${this.apiBaseUrl}/cart/clear/`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
