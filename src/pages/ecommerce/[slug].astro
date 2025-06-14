@@ -4,15 +4,17 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
 
-// Single Product interface that matches Django model exactly
+// Complete Product interface that matches Django model exactly
 interface ProductData {
   // Required fields (no null/undefined in Django model)
+  id: number; // CRITICAL: Required by cart API
   name: string;
   slug: string;
   price: number;
   product_type: "physical" | "digital";
   in_stock: boolean;
   stock_qty: number; // PositiveIntegerField, defaults to 0
+  is_active: boolean; // Required by cart system
 
   // Optional fields (null=True, blank=True in Django)
   description?: string;
@@ -617,6 +619,133 @@ const metaDescription = product.description
   <Footer slot="footer" />
 </BaseLayout>
 
+<!-- Load cart system via module import -->
+<script>
+  // Import cart types and manager using correct relative path
+  import type {
+    CartManager,
+    Product as CartProduct,
+    AddToCartResponse,
+  } from "../../lib/cart.ts";
+
+  // Extend window interface for CartManager
+  declare global {
+    interface Window {
+      cartManager: CartManager;
+      preloadedProduct: any;
+      preloadedProductImages: string[];
+    }
+  }
+
+  // Import and initialize cart system properly
+  async function initializeCartSystem(): Promise<void> {
+    try {
+      // Import the cart module using correct relative path
+      const cartModule = await import("../../lib/cart.ts");
+
+      // Initialize cart manager
+      window.cartManager = new cartModule.CartManager();
+
+      // Load cart data
+      await window.cartManager.loadCartData();
+
+      console.log("Cart system initialized successfully");
+
+      // Dispatch event for any listeners
+      window.dispatchEvent(new CustomEvent("cartSystemReady"));
+    } catch (error) {
+      console.error("Error loading cart system:", error);
+
+      // Create fallback cart manager that matches CartManager interface
+      window.cartManager = {
+        addToCart: async function (
+          product: CartProduct,
+          quantity: number = 1,
+        ): Promise<AddToCartResponse> {
+          console.warn("Cart system not available - using API fallback");
+          return await fallbackAddToCart(product, quantity);
+        },
+        getCartData: function () {
+          return null;
+        },
+        showCartTypeWarning: function (
+          _productType: "digital" | "physical",
+        ): void {
+          console.warn("Cart type warning - system not loaded");
+        },
+        clearCart: async function (): Promise<AddToCartResponse> {
+          console.warn("Clear cart not available");
+          return { success: false, message: "Clear cart not available" };
+        },
+        // Add other required CartManager methods as stubs
+        loadCartData: async function () {
+          return null;
+        },
+        updateCartItem: async function () {
+          return { success: false, message: "Not available" };
+        },
+        removeCartItem: async function () {
+          return { success: false, message: "Not available" };
+        },
+        getItemCount: function () {
+          return 0;
+        },
+        getSubtotal: function () {
+          return 0;
+        },
+        subscribe: function () {
+          return () => {};
+        },
+      } as unknown as CartManager;
+    }
+  }
+
+  // Fallback cart function that calls API directly
+  async function fallbackAddToCart(
+    product: CartProduct,
+    quantity: number,
+  ): Promise<AddToCartResponse> {
+    try {
+      const API_BASE_URL = "https://corrison.corrisonapi.com/api/v1";
+
+      // Get auth token from localStorage
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(`${API_BASE_URL}/cart/add/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          product: product.id,
+          quantity: quantity,
+        }),
+      });
+
+      if (response.ok) {
+        return { success: true, message: "Added to cart successfully" };
+      } else {
+        const errorData = await response.json();
+        return {
+          success: false,
+          message: errorData.detail || "Failed to add to cart",
+        };
+      }
+    } catch (error) {
+      console.error("Fallback cart error:", error);
+      return { success: false, message: "Network error - please try again" };
+    }
+  }
+
+  // Initialize cart system when DOM is ready
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeCartSystem);
+  } else {
+    initializeCartSystem();
+  }
+</script>
+
 <!-- Pass preloaded product data to JavaScript -->
 <script is:inline define:vars={{ product, productImages }}>
   window.preloadedProduct = product;
@@ -624,15 +753,22 @@ const metaDescription = product.description
 </script>
 
 <script>
-  // Single Product interface that matches Django model exactly
+  // Import cart types and manager using correct relative path
+  import type {
+    CartManager,
+    Product as CartProduct,
+    AddToCartResponse,
+  } from "../../lib/cart.ts";
   interface Product {
     // Required fields (no null/undefined in Django model)
+    id: number; // CRITICAL: Required by cart API
     name: string;
     slug: string;
     price: number;
     product_type: "physical" | "digital";
     in_stock: boolean;
-    stock_qty: number; // PositiveIntegerField, defaults to 0
+    stock_qty: number;
+    is_active: boolean; // Required by cart system
 
     // Optional fields (null=True, blank=True in Django)
     description?: string;
@@ -647,12 +783,11 @@ const metaDescription = product.description
     is_featured?: boolean;
     requires_shipping?: boolean;
 
-    // Relationships - category is ForeignKey (required) but API might not include it
+    // Relationships
     category?: {
       name: string;
       slug: string;
     };
-    // images is ProductImage relationship
     images?: Array<{ image: string }>;
   }
 
@@ -681,10 +816,7 @@ const metaDescription = product.description
     savingsAmount: document.getElementById("savings-amount"),
     productTypeBadge: document.getElementById("product-type-badge"),
     categoryTag: document.getElementById("category-tag"),
-    breadcrumbCategory: document.getElementById("breadcrumb-category"),
-    breadcrumbProduct: document.getElementById("breadcrumb-product"),
-    stockIndicator: document.getElementById("stock-indicator"),
-    stockText: document.getElementById("stock-text"),
+    stockStatus: document.getElementById("stock-status"),
     digitalInfo: document.getElementById("digital-info"),
     physicalInfo: document.getElementById("physical-info"),
     downloadDays: document.getElementById("download-days"),
@@ -864,9 +996,7 @@ const metaDescription = product.description
 
       // Fallback to placeholder if no images
       if (productImages.length === 0) {
-        productImages.push(
-          "https://via.placeholder.com/600x600/e5e7eb/6b7280?text=No+Image",
-        );
+        productImages.push("/static/images/placeholder.png");
       }
     }
 
@@ -937,7 +1067,7 @@ const metaDescription = product.description
             const imageUrl: string =
               product.main_image ||
               product.featured_image ||
-              "https://via.placeholder.com/300x300/e5e7eb/6b7280?text=No+Image";
+              "/static/images/placeholder.png";
             const price: number = product.sale_price || product.price;
 
             return `
@@ -1023,7 +1153,7 @@ const metaDescription = product.description
       selectImage(nextIndex);
     });
 
-    // Add to cart - KEEP ALL EXISTING CART FUNCTIONALITY
+    // Add to cart - FIXED CART INTEGRATION
     elements.addToCartBtn?.addEventListener("click", () => {
       if (currentProduct && elements.quantityInput) {
         const quantity: number = parseInt(
@@ -1049,7 +1179,7 @@ const metaDescription = product.description
     });
   }
 
-  // KEEP ALL EXISTING CART FUNCTIONALITY EXACTLY AS IS
+  // FIXED CART INTEGRATION - Use Your Existing CartManager
   async function addToCart(product: Product, quantity: number): Promise<void> {
     const cartButton = elements.addToCartBtn as HTMLButtonElement;
     if (!cartButton) return;
@@ -1058,42 +1188,56 @@ const metaDescription = product.description
     const originalClasses: string = cartButton.className;
 
     try {
-      // Wait for cart manager to be available
-      if (typeof (window as any).cartManager === "undefined") {
-        showNotification(
-          "Cart system is loading. Please try again in a moment.",
-          "warning",
-        );
-        return;
-      }
-
       // Update button state
       cartButton.textContent = "Adding to Cart...";
       cartButton.disabled = true;
       cartButton.classList.add("opacity-75");
 
-      // Check cart type compatibility
-      const currentCartData = (window as any).cartManager.getCartData();
-      if (currentCartData && currentCartData.items.length > 0) {
-        const currentCartType = currentCartData.cart_type;
+      // Wait for cart system to be ready
+      if (typeof window.cartManager === "undefined") {
+        await new Promise<void>((resolve) => {
+          const checkCartSystem = () => {
+            if (typeof window.cartManager !== "undefined") {
+              resolve();
+            } else {
+              setTimeout(checkCartSystem, 100);
+            }
+          };
+          checkCartSystem();
+        });
+      }
 
-        if (currentCartType && currentCartType !== product.product_type) {
-          // Show cart type warning
-          showCartTypeWarning(product.product_type, currentCartType);
+      // Check cart type compatibility
+      const currentCart = window.cartManager.getCartData();
+      if (currentCart && currentCart.items && currentCart.items.length > 0) {
+        // Check for type conflict
+        const hasConflict =
+          (currentCart.is_digital_only &&
+            product.product_type === "physical") ||
+          (currentCart.has_physical_items &&
+            product.product_type === "digital");
+
+        if (hasConflict) {
+          const currentType = currentCart.is_digital_only
+            ? "digital products"
+            : "physical products";
+          const newType =
+            product.product_type === "digital"
+              ? "digital product"
+              : "physical product";
 
           // Reset button
           cartButton.textContent = originalText;
           cartButton.disabled = false;
           cartButton.classList.remove("opacity-75");
+
+          showCartTypeWarning(currentType, newType);
           return;
         }
       }
 
-      // Add to cart via API
-      const result = await (window as any).cartManager.addToCart(
-        product,
-        quantity,
-      );
+      // Add to cart using your existing method
+      const result = await window.cartManager.addToCart(product, quantity);
 
       if (result.success) {
         // Success state
@@ -1102,8 +1246,7 @@ const metaDescription = product.description
           .replace("bg-blue-600", "bg-green-600")
           .replace("hover:bg-blue-700", "hover:bg-green-700");
 
-        // Show success notification
-        showNotification(`${product.name} added to cart!`, "success");
+        showNotification("Product added to cart successfully!", "success");
 
         // Reset button after 2 seconds
         setTimeout(() => {
@@ -1119,11 +1262,7 @@ const metaDescription = product.description
           .replace("bg-blue-600", "bg-red-600")
           .replace("hover:bg-blue-700", "hover:bg-red-700");
 
-        // Show error notification
-        showNotification(
-          result.message || "Failed to add item to cart",
-          "error",
-        );
+        showNotification(result.message || "Failed to add to cart", "error");
 
         // Reset button after 3 seconds
         setTimeout(() => {
@@ -1136,27 +1275,29 @@ const metaDescription = product.description
     } catch (error) {
       console.error("Add to cart error:", error);
 
-      // Reset button on error
-      cartButton.textContent = originalText;
-      cartButton.className = originalClasses;
-      cartButton.disabled = false;
-      cartButton.classList.remove("opacity-75");
+      // Error state
+      cartButton.textContent = "Failed to Add";
+      cartButton.className = cartButton.className
+        .replace("bg-blue-600", "bg-red-600")
+        .replace("hover:bg-blue-700", "hover:bg-red-700");
 
-      // Show error notification
       showNotification("Something went wrong. Please try again.", "error");
+
+      // Reset button after 3 seconds
+      setTimeout(() => {
+        cartButton.textContent = originalText;
+        cartButton.className = originalClasses;
+        cartButton.disabled = false;
+        cartButton.classList.remove("opacity-75");
+      }, 3000);
     }
   }
 
   // Show cart type warning
   function showCartTypeWarning(
-    productType: "digital" | "physical",
-    currentCartType: "digital" | "physical",
+    currentTypeLabel: string,
+    newTypeLabel: string,
   ): void {
-    const currentTypeLabel =
-      currentCartType === "digital" ? "digital products" : "physical products";
-    const newTypeLabel =
-      productType === "digital" ? "digital product" : "physical product";
-
     const message = `Cannot mix product types. Your cart currently contains ${currentTypeLabel}. Please checkout first or remove existing items to add this ${newTypeLabel}.`;
 
     showNotification(message, "warning");
@@ -1222,8 +1363,7 @@ const metaDescription = product.description
 
   // Clear cart and add current product
   async function clearCartAndAdd(): Promise<void> {
-    if (typeof (window as any).cartManager === "undefined" || !currentProduct)
-      return;
+    if (typeof window.cartManager === "undefined" || !currentProduct) return;
 
     const confirmation = confirm(
       "This will remove all items from your cart and add this product. Are you sure you want to continue?",
@@ -1233,25 +1373,26 @@ const metaDescription = product.description
 
     try {
       // Clear cart first
-      const clearResult = await (window as any).cartManager.clearCart();
+      const clearResult = await window.cartManager.clearCart();
 
-      if (clearResult.success) {
-        // Remove compatibility warning
-        const warningDiv = document.getElementById(
-          "cart-compatibility-warning",
-        );
-        if (warningDiv) {
-          warningDiv.remove();
-        }
-
-        // Add current product
-        const quantityInput = elements.quantityInput as HTMLInputElement;
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-
-        await addToCart(currentProduct, quantity);
-      } else {
+      if (!clearResult.success) {
         showNotification("Failed to clear cart. Please try again.", "error");
+        return;
       }
+
+      // Remove compatibility warning
+      const warningDiv = document.getElementById("cart-compatibility-warning");
+      if (warningDiv) {
+        warningDiv.remove();
+      }
+
+      // Add current product
+      const quantityInput = elements.quantityInput as HTMLInputElement;
+      const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+
+      await addToCart(currentProduct, quantity);
+
+      showNotification("Cart cleared and product added!", "success");
     } catch (error) {
       console.error("Error clearing cart and adding product:", error);
       showNotification("Something went wrong. Please try again.", "error");
@@ -1314,56 +1455,6 @@ const metaDescription = product.description
     }, 5000);
   }
 
-  // Initialize cart integration
-  function initializeCartIntegration(): void {
-    // Wait for cart manager to be available
-    if (typeof (window as any).cartManager === "undefined") {
-      setTimeout(initializeCartIntegration, 100);
-      return;
-    }
-
-    // Subscribe to cart changes to update UI
-    (window as any).cartManager.subscribe((cartData: any) => {
-      updateProductPageCartUI(cartData);
-    });
-
-    // Load initial cart data
-    (window as any).cartManager.loadCartData();
-  }
-
-  // Update product page cart UI
-  function updateProductPageCartUI(cartData: any): void {
-    if (currentProduct && cartData) {
-      // Check if current product type conflicts with cart
-      const hasConflict =
-        cartData.items.length > 0 &&
-        cartData.cart_type &&
-        cartData.cart_type !== currentProduct.product_type;
-
-      const addToCartBtn = elements.addToCartBtn as HTMLButtonElement;
-
-      if (hasConflict && addToCartBtn) {
-        // Show inline warning
-        showInlineCartWarning(
-          cartData.cart_type === "digital"
-            ? "digital products"
-            : "physical products",
-          currentProduct.product_type === "digital"
-            ? "digital product"
-            : "physical product",
-        );
-      } else {
-        // Remove warning if it exists
-        const existingWarning = document.getElementById(
-          "cart-compatibility-warning",
-        );
-        if (existingWarning) {
-          existingWarning.remove();
-        }
-      }
-    }
-  }
-
   // Make functions globally available
   (window as any).clearCartAndAdd = clearCartAndAdd;
 
@@ -1371,6 +1462,10 @@ const metaDescription = product.description
     const button: HTMLElement | null = elements.wishlistBtn;
     if (!button) return;
 
+    // Note: Wishlist functionality would need to be implemented in CartManager
+    console.log("Wishlist toggle for product:", product.name);
+
+    // Update button UI
     const isInWishlist: boolean = button.classList.contains("text-red-600");
 
     if (isInWishlist) {
@@ -1382,7 +1477,6 @@ const metaDescription = product.description
           </svg>
           Wishlist
         `;
-      console.log(`Removed ${product.name} from wishlist`);
     } else {
       button.classList.add("text-red-600", "bg-red-50");
       button.classList.remove("text-gray-700");
@@ -1392,7 +1486,6 @@ const metaDescription = product.description
           </svg>
           In Wishlist
         `;
-      console.log(`Added ${product.name} to wishlist`);
     }
   }
 
@@ -1427,6 +1520,5 @@ const metaDescription = product.description
   document.addEventListener("DOMContentLoaded", () => {
     setupEventListeners();
     initializeProduct();
-    initializeCartIntegration();
   });
 </script>

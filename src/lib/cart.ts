@@ -1,20 +1,28 @@
 // src/lib/cart.ts
 // Cart Management Module with Digital/Physical Type Enforcement
-
 export interface Product {
+  id: number;
   slug: string;
   name: string;
+  description?: string;
   price: number;
   sale_price?: number;
   main_image?: string;
   featured_image?: string;
+  images?: Array<{ image: string }>;
   product_type: "digital" | "physical";
   category?: { name: string; slug: string };
   is_active: boolean;
   stock_qty?: number;
   in_stock?: boolean;
+  weight?: number;
+  dimensions?: string;
+  digital_file?: string;
+  download_limit?: number;
+  download_expiry_days?: number;
+  is_featured?: boolean;
+  requires_shipping?: boolean;
 }
-
 export interface CartItem {
   id: string;
   product: Product;
@@ -127,9 +135,9 @@ export class CartManager {
 
       // Transform API response to CartData format
       this.cartData = {
-        cart_token: data.cart_token || this.cartToken || '',
+        cart_token: data.token || this.cartToken || '',
         items: data.items || [],
-        item_count: data.item_count || 0,
+        item_count: data.total_items || 0,
         subtotal: data.subtotal || 0,
         cart_type: this.determineCartType(data.items || []),
         has_digital_items: data.has_digital_items || false,
@@ -139,8 +147,8 @@ export class CartManager {
       };
 
       // Save token if received
-      if (data.cart_token) {
-        this.saveCartToken(data.cart_token);
+      if (data.token) {
+        this.saveCartToken(data.token);
       }
 
       this.updateCartUI('success');
@@ -196,13 +204,13 @@ export class CartManager {
         }
       }
 
-      const response = await fetch(`${this.apiBaseUrl}/cart/add/`, {
+      // Use DRF CartItemViewSet.create endpoint
+      const response = await fetch(`${this.apiBaseUrl}/items/`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({
-          product_slug: product.slug,
-          quantity: quantity,
-          cart_token: this.cartToken
+          product: product.id,
+          quantity: quantity
         }),
       });
 
@@ -225,7 +233,7 @@ export class CartManager {
         success: true,
         message: `${product.name} added to cart`,
         cart_token: data.cart_token,
-        item: data.item,
+        item: data,
         cart_data: this.cartData || undefined
       };
 
@@ -241,13 +249,12 @@ export class CartManager {
   // Update cart item quantity
   async updateCartItem(itemId: string, quantity: number): Promise<AddToCartResponse> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/cart/update/`, {
+      // Use DRF CartItemViewSet.update endpoint
+      const response = await fetch(`${this.apiBaseUrl}/items/${itemId}/`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({
-          item_id: itemId,
-          quantity: quantity,
-          cart_token: this.cartToken
+          quantity: quantity
         }),
       });
 
@@ -277,13 +284,10 @@ export class CartManager {
   // Remove item from cart
   async removeCartItem(itemId: string): Promise<AddToCartResponse> {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/cart/remove/`, {
+      // Use DRF CartItemViewSet.destroy endpoint
+      const response = await fetch(`${this.apiBaseUrl}/items/${itemId}/`, {
         method: 'DELETE',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({
-          item_id: itemId,
-          cart_token: this.cartToken
-        }),
       });
 
       if (!response.ok) {
@@ -312,12 +316,10 @@ export class CartManager {
   // Clear entire cart
   async clearCart(): Promise<AddToCartResponse> {
     try {
+      // Use DRF CartViewSet.clear endpoint
       const response = await fetch(`${this.apiBaseUrl}/cart/clear/`, {
-        method: 'DELETE',
+        method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({
-          cart_token: this.cartToken
-        }),
       });
 
       if (!response.ok) {
@@ -490,8 +492,8 @@ export class CartManager {
     // Create a simple toast notification
     const toast = document.createElement('div');
     toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 ${type === 'success' ? 'bg-green-500 text-white' :
-        type === 'error' ? 'bg-red-500 text-white' :
-          'bg-yellow-500 text-black'
+      type === 'error' ? 'bg-red-500 text-white' :
+        'bg-yellow-500 text-black'
       }`;
     toast.textContent = message;
 
