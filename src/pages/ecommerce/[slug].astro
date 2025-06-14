@@ -4,30 +4,36 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
 
-// Define the Product interface for TypeScript
+// Single Product interface that matches Django model exactly
 interface ProductData {
+  // Required fields (no null/undefined in Django model)
   name: string;
   slug: string;
-  description?: string;
   price: number;
-  sale_price?: number;
   product_type: "physical" | "digital";
   in_stock: boolean;
-  stock_qty: number;
+  stock_qty: number; // PositiveIntegerField, defaults to 0
+
+  // Optional fields (null=True, blank=True in Django)
+  description?: string;
+  sale_price?: number;
   main_image?: string;
   featured_image?: string;
-  images?: Array<{ image: string }>;
-  category?: {
-    name: string;
-    slug: string;
-  };
   weight?: number;
   dimensions?: string;
-  requires_shipping?: boolean;
   digital_file?: string;
   download_limit?: number;
   download_expiry_days?: number;
   is_featured?: boolean;
+  requires_shipping?: boolean;
+
+  // Relationships - category is ForeignKey (required) but API might not include it
+  category?: {
+    name: string;
+    slug: string;
+  };
+  // images is ProductImage relationship
+  images?: Array<{ image: string }>;
 }
 
 export async function getStaticPaths() {
@@ -163,7 +169,7 @@ const metaDescription = product.description
 
       <div class="container mx-auto px-4 py-12">
         <div class="max-w-6xl mx-auto">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div class="lg:grid lg:grid-cols-2 gap-12 space-y-8 lg:space-y-0">
             <!-- Product Images -->
             <div class="space-y-4">
               <!-- Main Image -->
@@ -618,67 +624,36 @@ const metaDescription = product.description
 </script>
 
 <script>
-  // ALL EXISTING JAVASCRIPT FUNCTIONALITY REMAINS EXACTLY THE SAME
-  // Define the exact interface that matches your Django Product model
+  // Single Product interface that matches Django model exactly
   interface Product {
-    // From your Django Product model
+    // Required fields (no null/undefined in Django model)
     name: string;
     slug: string;
-    description?: string;
     price: number;
-    sale_price?: number;
     product_type: "physical" | "digital";
-
-    // Stock fields
     in_stock: boolean;
-    stock_qty: number;
+    stock_qty: number; // PositiveIntegerField, defaults to 0
 
-    // Image fields
+    // Optional fields (null=True, blank=True in Django)
+    description?: string;
+    sale_price?: number;
     main_image?: string;
     featured_image?: string;
-    images?: Array<{ image: string }>;
+    weight?: number;
+    dimensions?: string;
+    digital_file?: string;
+    download_limit?: number;
+    download_expiry_days?: number;
+    is_featured?: boolean;
+    requires_shipping?: boolean;
 
-    // Category relationship
+    // Relationships - category is ForeignKey (required) but API might not include it
     category?: {
       name: string;
       slug: string;
     };
-
-    // Physical product fields
-    weight?: number;
-    dimensions?: string;
-    requires_shipping?: boolean;
-
-    // Digital product fields
-    digital_file?: string;
-    download_limit?: number;
-    download_expiry_days?: number;
-
-    // Other fields
-    is_featured?: boolean;
-  }
-  interface Product {
-    slug: string;
-    name: string;
-    description?: string;
-    price: number;
-    sale_price?: number;
-    main_image?: string;
-    featured_image?: string;
-    images?: Array<{ image: string } | string>;
-    category?:
-      | {
-          name: string;
-          slug: string;
-        }
-      | string;
-    product_type: "digital" | "physical";
-    in_stock: boolean;
-    stock_qty?: number;
-    download_expiry_days?: number;
-    download_limit?: number;
-    weight?: number;
-    dimensions?: string;
+    // images is ProductImage relationship
+    images?: Array<{ image: string }>;
   }
 
   interface Elements {
@@ -883,9 +858,7 @@ const metaDescription = product.description
       // Add additional images if available
       if (product.images && Array.isArray(product.images)) {
         productImages.push(
-          ...product.images.map((img: { image: string } | string) =>
-            typeof img === "object" ? img.image : img,
-          ),
+          ...product.images.map((img: { image: string }) => img.image),
         );
       }
 
