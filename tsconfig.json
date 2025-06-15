@@ -1,7 +1,15 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "allowJs": true,
+    "checkJs": false,
+    "moduleResolution": "node",
     "paths": {
+      "/lib/*": [
+        "./public/lib/*",
+        "./src/lib/*",
+        "./lib/*"
+      ],
       "astro/tsconfigs/*": [
         "node_modules/astro/tsconfigs/*"
       ]
@@ -10,6 +18,7 @@
   "extends": "astro/tsconfigs/strict",
   "include": [
     "src/**/*",
+    "lib/**/*",
     "src/env.d.ts"
   ],
   "exclude": [

@@ -1,5 +1,6 @@
 ---
 // src/components/CartIcon.astro - COMPLETE SOLUTION
+
 export interface Props {
   className?: string;
 }
@@ -207,8 +208,8 @@ const { className = "" } = Astro.props;
     async function initializeCartManager(): Promise<void> {
       try {
         // Import CartManager dynamically
-        const cartModule = await import("../lib/cart.ts");
-        cartManager = cartModule.CartManager.getInstance();
+        const cartModule = await import("../lib/cart.js");
+        cartManager = cartModule.cartManager;
 
         // Subscribe to cart updates
         cartSubscription = cartManager.subscribe((cartData: any) => {

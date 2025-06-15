@@ -750,8 +750,8 @@ const metaDescription = product.description
   // Initialize cart manager
   async function initializeCartManager(): Promise<void> {
     try {
-      const cartModule = await import("../../lib/cart.ts");
-      cartManager = cartModule.CartManager.getInstance();
+      const cartModule = await import("../../lib/cart.js");
+      cartManager = cartModule.cartManager;
       await cartManager.loadCartData();
       console.log("Cart Manager initialized successfully");
     } catch (error) {

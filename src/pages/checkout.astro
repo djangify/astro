@@ -356,18 +356,16 @@ const metaDescription =
   <Footer slot="footer" />
 </BaseLayout>
 
-<script>
-  // Import cart manager
-  import { cartManager } from "../lib/cart.js";
-
+<script type="module">
   // Stripe configuration
-  const STRIPE_PUBLISHABLE_KEY = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY; // Your Stripe publishable key
+  const STRIPE_PUBLISHABLE_KEY = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const API_BASE_URL = "https://corrison.corrisonapi.com/api/v1";
 
   // Stripe elements
-  let stripe: any = null;
-  let elements: any = null;
-  let cardElement: any = null;
+  let stripe = null;
+  let elements = null;
+  let cardElement = null;
+  let cartManager = null;
 
   // DOM elements
   const domElements = {
@@ -375,14 +373,12 @@ const metaDescription =
     checkoutContent: document.getElementById("checkout-content"),
     emptyCartRedirect: document.getElementById("empty-cart-redirect"),
     checkoutError: document.getElementById("checkout-error"),
-    checkoutForm: document.getElementById("checkout-form") as HTMLFormElement,
+    checkoutForm: document.getElementById("checkout-form"),
     orderItems: document.getElementById("order-items"),
     orderSubtotal: document.getElementById("order-subtotal"),
     orderTax: document.getElementById("order-tax"),
     orderTotal: document.getElementById("order-total"),
-    submitButton: document.getElementById(
-      "submit-payment",
-    ) as HTMLButtonElement,
+    submitButton: document.getElementById("submit-payment"),
     buttonText: document.getElementById("button-text"),
     buttonSpinner: document.getElementById("button-spinner"),
     cardErrors: document.getElementById("card-errors"),
@@ -390,13 +386,69 @@ const metaDescription =
     retryBtn: document.getElementById("retry-checkout-btn"),
   };
 
-  let currentCartData: any = null;
-  let clientSecret: string = "";
+  let currentCartData = null;
+  let clientSecret = "";
+
+  // Initialize cart manager
+  async function initializeCartManager() {
+    try {
+      // Check if cart manager is already available globally
+      if (window.cartManager) {
+        cartManager = window.cartManager;
+        console.log("Using global cart manager");
+        return cartManager;
+      }
+
+      // Wait for cart ready event if it's not available yet
+      return new Promise((resolve, reject) => {
+        if (window.cartManager) {
+          cartManager = window.cartManager;
+          resolve(cartManager);
+          return;
+        }
+
+        // Listen for cart ready event
+        const timeout = setTimeout(() => {
+          reject(new Error("Cart manager initialization timeout"));
+        }, 5000);
+
+        document.addEventListener(
+          "cartReady",
+          (event) => {
+            clearTimeout(timeout);
+            cartManager = event.detail.cartManager;
+            console.log("Cart manager ready from event");
+            resolve(cartManager);
+          },
+          { once: true },
+        );
+
+        // Fallback: try to import directly
+        import("../lib/cart.js")
+          .then((module) => {
+            clearTimeout(timeout);
+            cartManager = module.cartManager;
+            console.log("Cart manager imported directly");
+            resolve(cartManager);
+          })
+          .catch((error) => {
+            console.error("Failed to import cart manager:", error);
+            // Don't reject here, let the timeout handle it
+          });
+      });
+    } catch (error) {
+      console.error("Error initializing cart manager:", error);
+      throw error;
+    }
+  }
 
   // Initialize checkout page
-  async function initializeCheckout(): Promise<void> {
+  async function initializeCheckout() {
     try {
       showLoadingState();
+
+      // Initialize cart manager first
+      await initializeCartManager();
 
       // Initialize Stripe
       await initializeStripe();
@@ -410,9 +462,13 @@ const metaDescription =
   }
 
   // Initialize Stripe
-  async function initializeStripe(): Promise<void> {
+  async function initializeStripe() {
     try {
-      stripe = (window as any).Stripe(STRIPE_PUBLISHABLE_KEY);
+      if (!window.Stripe) {
+        throw new Error("Stripe.js not loaded");
+      }
+
+      stripe = window.Stripe(STRIPE_PUBLISHABLE_KEY);
       elements = stripe.elements();
 
       // Create card element
@@ -433,9 +489,11 @@ const metaDescription =
       cardElement.mount("#card-element");
 
       // Handle real-time validation errors from the card Element
-      cardElement.on("change", ({ error }: any) => {
+      cardElement.on("change", (event) => {
         if (domElements.cardErrors) {
-          domElements.cardErrors.textContent = error ? error.message : "";
+          domElements.cardErrors.textContent = event.error
+            ? event.error.message
+            : "";
         }
       });
     } catch (error) {
@@ -445,8 +503,12 @@ const metaDescription =
   }
 
   // Load checkout data
-  async function loadCheckoutData(): Promise<void> {
+  async function loadCheckoutData() {
     try {
+      if (!cartManager) {
+        throw new Error("Cart manager not available");
+      }
+
       // Load cart data
       const cartData = await cartManager.loadCartData();
 
@@ -471,8 +533,12 @@ const metaDescription =
   }
 
   // Create Stripe payment intent
-  async function createPaymentIntent(): Promise<void> {
+  async function createPaymentIntent() {
     try {
+      if (!cartManager) {
+        throw new Error("Cart manager not available");
+      }
+
       const cartToken = cartManager.getCartToken();
 
       const response = await fetch(`${API_BASE_URL}/create-payment-intent/`, {
@@ -496,14 +562,14 @@ const metaDescription =
   }
 
   // Render checkout summary
-  function renderCheckoutSummary(): void {
+  function renderCheckoutSummary() {
     if (!currentCartData || !domElements.orderItems) return;
 
     const items = currentCartData.items || [];
 
     // Render items
     domElements.orderItems.innerHTML = items
-      .map((item: any) => {
+      .map((item) => {
         const product = item.product;
         const imageUrl = product.main_image || "/static/images/placeholder.png";
         const totalPrice =
@@ -549,19 +615,15 @@ const metaDescription =
   }
 
   // Populate user data if authenticated
-  function populateUserData(): void {
+  function populateUserData() {
     try {
       const userData = localStorage.getItem("user_data");
       if (userData) {
         const user = JSON.parse(userData);
 
-        const emailInput = document.getElementById("email") as HTMLInputElement;
-        const firstNameInput = document.getElementById(
-          "first-name",
-        ) as HTMLInputElement;
-        const lastNameInput = document.getElementById(
-          "last-name",
-        ) as HTMLInputElement;
+        const emailInput = document.getElementById("email");
+        const firstNameInput = document.getElementById("first-name");
+        const lastNameInput = document.getElementById("last-name");
 
         if (emailInput && user.email) emailInput.value = user.email;
         if (firstNameInput && user.first_name)
@@ -571,11 +633,12 @@ const metaDescription =
       }
     } catch (error) {
       // Ignore errors - user might not be logged in
+      console.log("No user data available");
     }
   }
 
   // Handle form submission
-  async function handleSubmit(event: Event): Promise<void> {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!stripe || !cardElement || !clientSecret) {
@@ -587,14 +650,12 @@ const metaDescription =
 
     try {
       // Get form data
-      const formData = new FormData(
-        domElements.checkoutForm as HTMLFormElement,
-      );
+      const formData = new FormData(domElements.checkoutForm);
       const customerData = {
-        email: formData.get("email") as string,
-        first_name: formData.get("first_name") as string,
-        last_name: formData.get("last_name") as string,
-        notes: formData.get("notes") as string,
+        email: formData.get("email"),
+        first_name: formData.get("first_name"),
+        last_name: formData.get("last_name"),
+        notes: formData.get("notes"),
       };
 
       // Validate required fields
@@ -635,11 +696,12 @@ const metaDescription =
   }
 
   // Create order after successful payment
-  async function createOrder(
-    customerData: any,
-    paymentIntentId: string,
-  ): Promise<void> {
+  async function createOrder(customerData, paymentIntentId) {
     try {
+      if (!cartManager) {
+        throw new Error("Cart manager not available");
+      }
+
       const cartToken = cartManager.getCartToken();
 
       const response = await fetch(`${API_BASE_URL}/create-order/`, {
@@ -676,7 +738,7 @@ const metaDescription =
   }
 
   // Set loading state
-  function setLoading(loading: boolean): void {
+  function setLoading(loading) {
     if (domElements.submitButton) {
       domElements.submitButton.disabled = loading;
     }
@@ -693,7 +755,7 @@ const metaDescription =
   }
 
   // Show notification
-  function showNotification(message: string, type: string = "info"): void {
+  function showNotification(message, type = "info") {
     const notification = document.createElement("div");
     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm ${
       type === "success"
@@ -712,29 +774,29 @@ const metaDescription =
   }
 
   // State management functions
-  function showLoadingState(): void {
+  function showLoadingState() {
     hideAllStates();
     domElements.checkoutLoading?.classList.remove("hidden");
   }
 
-  function showCheckoutContent(): void {
+  function showCheckoutContent() {
     hideAllStates();
     domElements.checkoutContent?.classList.remove("hidden");
   }
 
-  function showEmptyCartState(): void {
+  function showEmptyCartState() {
     hideAllStates();
     domElements.emptyCartRedirect?.classList.remove("hidden");
   }
 
-  function showErrorState(message: string): void {
+  function showErrorState(message) {
     hideAllStates();
     if (domElements.errorMessage)
       domElements.errorMessage.textContent = message;
     domElements.checkoutError?.classList.remove("hidden");
   }
 
-  function hideAllStates(): void {
+  function hideAllStates() {
     domElements.checkoutLoading?.classList.add("hidden");
     domElements.checkoutContent?.classList.add("hidden");
     domElements.emptyCartRedirect?.classList.add("hidden");
@@ -742,7 +804,7 @@ const metaDescription =
   }
 
   // Event listeners
-  function setupEventListeners(): void {
+  function setupEventListeners() {
     // Form submission
     domElements.checkoutForm?.addEventListener("submit", handleSubmit);
 

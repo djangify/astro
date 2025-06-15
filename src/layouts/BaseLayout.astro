@@ -68,7 +68,7 @@ const isDashboardPage = authPagePaths.some(path => currentPath.startsWith(path))
     <script type="module">
       // Import and initialize cart manager globally
       try {
-        const { cartManager } = await import('/src/lib/cart.js');
+        const { cartManager } = await import('/lib/cart.js');
         
         // Make cart manager available globally
         window.cartManager = cartManager;
