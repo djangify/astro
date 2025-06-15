@@ -314,12 +314,18 @@ const metaDescription = product.description
 
               <!-- Product Description -->
               <div class="prose prose-gray max-w-none">
-                <p class="text-lg text-gray-600 leading-relaxed">
-                  {
-                    product.description ||
-                      "Premium quality product with excellent features and value."
-                  }
-                </p>
+                {
+                  product.description ? (
+                    <div
+                      set:html={product.description}
+                      class="text-lg text-gray-600 leading-relaxed"
+                    />
+                  ) : (
+                    <p class="text-lg text-gray-600 leading-relaxed">
+                      Premium quality product with excellent features and value.
+                    </p>
+                  )
+                }
               </div>
 
               <!-- Cart Type Warning (Hidden by default) -->
@@ -665,383 +671,535 @@ const metaDescription = product.description
 
   <Footer slot="footer" />
 </BaseLayout>
-
-<!-- Pass preloaded product data to JavaScript -->
-<script is:inline define:vars={{ product, productImages }}>
+<!-- Pass product data to JavaScript -->
+<script is:inline define:vars={{ product }}>
   window.preloadedProduct = product;
-  window.preloadedProductImages = productImages;
 </script>
-
+// src/pages/ecommerce/[slug].astro - Script section only (lines 558-850)
 <script>
-  // Interface definitions
-  interface Product {
-    id: number;
-    name: string;
-    slug: string;
-    price: number;
-    product_type: "physical" | "digital";
-    in_stock: boolean;
-    stock_qty: number;
-    is_active: boolean;
-    description?: string;
-    sale_price?: number;
-    main_image?: string;
-    featured_image?: string;
-    weight?: number;
-    dimensions?: string;
-    digital_file?: string;
-    download_limit?: number;
-    download_expiry_days?: number;
-    is_featured?: boolean;
-    requires_shipping?: boolean;
-    category?: {
-      name: string;
-      slug: string;
-    };
-    images?: Array<{ image: string }>;
-  }
-
-  interface Elements {
-    [key: string]: HTMLElement | null;
-  }
-
-  // Global variables
-  const API_BASE_URL: string = "https://corrison.corrisonapi.com/api/v1";
-  const slug: string = window.location.pathname.split("/").pop() || "";
-  let currentProduct: Product | null = null;
-  let currentImageIndex: number = 0;
-  let productImages: string[] = [];
+  // Simple cart manager and product functionality
   let cartManager: any = null;
+  let currentProduct: any = null;
 
-  // DOM elements with proper typing
-  const elements: Elements = {
-    loadingState: document.getElementById("loading-state"),
-    productContent: document.getElementById("product-content"),
-    errorState: document.getElementById("error-state"),
-    mainImage: document.getElementById("main-image"),
-    productTitle: document.getElementById("product-title"),
-    productDescription: document.getElementById("product-description"),
-    currentPrice: document.getElementById("current-price"),
-    originalPrice: document.getElementById("original-price"),
-    saleBadge: document.getElementById("sale-badge"),
-    savingsBadge: document.getElementById("savings-badge"),
-    savingsAmount: document.getElementById("savings-amount"),
-    productTypeBadge: document.getElementById("product-type-badge"),
-    categoryTag: document.getElementById("category-tag"),
-    stockStatus: document.getElementById("stock-status"),
-    digitalInfo: document.getElementById("digital-info"),
-    physicalInfo: document.getElementById("physical-info"),
-    downloadDays: document.getElementById("download-days"),
-    downloadLimit: document.getElementById("download-limit"),
-    productSpecs: document.getElementById("product-specs"),
-    quantityInput: document.getElementById("quantity-input"),
-    addToCartBtn: document.getElementById("add-to-cart-btn"),
-    wishlistBtn: document.getElementById("wishlist-btn"),
-    shareBtn: document.getElementById("share-btn"),
-    thumbnailContainer: document.getElementById("thumbnail-container"),
-    imageNav: document.getElementById("image-nav"),
-    prevImageBtn: document.getElementById("prev-image"),
-    nextImageBtn: document.getElementById("next-image"),
-    galleryTrigger: document.getElementById("gallery-trigger"),
-    relatedProductsGrid: document.getElementById("related-products-grid"),
-    cartTypeWarning: document.getElementById("cart-type-warning"),
-    cartWarningMessage: document.getElementById("cart-warning-message"),
-    clearCartAndAdd: document.getElementById("clear-cart-and-add"),
+  const elements = {
+    addToCartBtn: document.getElementById(
+      "add-to-cart-btn",
+    ) as HTMLButtonElement | null,
+    quantityInput: document.getElementById(
+      "quantity-input",
+    ) as HTMLInputElement | null,
+    decreaseQtyBtn: document.getElementById(
+      "decrease-qty",
+    ) as HTMLButtonElement | null,
+    increaseQtyBtn: document.getElementById(
+      "increase-qty",
+    ) as HTMLButtonElement | null,
+    mainImage: document.getElementById("main-image") as HTMLImageElement | null,
+    thumbnailContainer: document.getElementById(
+      "thumbnail-container",
+    ) as HTMLElement | null,
+    prevImageBtn: document.getElementById(
+      "prev-image",
+    ) as HTMLButtonElement | null,
+    nextImageBtn: document.getElementById(
+      "next-image",
+    ) as HTMLButtonElement | null,
+    galleryTrigger: document.getElementById(
+      "gallery-trigger",
+    ) as HTMLButtonElement | null,
+    wishlistBtn: document.getElementById(
+      "wishlist-btn",
+    ) as HTMLButtonElement | null,
+    shareBtn: document.getElementById("share-btn") as HTMLButtonElement | null,
+    productTypeBadge: document.getElementById(
+      "product-type-badge",
+    ) as HTMLElement | null,
+    saleBadge: document.getElementById("sale-badge") as HTMLElement | null,
+    originalPrice: document.getElementById(
+      "original-price",
+    ) as HTMLElement | null,
+    savingsAmount: document.getElementById(
+      "savings-amount",
+    ) as HTMLElement | null,
+    savingsBadge: document.getElementById(
+      "savings-badge",
+    ) as HTMLElement | null,
+    digitalInfo: document.getElementById("digital-info") as HTMLElement | null,
+    physicalInfo: document.getElementById(
+      "physical-info",
+    ) as HTMLElement | null,
+    downloadDays: document.getElementById(
+      "download-days",
+    ) as HTMLElement | null,
+    downloadLimit: document.getElementById(
+      "download-limit",
+    ) as HTMLElement | null,
+    stockStatus: document.getElementById("stock-status") as HTMLElement | null,
+    categoryTag: document.getElementById("category-tag") as HTMLElement | null,
+    productSpecs: document.getElementById(
+      "product-specs",
+    ) as HTMLElement | null,
+    relatedProductsGrid: document.getElementById(
+      "related-products-grid",
+    ) as HTMLElement | null,
   };
 
-  // Initialize Cart Manager
+  let productImages: string[] = [];
+  let currentImageIndex: number = 0;
+
+  // Initialize cart manager
   async function initializeCartManager(): Promise<void> {
     try {
-      // Dynamically import the CartManager
       const cartModule = await import("../../lib/cart.ts");
       cartManager = cartModule.CartManager.getInstance();
-
-      // Load cart data
       await cartManager.loadCartData();
-
-      console.log("✅ Cart Manager initialized successfully");
-
-      // Subscribe to cart changes for real-time updates
-      cartManager.subscribe((cartData: any) => {
-        console.log("Cart updated:", cartData);
-        // Update any cart-related UI if needed
-      });
+      console.log("Cart Manager initialized successfully");
     } catch (error) {
-      console.error("❌ Failed to initialize Cart Manager:", error);
+      console.error("Failed to initialize Cart Manager:", error);
       cartManager = null;
     }
   }
 
-  // Initialize product data from server-rendered content
+  // Initialize product data
   function initializeProduct(): void {
-    // Use preloaded product data
-    const preloadedProduct = (window as any).preloadedProduct;
-    const preloadedImages = (window as any).preloadedProductImages;
+    currentProduct = (window as any).preloadedProduct;
 
-    if (preloadedProduct) {
-      currentProduct = preloadedProduct;
-      productImages = preloadedImages || [];
-
-      // Update UI with JavaScript after page load
-      renderProductData(preloadedProduct);
-      setupProductImages(preloadedProduct);
-      loadRelatedProducts(
-        typeof preloadedProduct.category === "object"
-          ? preloadedProduct.category?.slug
-          : undefined,
-      );
+    if (currentProduct) {
+      updateProductDisplay();
+      setupProductImages();
+      setupEventListeners();
     }
   }
 
-  // Render product data with JavaScript (for dynamic content)
-  function renderProductData(product: Product): void {
-    const isDigital = product.product_type === "digital";
-    const currentPrice = product.sale_price || product.price;
-    const originalPrice = product.sale_price ? product.price : null;
+  // Update product display based on data
+  function updateProductDisplay(): void {
+    if (!currentProduct) return;
+
+    const isDigital: boolean = currentProduct.product_type === "digital";
+    const hasCategory: boolean =
+      currentProduct.category && currentProduct.category.name;
 
     // Update product type badge
     if (elements.productTypeBadge) {
       elements.productTypeBadge.textContent = isDigital
         ? "Digital Download"
         : "Physical Product";
-      elements.productTypeBadge.className = `px-3 py-1 text-sm font-semibold rounded-full ${
-        isDigital
-          ? "bg-purple-100 text-purple-800"
-          : "bg-blue-100 text-blue-800"
-      }`;
+      elements.productTypeBadge.className = isDigital
+        ? "px-3 py-1 text-sm font-semibold rounded-full bg-purple-100 text-purple-800"
+        : "px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800";
     }
 
-    // Show category if available
-    if (product.category && elements.categoryTag) {
-      const categoryName =
-        typeof product.category === "object"
-          ? product.category.name
-          : product.category;
-      const categorySpan = elements.categoryTag.querySelector("span");
-      if (categorySpan) categorySpan.textContent = categoryName;
-      elements.categoryTag.classList.remove("hidden");
-    }
-
-    // Show sale price if applicable
+    // Show/hide sale badge and pricing
     if (
-      originalPrice &&
-      elements.originalPrice &&
-      elements.saleBadge &&
-      elements.savingsBadge &&
-      elements.savingsAmount
+      currentProduct.sale_price &&
+      currentProduct.sale_price < currentProduct.price
     ) {
-      elements.originalPrice.textContent = `$${parseFloat(originalPrice.toString()).toFixed(2)}`;
-      elements.originalPrice.classList.remove("hidden");
-      elements.saleBadge.classList.remove("hidden");
-
-      const savings = originalPrice - currentPrice;
-      elements.savingsAmount.textContent = `$${savings.toFixed(2)}`;
-      elements.savingsBadge.classList.remove("hidden");
+      if (elements.saleBadge) elements.saleBadge.classList.remove("hidden");
+      if (elements.originalPrice) {
+        elements.originalPrice.textContent = `$${currentProduct.price.toFixed(2)}`;
+        elements.originalPrice.classList.remove("hidden");
+      }
+      if (elements.savingsAmount && elements.savingsBadge) {
+        const savings = currentProduct.price - currentProduct.sale_price;
+        elements.savingsAmount.textContent = `$${savings.toFixed(2)}`;
+        elements.savingsBadge.classList.remove("hidden");
+      }
     }
 
-    // Show appropriate product info section
-    if (isDigital && elements.digitalInfo && elements.physicalInfo) {
-      elements.digitalInfo.classList.remove("hidden");
-      elements.physicalInfo.classList.add("hidden");
+    // Show/hide product type info
+    if (isDigital) {
+      if (elements.digitalInfo) elements.digitalInfo.classList.remove("hidden");
+      if (elements.physicalInfo) elements.physicalInfo.classList.add("hidden");
 
-      if (product.download_expiry_days && elements.downloadDays) {
+      // Update digital product details
+      if (elements.downloadDays) {
         elements.downloadDays.textContent =
-          product.download_expiry_days.toString();
+          currentProduct.download_expiry_days || "30";
       }
-      if (product.download_limit && elements.downloadLimit) {
-        elements.downloadLimit.textContent = product.download_limit.toString();
+      if (elements.downloadLimit) {
+        elements.downloadLimit.textContent =
+          currentProduct.download_limit || "5";
       }
-    } else if (!isDigital && elements.physicalInfo && elements.digitalInfo) {
-      elements.physicalInfo.classList.remove("hidden");
-      elements.digitalInfo.classList.add("hidden");
+    } else {
+      if (elements.digitalInfo) elements.digitalInfo.classList.add("hidden");
+      if (elements.physicalInfo)
+        elements.physicalInfo.classList.remove("hidden");
 
-      // Add product specs
-      const specs = [];
-      if (product.weight) specs.push(`Weight: ${product.weight}kg`);
-      if (product.dimensions) specs.push(`Dimensions: ${product.dimensions}`);
-
-      if (specs.length > 0 && elements.productSpecs) {
+      // Update physical product specs
+      if (
+        elements.productSpecs &&
+        (currentProduct.weight || currentProduct.dimensions)
+      ) {
+        let specs = [];
+        if (currentProduct.weight)
+          specs.push(`Weight: ${currentProduct.weight}kg`);
+        if (currentProduct.dimensions)
+          specs.push(`Dimensions: ${currentProduct.dimensions}`);
         elements.productSpecs.textContent = specs.join(" • ");
       }
     }
 
-    // Update stock status
-    updateStockStatus(product);
-
-    // Update quantity input max
-    if (product.stock_qty && product.stock_qty > 0 && elements.quantityInput) {
-      (elements.quantityInput as HTMLInputElement).max = Math.min(
-        product.stock_qty,
-        10,
-      ).toString();
+    // Show category
+    if (hasCategory && elements.categoryTag) {
+      const categorySpan = elements.categoryTag.querySelector("span");
+      if (categorySpan) {
+        categorySpan.textContent = currentProduct.category.name;
+      }
+      elements.categoryTag.classList.remove("hidden");
     }
-  }
 
-  // Update stock status
-  function updateStockStatus(product: Product): void {
-    const isDigital = product.product_type === "digital";
-    const inStock =
-      product.in_stock &&
-      (product.stock_qty ? product.stock_qty > 0 : false || isDigital);
-
+    // Update stock status (digital products are always in stock)
     if (elements.stockStatus) {
-      const indicator = elements.stockStatus.querySelector(".w-3");
-      const text = elements.stockStatus.querySelector("span");
+      const stockIndicator = elements.stockStatus.querySelector("div");
+      const stockText = elements.stockStatus.querySelector("span");
 
-      if (indicator && text) {
-        if (inStock) {
-          indicator.className = "w-3 h-3 rounded-full bg-green-500";
-          text.textContent = isDigital
-            ? "Available for download"
-            : product.stock_qty && product.stock_qty > 10
-              ? "In Stock"
-              : `${product.stock_qty || 0} left in stock`;
-          text.className = "text-sm font-medium text-green-600";
-        } else {
-          indicator.className = "w-3 h-3 rounded-full bg-red-500";
-          text.textContent = "Out of Stock";
-          text.className = "text-sm font-medium text-red-600";
+      if (isDigital || currentProduct.in_stock) {
+        if (stockIndicator)
+          stockIndicator.className = "w-3 h-3 rounded-full bg-green-500";
+        if (stockText) {
+          stockText.textContent = isDigital
+            ? "Available for Download"
+            : "In Stock";
+          stockText.className = "text-sm font-medium text-green-600";
+        }
+      } else {
+        if (stockIndicator)
+          stockIndicator.className = "w-3 h-3 rounded-full bg-red-500";
+        if (stockText) {
+          stockText.textContent = "Out of Stock";
+          stockText.className = "text-sm font-medium text-red-600";
         }
       }
     }
-
-    // Update add to cart button
-    if (elements.addToCartBtn) {
-      if (!inStock) {
-        (elements.addToCartBtn as HTMLButtonElement).disabled = true;
-        elements.addToCartBtn.textContent = "Out of Stock";
-        elements.addToCartBtn.classList.add("opacity-50", "cursor-not-allowed");
-      }
-    }
   }
 
-  // Setup product images (for JavaScript interactions only)
-  function setupProductImages(product: Product): void {
+  // Setup product images
+  function setupProductImages(): void {
+    if (!currentProduct) return;
+
+    // Build images array
+    productImages = [];
+    if (currentProduct.main_image)
+      productImages.push(currentProduct.main_image);
+    if (currentProduct.images && Array.isArray(currentProduct.images)) {
+      currentProduct.images.forEach((img: any) => {
+        const imageUrl: string = typeof img === "object" ? img.image : img;
+        if (imageUrl && !productImages.includes(imageUrl)) {
+          productImages.push(imageUrl);
+        }
+      });
+    }
+
     if (productImages.length === 0) {
-      productImages = [];
-
-      // Add main image
-      if (product.main_image) {
-        productImages.push(product.main_image);
-      }
-
-      // Add additional images if available
-      if (product.images && Array.isArray(product.images)) {
-        productImages.push(
-          ...product.images.map((img: { image: string }) => img.image),
-        );
-      }
-
-      // Fallback to placeholder if no images
-      if (productImages.length === 0) {
-        productImages.push("/static/images/placeholder.png");
-      }
+      productImages = ["/static/images/placeholder.png"];
     }
 
-    // Setup thumbnails if multiple images
-    if (productImages.length > 1) {
-      renderThumbnails();
-      elements.imageNav?.classList.remove("hidden");
-      elements.thumbnailContainer?.classList.remove("hidden");
+    // Update main image
+    if (elements.mainImage) {
+      elements.mainImage.src = productImages[0];
     }
-  }
 
-  // Render thumbnail images
-  function renderThumbnails(): void {
-    if (elements.thumbnailContainer) {
+    // Create thumbnails
+    if (elements.thumbnailContainer && productImages.length > 1) {
       elements.thumbnailContainer.innerHTML = productImages
         .map(
-          (image: string, index: number) => `
-          <button 
-            class="relative overflow-hidden rounded-lg border-2 transition-all ${
-              index === currentImageIndex
-                ? "border-blue-500"
-                : "border-gray-200 hover:border-gray-300"
-            }"
-            onclick="selectImage(${index})"
-          >
-            <img 
-              src="${image}" 
-              alt="Product image ${index + 1}" 
-              class="w-full h-20 object-cover"
-            >
-          </button>
-        `,
+          (img: string, index: number) => `
+        <button class="thumbnail-btn border-2 ${index === 0 ? "border-blue-500" : "border-gray-200"} rounded-lg overflow-hidden hover:border-blue-300 transition-colors" data-index="${index}">
+          <img src="${img}" alt="Product image ${index + 1}" class="w-full h-20 object-cover">
+        </button>
+      `,
         )
         .join("");
+
+      // Add thumbnail click listeners
+      elements.thumbnailContainer
+        .querySelectorAll(".thumbnail-btn")
+        .forEach((btn: Element) => {
+          btn.addEventListener("click", () => {
+            const index = parseInt((btn as HTMLElement).dataset.index || "0");
+            selectImage(index);
+          });
+        });
     }
   }
 
-  // Image navigation functions
+  // Select image by index
   function selectImage(index: number): void {
+    if (index < 0 || index >= productImages.length) return;
+
     currentImageIndex = index;
+
     if (elements.mainImage) {
-      (elements.mainImage as HTMLImageElement).src = productImages[index];
+      elements.mainImage.src = productImages[index];
     }
-    renderThumbnails();
+
+    // Update thumbnail borders
+    if (elements.thumbnailContainer) {
+      elements.thumbnailContainer
+        .querySelectorAll(".thumbnail-btn")
+        .forEach((btn: Element, i: number) => {
+          (btn as HTMLElement).className =
+            `thumbnail-btn border-2 ${i === index ? "border-blue-500" : "border-gray-200"} rounded-lg overflow-hidden hover:border-blue-300 transition-colors`;
+        });
+    }
   }
 
-  // Make selectImage globally available
-  (window as any).selectImage = selectImage;
+  // Setup event listeners
+  function setupEventListeners(): void {
+    // Quantity controls
+    if (elements.decreaseQtyBtn && elements.quantityInput) {
+      elements.decreaseQtyBtn.addEventListener("click", () => {
+        const current: number =
+          parseInt(elements.quantityInput?.value || "1") || 1;
+        if (current > 1 && elements.quantityInput) {
+          elements.quantityInput.value = (current - 1).toString();
+        }
+      });
+    }
 
-  // Load related products
-  async function loadRelatedProducts(categorySlug?: string): Promise<void> {
-    if (!categorySlug || !elements.relatedProductsGrid) return;
+    if (elements.increaseQtyBtn && elements.quantityInput) {
+      elements.increaseQtyBtn.addEventListener("click", () => {
+        const current: number =
+          parseInt(elements.quantityInput?.value || "1") || 1;
+        const max: number =
+          currentProduct?.product_type === "digital"
+            ? 10
+            : currentProduct?.stock_qty || 10;
+        if (current < max && elements.quantityInput) {
+          elements.quantityInput.value = (current + 1).toString();
+        }
+      });
+    }
+
+    // Image navigation
+    if (elements.prevImageBtn) {
+      elements.prevImageBtn.addEventListener("click", () => {
+        const prevIndex: number =
+          currentImageIndex > 0
+            ? currentImageIndex - 1
+            : productImages.length - 1;
+        selectImage(prevIndex);
+      });
+    }
+
+    if (elements.nextImageBtn) {
+      elements.nextImageBtn.addEventListener("click", () => {
+        const nextIndex: number =
+          currentImageIndex < productImages.length - 1
+            ? currentImageIndex + 1
+            : 0;
+        selectImage(nextIndex);
+      });
+    }
+
+    // Gallery trigger
+    if (elements.galleryTrigger) {
+      elements.galleryTrigger.addEventListener("click", () => {
+        window.open(productImages[currentImageIndex], "_blank");
+      });
+    }
+
+    // Add to cart - FIXED FOR PROPER ID HANDLING
+    if (elements.addToCartBtn) {
+      elements.addToCartBtn.addEventListener("click", async (e: Event) => {
+        e.preventDefault();
+
+        if (!cartManager || !currentProduct) {
+          showNotification("Cart system not available", "error");
+          return;
+        }
+
+        // Ensure product has valid ID
+        if (!currentProduct.id || isNaN(parseInt(currentProduct.id))) {
+          showNotification("Invalid product ID", "error");
+          return;
+        }
+
+        const quantity: number = elements.quantityInput
+          ? parseInt(elements.quantityInput.value) || 1
+          : 1;
+
+        // Disable button during add
+        if (elements.addToCartBtn) {
+          elements.addToCartBtn.disabled = true;
+          elements.addToCartBtn.textContent = "Adding...";
+        }
+
+        try {
+          console.log("Adding product to cart:", {
+            id: currentProduct.id,
+            name: currentProduct.name,
+            quantity: quantity,
+          });
+
+          const result = await cartManager.addToCart(currentProduct, quantity);
+
+          if (result.success) {
+            showNotification("Added to cart successfully!", "success");
+            if (elements.addToCartBtn) {
+              elements.addToCartBtn.textContent = "Added to Cart";
+              elements.addToCartBtn.classList.remove(
+                "bg-blue-600",
+                "hover:bg-blue-700",
+              );
+              elements.addToCartBtn.classList.add("bg-green-600");
+
+              // Reset button after 3 seconds
+              setTimeout(() => {
+                if (elements.addToCartBtn) {
+                  elements.addToCartBtn.textContent = "Add to Cart";
+                  elements.addToCartBtn.disabled = false;
+                  elements.addToCartBtn.classList.remove("bg-green-600");
+                  elements.addToCartBtn.classList.add(
+                    "bg-blue-600",
+                    "hover:bg-blue-700",
+                  );
+                }
+              }, 3000);
+            }
+          } else {
+            showNotification(
+              result.message || "Failed to add to cart",
+              "error",
+            );
+            if (elements.addToCartBtn) {
+              elements.addToCartBtn.disabled = false;
+              elements.addToCartBtn.textContent = "Add to Cart";
+            }
+          }
+        } catch (error) {
+          console.error("Add to cart error:", error);
+          showNotification("Failed to add to cart", "error");
+          if (elements.addToCartBtn) {
+            elements.addToCartBtn.disabled = false;
+            elements.addToCartBtn.textContent = "Add to Cart";
+          }
+        }
+      });
+    }
+
+    // Wishlist button
+    if (elements.wishlistBtn) {
+      elements.wishlistBtn.addEventListener("click", () => {
+        toggleWishlist();
+      });
+    }
+
+    // Share button
+    if (elements.shareBtn) {
+      elements.shareBtn.addEventListener("click", () => {
+        shareProduct();
+      });
+    }
+  }
+
+  // Simple notification system
+  function showNotification(message: string, type: string = "info"): void {
+    const notification: HTMLDivElement = document.createElement("div");
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm ${
+      type === "success"
+        ? "bg-green-500 text-white"
+        : type === "error"
+          ? "bg-red-500 text-white"
+          : "bg-blue-500 text-white"
+    }`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
+
+  // Toggle wishlist
+  function toggleWishlist(): void {
+    if (!elements.wishlistBtn) return;
+
+    // Simple wishlist toggle - you can enhance this with API calls
+    const isInWishlist: boolean =
+      elements.wishlistBtn.classList.contains("text-red-600");
+
+    if (isInWishlist) {
+      elements.wishlistBtn.classList.remove("text-red-600", "bg-red-50");
+      elements.wishlistBtn.classList.add("text-gray-700");
+      showNotification("Removed from wishlist", "info");
+    } else {
+      elements.wishlistBtn.classList.add("text-red-600", "bg-red-50");
+      elements.wishlistBtn.classList.remove("text-gray-700");
+      showNotification("Added to wishlist", "success");
+    }
+  }
+
+  // Share product
+  function shareProduct(): void {
+    if ((navigator as any).share && currentProduct) {
+      (navigator as any).share({
+        title: currentProduct.name,
+        text: currentProduct.description,
+        url: window.location.href,
+      });
+    } else {
+      // Fallback to clipboard
+      navigator.clipboard
+        .writeText(window.location.href)
+        .then(() => {
+          showNotification("Link copied to clipboard!", "success");
+        })
+        .catch(() => {
+          showNotification("Failed to copy link", "error");
+        });
+    }
+  }
+
+  // Load related products (simplified)
+  async function loadRelatedProducts(): Promise<void> {
+    if (!elements.relatedProductsGrid || !currentProduct?.category?.slug)
+      return;
 
     try {
-      const response: Response = await fetch(
-        `${API_BASE_URL}/products/?category=${categorySlug}&limit=4`,
+      const response = await fetch(
+        `https://corrison.corrisonapi.com/api/v1/products/?category=${currentProduct.category.slug}&limit=4`,
       );
       if (!response.ok) return;
 
-      const data: any = await response.json();
-      const products: Product[] = (data.results || data).filter(
-        (p: Product) => p.slug !== slug,
-      );
+      const data = await response.json();
+      const products = (data.results || data)
+        .filter((p: any) => p.slug !== currentProduct.slug)
+        .slice(0, 4);
 
       if (products.length > 0) {
         elements.relatedProductsGrid.innerHTML = products
-          .map((product: Product) => {
-            const imageUrl: string =
-              product.main_image ||
-              product.featured_image ||
-              "/static/images/placeholder.png";
-            const price: number = product.sale_price || product.price;
-
-            return `
-              <div class="group bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 hover:shadow-md transition-all cursor-pointer"
-                   onclick="window.location.href='/ecommerce/${product.slug}'">
-                <div class="relative h-48 overflow-hidden">
-                  <img src="${imageUrl}" 
-                       alt="${product.name}" 
-                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                       >
-                  <div class="absolute top-2 left-2">
-                    <span class="px-2 py-1 text-xs font-semibold rounded ${
-                      product.product_type === "digital"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-blue-100 text-blue-800"
-                    }">
-                      ${product.product_type === "digital" ? "Digital" : "Physical"}
-                    </span>
-                  </div>
-                </div>
-                <div class="p-4">
-                  <h3 class="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-2">
-                    ${product.name}
-                  </h3>
-                  <div class="flex items-center justify-between">
-                    <span class="text-lg font-bold text-gray-900">
-                      $${parseFloat(price.toString()).toFixed(2)}
-                    </span>
-                    <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
-                      View
-                    </button>
-                  </div>
+          .map(
+            (product: any) => `
+          <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+            <a href="/ecommerce/${product.slug}" class="block">
+              <div class="aspect-square bg-gray-100">
+                <img src="${product.main_image || "/static/images/placeholder.png"}" 
+                     alt="${product.name}" 
+                     class="w-full h-full object-cover">
+              </div>
+              <div class="p-4">
+                <h3 class="font-semibold text-gray-900 hover:text-blue-600 transition-colors mb-2">
+                  ${product.name}
+                </h3>
+                <div class="flex items-center justify-between">
+                  <span class="text-lg font-bold text-gray-900">
+                    ${(product.sale_price || product.price).toFixed(2)}
+                  </span>
+                  <span class="text-xs px-2 py-1 rounded-full ${
+                    product.product_type === "digital"
+                      ? "bg-purple-100 text-purple-800"
+                      : "bg-blue-100 text-blue-800"
+                  }">
+                    ${product.product_type === "digital" ? "Digital" : "Physical"}
+                  </span>
                 </div>
               </div>
-            `;
-          })
+            </a>
+          </div>
+        `,
+          )
           .join("");
       }
     } catch (error) {
@@ -1049,334 +1207,14 @@ const metaDescription = product.description
     }
   }
 
-  // MAIN CART INTEGRATION FUNCTIONS
-
-  // Add to cart function - PROPERLY INTEGRATED WITH CART.TS
-  async function addToCart(product: Product, quantity: number): Promise<void> {
-    const cartButton = elements.addToCartBtn as HTMLButtonElement;
-    if (!cartButton || !cartManager) {
-      showNotification("Cart system not available", "error");
-      return;
-    }
-
-    // Check for cart type compatibility first
-    const currentCartData = cartManager.getCartData();
-    if (currentCartData && currentCartData.items.length > 0) {
-      const currentCartType = currentCartData.cart_type;
-      if (currentCartType && currentCartType !== product.product_type) {
-        showCartTypeWarning(currentCartType, product.product_type);
-        return;
-      }
-    }
-
-    const originalText = cartButton.textContent;
-    cartButton.textContent = "Adding...";
-    cartButton.disabled = true;
-
-    try {
-      const result = await cartManager.addToCart(product, quantity);
-
-      if (result.success) {
-        cartButton.textContent = "Added to Cart";
-        cartButton.classList.remove("bg-blue-600", "hover:bg-blue-700");
-        cartButton.classList.add("bg-green-600");
-
-        // Hide any cart type warnings
-        hideCartTypeWarning();
-
-        // Show success notification
-        showNotification(result.message, "success");
-
-        // FORCE CartIcon to refresh
-        window.dispatchEvent(
-          new CustomEvent("cartUpdated", {
-            detail: result.cart_data,
-          }),
-        );
-
-        console.log("Product added to cart successfully");
-      } else {
-        cartButton.textContent = originalText;
-        cartButton.disabled = false;
-        showNotification(result.message, "error");
-        console.log("Failed to add product to cart:", result.message);
-      }
-    } catch (error) {
-      console.error("Cart error:", error);
-      cartButton.textContent = originalText;
-      cartButton.disabled = false;
-      showNotification("Failed to add item to cart", "error");
-    }
-
-    // Reset button after 3 seconds
-    setTimeout(() => {
-      cartButton.textContent = originalText;
-      cartButton.disabled = false;
-      cartButton.classList.remove("bg-green-600");
-      cartButton.classList.add("bg-blue-600", "hover:bg-blue-700");
-    }, 3000);
-  }
-
-  // Show cart type warning
-  function showCartTypeWarning(currentType: string, newType: string): void {
-    const currentTypeLabel =
-      currentType === "digital" ? "digital products" : "physical products";
-    const newTypeLabel =
-      newType === "digital" ? "digital product" : "physical product";
-
-    const message = `Your cart currently contains ${currentTypeLabel}. This ${newTypeLabel} cannot be added to the same cart.`;
-
-    if (elements.cartTypeWarning && elements.cartWarningMessage) {
-      elements.cartWarningMessage.textContent = message;
-      elements.cartTypeWarning.classList.remove("hidden");
-    }
-
-    showNotification(`Cannot mix product types. ${message}`, "warning");
-  }
-
-  // Hide cart type warning
-  function hideCartTypeWarning(): void {
-    if (elements.cartTypeWarning) {
-      elements.cartTypeWarning.classList.add("hidden");
-    }
-  }
-
-  // Clear cart and add current product
-  async function clearCartAndAdd(): Promise<void> {
-    if (!cartManager || !currentProduct) return;
-
-    const confirmation = confirm(
-      "This will remove all items from your cart and add this product. Are you sure you want to continue?",
-    );
-
-    if (!confirmation) return;
-
-    try {
-      // Clear cart first
-      const clearResult = await cartManager.clearCart();
-
-      if (!clearResult.success) {
-        showNotification("Failed to clear cart. Please try again.", "error");
-        return;
-      }
-
-      // Hide cart type warning
-      hideCartTypeWarning();
-
-      // Add current product
-      const quantityInput = elements.quantityInput as HTMLInputElement;
-      const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-
-      await addToCart(currentProduct, quantity);
-
-      showNotification("Cart cleared and product added!", "success");
-    } catch (error) {
-      console.error("Error clearing cart and adding product:", error);
-      showNotification("Something went wrong. Please try again.", "error");
-    }
-  }
-
-  // Enhanced notification system
-  function showNotification(
-    message: string,
-    type: "success" | "error" | "warning" = "success",
-  ): void {
-    // Remove existing notifications
-    const existingNotifications =
-      document.querySelectorAll(".cart-notification");
-    existingNotifications.forEach((notification) => notification.remove());
-
-    // Create notification element
-    const notification = document.createElement("div");
-    notification.className = `cart-notification fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transform transition-all duration-300 translate-x-full`;
-
-    // Set colors based on type
-    const colors = {
-      success: "bg-green-500 text-white border-green-600",
-      error: "bg-red-500 text-white border-red-600",
-      warning: "bg-yellow-500 text-black border-yellow-600",
-    };
-
-    notification.className += ` ${colors[type]} border-l-4`;
-
-    // Set content
-    notification.innerHTML = `
-      <div class="flex items-start">
-        <div class="flex-1">
-          <p class="text-sm font-medium">${message}</p>
-        </div>
-        <button class="ml-2 text-current opacity-70 hover:opacity-100" onclick="this.parentElement.parentElement.remove()">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-    `;
-
-    // Add to page
-    document.body.appendChild(notification);
-
-    // Animate in
-    setTimeout(() => {
-      notification.classList.remove("translate-x-full");
-    }, 100);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      notification.classList.add("translate-x-full");
-      setTimeout(() => {
-        if (notification.parentElement) {
-          notification.remove();
-        }
-      }, 300);
-    }, 5000);
-  }
-
-  // Event listeners
-  function setupEventListeners(): void {
-    // Quantity controls
-    const decreaseBtn: HTMLElement | null =
-      document.getElementById("decrease-qty");
-    const increaseBtn: HTMLElement | null =
-      document.getElementById("increase-qty");
-
-    decreaseBtn?.addEventListener("click", () => {
-      const quantityInput = elements.quantityInput as HTMLInputElement;
-      if (quantityInput) {
-        const qty: number = parseInt(quantityInput.value);
-        if (qty > 1) quantityInput.value = (qty - 1).toString();
-      }
-    });
-
-    increaseBtn?.addEventListener("click", () => {
-      const quantityInput = elements.quantityInput as HTMLInputElement;
-      if (quantityInput) {
-        const qty: number = parseInt(quantityInput.value);
-        const max: number = parseInt(quantityInput.max);
-        if (qty < max) quantityInput.value = (qty + 1).toString();
-      }
-    });
-
-    // Image navigation
-    elements.prevImageBtn?.addEventListener("click", () => {
-      const prevIndex: number =
-        currentImageIndex > 0
-          ? currentImageIndex - 1
-          : productImages.length - 1;
-      selectImage(prevIndex);
-    });
-
-    elements.nextImageBtn?.addEventListener("click", () => {
-      const nextIndex: number =
-        currentImageIndex < productImages.length - 1
-          ? currentImageIndex + 1
-          : 0;
-      selectImage(nextIndex);
-    });
-
-    // Add to cart - MAIN CART INTEGRATION
-    elements.addToCartBtn?.addEventListener("click", () => {
-      if (currentProduct && elements.quantityInput) {
-        const quantity: number = parseInt(
-          (elements.quantityInput as HTMLInputElement).value,
-        );
-        addToCart(currentProduct, quantity);
-      }
-    });
-
-    // Clear cart and add button
-    elements.clearCartAndAdd?.addEventListener("click", clearCartAndAdd);
-
-    // Wishlist
-    elements.wishlistBtn?.addEventListener("click", () => {
-      if (currentProduct) toggleWishlist(currentProduct);
-    });
-
-    // Share
-    elements.shareBtn?.addEventListener("click", () => {
-      if (currentProduct) shareProduct(currentProduct);
-    });
-
-    // Gallery trigger
-    elements.galleryTrigger?.addEventListener("click", () => {
-      window.open(productImages[currentImageIndex], "_blank");
-    });
-  }
-
-  function toggleWishlist(product: Product): void {
-    const button: HTMLElement | null = elements.wishlistBtn;
-    if (!button) return;
-
-    console.log("Wishlist toggle for product:", product.name);
-
-    // Update button UI
-    const isInWishlist: boolean = button.classList.contains("text-red-600");
-
-    if (isInWishlist) {
-      button.classList.remove("text-red-600", "bg-red-50");
-      button.classList.add("text-gray-700");
-      button.innerHTML = `
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-          </svg>
-          Wishlist
-        `;
-    } else {
-      button.classList.add("text-red-600", "bg-red-50");
-      button.classList.remove("text-gray-700");
-      button.innerHTML = `
-          <svg class="w-5 h-5 mr-2" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-          </svg>
-          In Wishlist
-        `;
-    }
-  }
-
-  function shareProduct(product: Product): void {
-    if (navigator.share) {
-      navigator.share({
-        title: product.name,
-        text: product.description,
-        url: window.location.href,
-      });
-    } else {
-      // Fallback to clipboard
-      navigator.clipboard.writeText(window.location.href).then(() => {
-        const button: HTMLElement | null = elements.shareBtn;
-        if (!button) return;
-
-        const originalText: string = button.innerHTML;
-        button.innerHTML = `
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            Copied
-          `;
-        window.setTimeout(() => {
-          button.innerHTML = originalText;
-        }, 2000);
-      });
-    }
-  }
-
-  // Initialize everything
+  // Initialize everything when DOM is ready
   async function initialize(): Promise<void> {
-    console.log("🚀 Initializing product page...");
-
-    // Initialize cart manager first
     await initializeCartManager();
-
-    // Setup event listeners
-    setupEventListeners();
-
-    // Initialize product data
     initializeProduct();
-
-    console.log("✅ Product page initialized successfully");
+    loadRelatedProducts();
   }
 
-  // Start initialization when DOM is ready
+  // Start initialization
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initialize);
   } else {

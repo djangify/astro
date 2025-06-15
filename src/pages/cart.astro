@@ -1,0 +1,573 @@
+---
+// src/pages/cart.astro
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+// SEO meta information
+const metaTitle = "Shopping Cart – Corrison";
+const metaDescription =
+  "Review your cart items, adjust quantities, and proceed to checkout for your digital products.";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">{metaTitle}</title>
+  <meta slot="head" name="description" content={metaDescription} />
+  <meta slot="head" property="og:title" content={metaTitle} />
+  <meta slot="head" property="og:description" content={metaDescription} />
+  <meta slot="head" property="og:type" content="website" />
+
+  <div class="min-h-screen bg-gray-50">
+    <!-- Page Header -->
+    <section class="bg-white border-b border-gray-200">
+      <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl lg:text-4xl font-bold text-gray-900">
+          Shopping Cart
+        </h1>
+        <p class="text-gray-600 mt-2">Review and manage your cart items</p>
+      </div>
+    </section>
+
+    <div class="container mx-auto px-4 py-8">
+      <div class="max-w-6xl mx-auto">
+        <!-- Loading State -->
+        <div id="cart-loading" class="text-center py-16">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
+          >
+          </div>
+          <p class="text-gray-600">Loading your cart...</p>
+        </div>
+
+        <!-- Cart Content -->
+        <div id="cart-content" class="hidden">
+          <div class="lg:grid lg:grid-cols-3 lg:gap-8">
+            <!-- Cart Items -->
+            <div class="lg:col-span-2">
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+              >
+                <!-- Cart Header -->
+                <div
+                  class="px-6 py-4 border-b border-gray-200 flex items-center justify-between"
+                >
+                  <h2 class="text-lg font-semibold text-gray-900">
+                    Cart Items (<span id="cart-item-count">0</span>)
+                  </h2>
+                  <button
+                    id="clear-cart-btn"
+                    class="text-sm text-red-600 hover:text-red-700 font-medium"
+                  >
+                    Clear Cart
+                  </button>
+                </div>
+
+                <!-- Cart Items List -->
+                <div id="cart-items-list" class="divide-y divide-gray-200">
+                  <!-- Items will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Cart Summary -->
+            <div class="mt-8 lg:mt-0">
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4"
+              >
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                  Order Summary
+                </h3>
+
+                <div class="space-y-3 mb-6">
+                  <div class="flex justify-between text-gray-600">
+                    <span
+                      >Subtotal (<span id="summary-item-count">0</span> items)</span
+                    >
+                    <span id="cart-subtotal">$0.00</span>
+                  </div>
+
+                  <!-- Digital products don't need shipping -->
+                  <div class="flex justify-between text-gray-600">
+                    <span>Shipping</span>
+                    <span class="text-green-600">Free (Digital)</span>
+                  </div>
+
+                  <div class="flex justify-between text-gray-600">
+                    <span>Tax</span>
+                    <span id="cart-tax">$0.00</span>
+                  </div>
+
+                  <div class="border-t border-gray-200 pt-3">
+                    <div
+                      class="flex justify-between text-lg font-semibold text-gray-900"
+                    >
+                      <span>Total</span>
+                      <span id="cart-total">$0.00</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Checkout Button -->
+                <button
+                  id="checkout-btn"
+                  class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                  Proceed to Checkout
+                </button>
+
+                <!-- Continue Shopping -->
+                <a
+                  href="/ecommerce/products"
+                  class="block w-full text-center text-blue-600 hover:text-blue-700 font-medium py-3 mt-3 transition-colors"
+                >
+                  Continue Shopping
+                </a>
+
+                <!-- Security Badge -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                  <div
+                    class="flex items-center justify-center text-sm text-gray-600"
+                  >
+                    <svg
+                      class="w-5 h-5 text-green-500 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                      ></path>
+                    </svg>
+                    Secure Checkout
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty Cart State -->
+        <div id="empty-cart" class="hidden text-center py-16">
+          <div
+            class="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6"
+          >
+            <svg
+              class="w-10 h-10 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"
+              ></path>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            Your cart is empty
+          </h2>
+          <p class="text-gray-600 mb-8">
+            Looks like you haven't added any items to your cart yet.
+          </p>
+          <a
+            href="/ecommerce/products"
+            class="inline-block bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Browse Products
+          </a>
+        </div>
+
+        <!-- Error State -->
+        <div id="cart-error" class="hidden text-center py-16">
+          <div
+            class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6"
+          >
+            <svg
+              class="w-10 h-10 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              ></path>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            Unable to Load Cart
+          </h2>
+          <p class="text-gray-600 mb-8">
+            We're having trouble loading your cart. Please try again.
+          </p>
+          <button
+            id="retry-cart-btn"
+            class="bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script>
+  // Import cart manager and types
+  import { cartManager } from "../lib/cart.ts";
+
+  // DOM elements
+  const elements = {
+    cartLoading: document.getElementById("cart-loading"),
+    cartContent: document.getElementById("cart-content"),
+    emptyCart: document.getElementById("empty-cart"),
+    cartError: document.getElementById("cart-error"),
+    cartItemsList: document.getElementById("cart-items-list"),
+    cartItemCount: document.getElementById("cart-item-count"),
+    summaryItemCount: document.getElementById("summary-item-count"),
+    cartSubtotal: document.getElementById("cart-subtotal"),
+    cartTax: document.getElementById("cart-tax"),
+    cartTotal: document.getElementById("cart-total"),
+    clearCartBtn: document.getElementById("clear-cart-btn"),
+    checkoutBtn: document.getElementById("checkout-btn"),
+    retryCartBtn: document.getElementById("retry-cart-btn"),
+  };
+
+  let currentCartData: any = null;
+
+  // Initialize cart page
+  async function initializeCartPage(): Promise<void> {
+    try {
+      showLoadingState();
+      await loadCartData();
+    } catch (error) {
+      console.error("Error initializing cart page:", error);
+      showErrorState();
+    }
+  }
+
+  // Load cart data
+  async function loadCartData(): Promise<void> {
+    try {
+      const cartData = await cartManager.loadCartData();
+
+      if (!cartData || cartData.total_items === 0) {
+        showEmptyCartState();
+        return;
+      }
+
+      currentCartData = cartData;
+      renderCartItems();
+      updateCartSummary();
+      showCartContent();
+    } catch (error) {
+      console.error("Error loading cart data:", error);
+      showErrorState();
+    }
+  }
+
+  // Render cart items
+  function renderCartItems(): void {
+    if (!currentCartData || !elements.cartItemsList) return;
+
+    const items = currentCartData.items || [];
+
+    elements.cartItemsList.innerHTML = items
+      .map((item: any) => createCartItemHTML(item))
+      .join("");
+
+    // Update counts
+    if (elements.cartItemCount)
+      elements.cartItemCount.textContent = items.length.toString();
+    if (elements.summaryItemCount)
+      elements.summaryItemCount.textContent = items.length.toString();
+  }
+
+  // Create cart item HTML
+  function createCartItemHTML(item: any): string {
+    const product = item.product;
+    const imageUrl = product.main_image || "/static/images/placeholder.png";
+    const unitPrice =
+      typeof item.unit_price === "string"
+        ? parseFloat(item.unit_price)
+        : item.unit_price;
+    const totalPrice =
+      typeof item.total_price === "string"
+        ? parseFloat(item.total_price)
+        : item.total_price;
+
+    return `
+      <div class="p-6" data-item-id="${item.id}">
+        <div class="flex items-start space-x-4">
+          <!-- Product Image -->
+          <div class="flex-shrink-0">
+            <img 
+              src="${imageUrl}" 
+              alt="${product.name}"
+              class="w-20 h-20 object-cover rounded-lg"
+              onerror="this.src='/static/images/placeholder.png'"
+            />
+          </div>
+
+          <!-- Product Details -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-gray-900 hover:text-blue-600">
+                  <a href="/ecommerce/${product.slug}" class="transition-colors">
+                    ${product.name}
+                  </a>
+                </h3>
+                
+                <div class="mt-1 flex items-center space-x-2">
+                  <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                    product.product_type === "digital"
+                      ? "bg-purple-100 text-purple-800"
+                      : "bg-blue-100 text-blue-800"
+                  }">
+                    ${product.product_type === "digital" ? "Digital Download" : "Physical Product"}
+                  </span>
+                </div>
+
+                <div class="mt-2 text-sm text-gray-600">
+                  <span class="font-medium">$${unitPrice.toFixed(2)}</span> per item
+                </div>
+              </div>
+
+              <!-- Remove Button -->
+              <button
+                onclick="removeCartItem('${item.id}')"
+                class="ml-4 text-gray-400 hover:text-red-600 transition-colors"
+                title="Remove item"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Quantity and Price -->
+            <div class="mt-4 flex items-center justify-between">
+              <!-- Quantity Controls -->
+              <div class="flex items-center border border-gray-300 rounded-lg">
+                <button
+                  onclick="updateQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})"
+                  class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                  ${item.quantity <= 1 ? "disabled" : ""}
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                  </svg>
+                </button>
+                
+                <input
+                  type="number"
+                  value="${item.quantity}"
+                  min="1"
+                  max="10"
+                  class="w-16 px-3 py-2 text-center border-0 focus:ring-0"
+                  onchange="updateQuantity('${item.id}', parseInt(this.value) || 1)"
+                />
+                
+                <button
+                  onclick="updateQuantity('${item.id}', ${item.quantity + 1})"
+                  class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                  ${item.quantity >= 10 ? "disabled" : ""}
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Item Total -->
+              <div class="text-right">
+                <div class="text-lg font-semibold text-gray-900">
+                  $${totalPrice.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Update cart summary
+  function updateCartSummary(): void {
+    if (!currentCartData) return;
+
+    const subtotal =
+      typeof currentCartData.subtotal === "string"
+        ? parseFloat(currentCartData.subtotal)
+        : currentCartData.subtotal;
+
+    // For digital products, no tax (you can adjust this logic)
+    const tax = 0;
+    const total = subtotal + tax;
+
+    if (elements.cartSubtotal)
+      elements.cartSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+    if (elements.cartTax) elements.cartTax.textContent = `$${tax.toFixed(2)}`;
+    if (elements.cartTotal)
+      elements.cartTotal.textContent = `$${total.toFixed(2)}`;
+  }
+
+  // Update item quantity
+  async function updateQuantity(
+    itemId: string,
+    newQuantity: number,
+  ): Promise<void> {
+    if (newQuantity < 1 || newQuantity > 10) return;
+
+    try {
+      showNotification("Updating quantity...", "info");
+
+      const result = await cartManager.updateCartItem(itemId, newQuantity);
+
+      if (result.success) {
+        currentCartData = result.cart_data;
+        renderCartItems();
+        updateCartSummary();
+        showNotification("Quantity updated", "success");
+      } else {
+        showNotification(
+          result.message || "Failed to update quantity",
+          "error",
+        );
+      }
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+      showNotification("Failed to update quantity", "error");
+    }
+  }
+
+  // Remove cart item
+  async function removeCartItem(itemId: string): Promise<void> {
+    try {
+      showNotification("Removing item...", "info");
+
+      const result = await cartManager.removeCartItem(itemId);
+
+      if (result.success) {
+        currentCartData = result.cart_data;
+
+        if (!currentCartData || currentCartData.total_items === 0) {
+          showEmptyCartState();
+        } else {
+          renderCartItems();
+          updateCartSummary();
+        }
+
+        showNotification("Item removed from cart", "success");
+      } else {
+        showNotification(result.message || "Failed to remove item", "error");
+      }
+    } catch (error) {
+      console.error("Error removing item:", error);
+      showNotification("Failed to remove item", "error");
+    }
+  }
+
+  // Clear entire cart
+  async function clearCart(): Promise<void> {
+    if (!confirm("Are you sure you want to clear your cart?")) return;
+
+    try {
+      showNotification("Clearing cart...", "info");
+
+      const result = await cartManager.clearCart();
+
+      if (result.success) {
+        showEmptyCartState();
+        showNotification("Cart cleared", "success");
+      } else {
+        showNotification(result.message || "Failed to clear cart", "error");
+      }
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      showNotification("Failed to clear cart", "error");
+    }
+  }
+
+  // Show notification
+  function showNotification(message: string, type: string = "info"): void {
+    const notification = document.createElement("div");
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm ${
+      type === "success"
+        ? "bg-green-500 text-white"
+        : type === "error"
+          ? "bg-red-500 text-white"
+          : "bg-blue-500 text-white"
+    }`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
+
+  // State management functions
+  function showLoadingState(): void {
+    hideAllStates();
+    elements.cartLoading?.classList.remove("hidden");
+  }
+
+  function showCartContent(): void {
+    hideAllStates();
+    elements.cartContent?.classList.remove("hidden");
+  }
+
+  function showEmptyCartState(): void {
+    hideAllStates();
+    elements.emptyCart?.classList.remove("hidden");
+  }
+
+  function showErrorState(): void {
+    hideAllStates();
+    elements.cartError?.classList.remove("hidden");
+  }
+
+  function hideAllStates(): void {
+    elements.cartLoading?.classList.add("hidden");
+    elements.cartContent?.classList.add("hidden");
+    elements.emptyCart?.classList.add("hidden");
+    elements.cartError?.classList.add("hidden");
+  }
+
+  // Event listeners
+  function setupEventListeners(): void {
+    // Clear cart button
+    elements.clearCartBtn?.addEventListener("click", clearCart);
+
+    // Checkout button
+    elements.checkoutBtn?.addEventListener("click", () => {
+      window.location.href = "/checkout";
+    });
+
+    // Retry button
+    elements.retryCartBtn?.addEventListener("click", loadCartData);
+  }
+
+  // Make functions globally available
+  (window as any).updateQuantity = updateQuantity;
+  (window as any).removeCartItem = removeCartItem;
+
+  // Initialize when DOM is ready
+  document.addEventListener("DOMContentLoaded", () => {
+    setupEventListeners();
+    initializeCartPage();
+  });
+</script>

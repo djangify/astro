@@ -1,0 +1,759 @@
+---
+// src/pages/checkout.astro
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+// SEO meta information
+const metaTitle = "Checkout – Corrison";
+const metaDescription =
+  "Complete your purchase securely with our streamlined checkout process for digital products.";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">{metaTitle}</title>
+  <meta slot="head" name="description" content={metaDescription} />
+  <meta slot="head" property="og:title" content={metaTitle} />
+  <meta slot="head" property="og:description" content={metaDescription} />
+  <meta slot="head" property="og:type" content="website" />
+
+  <!-- Stripe JavaScript -->
+  <script is:inline src="https://js.stripe.com/v3/"></script>
+
+  <div class="min-h-screen bg-gray-50">
+    <!-- Page Header -->
+    <section class="bg-white border-b border-gray-200">
+      <div class="container mx-auto px-4 py-6">
+        <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Checkout</h1>
+        <div class="mt-2 flex items-center space-x-2 text-sm text-gray-600">
+          <a href="/cart" class="hover:text-blue-600">Cart</a>
+          <span>→</span>
+          <span class="text-gray-900 font-medium">Checkout</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container mx-auto px-4 py-8">
+      <div class="max-w-6xl mx-auto">
+        <!-- Loading State -->
+        <div id="checkout-loading" class="text-center py-16">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
+          >
+          </div>
+          <p class="text-gray-600">Loading checkout...</p>
+        </div>
+
+        <!-- Empty Cart Redirect -->
+        <div id="empty-cart-redirect" class="hidden text-center py-16">
+          <div
+            class="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-6"
+          >
+            <svg
+              class="w-10 h-10 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"
+              ></path>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            Your cart is empty
+          </h2>
+          <p class="text-gray-600 mb-8">
+            Add some items to your cart before checking out.
+          </p>
+          <a
+            href="/ecommerce/products"
+            class="bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Browse Products
+          </a>
+        </div>
+
+        <!-- Checkout Content -->
+        <div id="checkout-content" class="hidden">
+          <form id="checkout-form" class="lg:grid lg:grid-cols-2 lg:gap-8">
+            <!-- Customer Information -->
+            <div class="space-y-6">
+              <!-- Customer Details -->
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+              >
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                  Customer Information
+                </h2>
+
+                <div class="space-y-4">
+                  <div>
+                    <label
+                      for="email"
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      required
+                      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="your@email.com"
+                    />
+                    <p class="mt-1 text-xs text-gray-500">
+                      Digital products will be delivered to this email
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        for="first-name"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        id="first-name"
+                        name="first_name"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        for="last-name"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        id="last-name"
+                        name="last_name"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment Method -->
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+              >
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                  Payment Method
+                </h2>
+
+                <!-- Stripe Elements will be mounted here -->
+                <div
+                  id="card-element"
+                  class="border border-gray-300 rounded-lg p-3 bg-white"
+                >
+                  <!-- Stripe Elements will create form elements here -->
+                </div>
+
+                <!-- Stripe errors will be displayed here -->
+                <div
+                  id="card-errors"
+                  role="alert"
+                  class="mt-2 text-sm text-red-600"
+                >
+                </div>
+
+                <!-- Payment Security Notice -->
+                <div class="mt-4 flex items-center text-sm text-gray-600">
+                  <svg
+                    class="w-5 h-5 text-green-500 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    ></path>
+                  </svg>
+                  Your payment information is secure and encrypted
+                </div>
+              </div>
+
+              <!-- Order Notes -->
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+              >
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                  Order Notes (Optional)
+                </h2>
+                <textarea
+                  id="order-notes"
+                  name="notes"
+                  rows="3"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Any special instructions or notes about your order..."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="mt-8 lg:mt-0">
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4"
+              >
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                  Order Summary
+                </h3>
+
+                <!-- Order Items -->
+                <div id="order-items" class="space-y-4 mb-6">
+                  <!-- Items will be populated by JavaScript -->
+                </div>
+
+                <!-- Order Totals -->
+                <div class="border-t border-gray-200 pt-4 space-y-3">
+                  <div class="flex justify-between text-gray-600">
+                    <span>Subtotal</span>
+                    <span id="order-subtotal">$0.00</span>
+                  </div>
+
+                  <div class="flex justify-between text-gray-600">
+                    <span>Shipping</span>
+                    <span class="text-green-600">Free (Digital)</span>
+                  </div>
+
+                  <div class="flex justify-between text-gray-600">
+                    <span>Tax</span>
+                    <span id="order-tax">$0.00</span>
+                  </div>
+
+                  <div class="border-t border-gray-200 pt-3">
+                    <div
+                      class="flex justify-between text-xl font-bold text-gray-900"
+                    >
+                      <span>Total</span>
+                      <span id="order-total">$0.00</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Place Order Button -->
+                <button
+                  type="submit"
+                  id="submit-payment"
+                  class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <span id="button-text">Complete Order</span>
+                  <span id="button-spinner" class="hidden">
+                    <svg
+                      class="animate-spin h-5 w-5 inline ml-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  </span>
+                </button>
+
+                <!-- Back to Cart -->
+                <a
+                  href="/cart"
+                  class="block w-full text-center text-blue-600 hover:text-blue-700 font-medium py-3 mt-3 transition-colors"
+                >
+                  ← Back to Cart
+                </a>
+
+                <!-- Digital Product Notice -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                  <div
+                    class="bg-purple-50 border border-purple-200 rounded-lg p-4"
+                  >
+                    <div class="flex items-start">
+                      <svg
+                        class="w-5 h-5 text-purple-600 mt-0.5 mr-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                        ></path>
+                      </svg>
+                      <div>
+                        <h4 class="text-sm font-semibold text-purple-900">
+                          Digital Delivery
+                        </h4>
+                        <p class="text-sm text-purple-700 mt-1">
+                          Download links will be sent to your email immediately
+                          after payment confirmation.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Error State -->
+        <div id="checkout-error" class="hidden text-center py-16">
+          <div
+            class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6"
+          >
+            <svg
+              class="w-10 h-10 text-red-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+              ></path>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Checkout Error</h2>
+          <p class="text-gray-600 mb-8" id="error-message">
+            We're having trouble loading the checkout. Please try again.
+          </p>
+          <button
+            id="retry-checkout-btn"
+            class="bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script>
+  // Import cart manager
+  import { cartManager } from "../lib/cart.ts";
+
+  // Stripe configuration
+  const STRIPE_PUBLISHABLE_KEY =
+    "pk_test_51Q6XCaKJ1QyHjN1jONjYcYCCHZcCKDbA5Y9QnR5IZ8jODNgBmjVtXzxCzHCfkH5c4vOcQbQO8fPdHc4I7PLJC8Q8004VDxlGK6"; // Your Stripe publishable key
+  const API_BASE_URL = "https://corrison.corrisonapi.com/api/v1";
+
+  // Stripe elements
+  let stripe: any = null;
+  let elements: any = null;
+  let cardElement: any = null;
+
+  // DOM elements
+  const domElements = {
+    checkoutLoading: document.getElementById("checkout-loading"),
+    checkoutContent: document.getElementById("checkout-content"),
+    emptyCartRedirect: document.getElementById("empty-cart-redirect"),
+    checkoutError: document.getElementById("checkout-error"),
+    checkoutForm: document.getElementById("checkout-form") as HTMLFormElement,
+    orderItems: document.getElementById("order-items"),
+    orderSubtotal: document.getElementById("order-subtotal"),
+    orderTax: document.getElementById("order-tax"),
+    orderTotal: document.getElementById("order-total"),
+    submitButton: document.getElementById(
+      "submit-payment",
+    ) as HTMLButtonElement,
+    buttonText: document.getElementById("button-text"),
+    buttonSpinner: document.getElementById("button-spinner"),
+    cardErrors: document.getElementById("card-errors"),
+    errorMessage: document.getElementById("error-message"),
+    retryBtn: document.getElementById("retry-checkout-btn"),
+  };
+
+  let currentCartData: any = null;
+  let clientSecret: string = "";
+
+  // Initialize checkout page
+  async function initializeCheckout(): Promise<void> {
+    try {
+      showLoadingState();
+
+      // Initialize Stripe
+      await initializeStripe();
+
+      // Load cart data
+      await loadCheckoutData();
+    } catch (error) {
+      console.error("Error initializing checkout:", error);
+      showErrorState("Failed to initialize checkout. Please try again.");
+    }
+  }
+
+  // Initialize Stripe
+  async function initializeStripe(): Promise<void> {
+    try {
+      stripe = (window as any).Stripe(STRIPE_PUBLISHABLE_KEY);
+      elements = stripe.elements();
+
+      // Create card element
+      const style = {
+        base: {
+          fontSize: "16px",
+          color: "#424770",
+          "::placeholder": {
+            color: "#aab7c4",
+          },
+        },
+        invalid: {
+          color: "#9e2146",
+        },
+      };
+
+      cardElement = elements.create("card", { style });
+      cardElement.mount("#card-element");
+
+      // Handle real-time validation errors from the card Element
+      cardElement.on("change", ({ error }: any) => {
+        if (domElements.cardErrors) {
+          domElements.cardErrors.textContent = error ? error.message : "";
+        }
+      });
+    } catch (error) {
+      console.error("Error initializing Stripe:", error);
+      throw new Error("Failed to initialize payment system");
+    }
+  }
+
+  // Load checkout data
+  async function loadCheckoutData(): Promise<void> {
+    try {
+      // Load cart data
+      const cartData = await cartManager.loadCartData();
+
+      if (!cartData || cartData.total_items === 0) {
+        showEmptyCartState();
+        return;
+      }
+
+      currentCartData = cartData;
+
+      // Create payment intent
+      await createPaymentIntent();
+
+      // Render checkout
+      renderCheckoutSummary();
+      populateUserData();
+      showCheckoutContent();
+    } catch (error) {
+      console.error("Error loading checkout data:", error);
+      throw error;
+    }
+  }
+
+  // Create Stripe payment intent
+  async function createPaymentIntent(): Promise<void> {
+    try {
+      const cartToken = cartManager.getCartToken();
+
+      const response = await fetch(`${API_BASE_URL}/create-payment-intent/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cartToken && { Authorization: `Bearer ${cartToken}` }),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create payment intent");
+      }
+
+      const data = await response.json();
+      clientSecret = data.client_secret;
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+      throw new Error("Failed to initialize payment");
+    }
+  }
+
+  // Render checkout summary
+  function renderCheckoutSummary(): void {
+    if (!currentCartData || !domElements.orderItems) return;
+
+    const items = currentCartData.items || [];
+
+    // Render items
+    domElements.orderItems.innerHTML = items
+      .map((item: any) => {
+        const product = item.product;
+        const imageUrl = product.main_image || "/static/images/placeholder.png";
+        const totalPrice =
+          typeof item.total_price === "string"
+            ? parseFloat(item.total_price)
+            : item.total_price;
+
+        return `
+        <div class="flex items-center space-x-3">
+          <img 
+            src="${imageUrl}" 
+            alt="${product.name}"
+            class="w-12 h-12 object-cover rounded"
+            onerror="this.src='/static/images/placeholder.png'"
+          />
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-medium text-gray-900 truncate">${product.name}</h4>
+            <p class="text-sm text-gray-600">Qty: ${item.quantity}</p>
+          </div>
+          <div class="text-sm font-medium text-gray-900">
+            $${totalPrice.toFixed(2)}
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
+    // Update totals
+    const subtotal =
+      typeof currentCartData.subtotal === "string"
+        ? parseFloat(currentCartData.subtotal)
+        : currentCartData.subtotal;
+
+    const tax = 0; // Digital products typically don't have tax
+    const total = subtotal + tax;
+
+    if (domElements.orderSubtotal)
+      domElements.orderSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+    if (domElements.orderTax)
+      domElements.orderTax.textContent = `$${tax.toFixed(2)}`;
+    if (domElements.orderTotal)
+      domElements.orderTotal.textContent = `$${total.toFixed(2)}`;
+  }
+
+  // Populate user data if authenticated
+  function populateUserData(): void {
+    try {
+      const userData = localStorage.getItem("user_data");
+      if (userData) {
+        const user = JSON.parse(userData);
+
+        const emailInput = document.getElementById("email") as HTMLInputElement;
+        const firstNameInput = document.getElementById(
+          "first-name",
+        ) as HTMLInputElement;
+        const lastNameInput = document.getElementById(
+          "last-name",
+        ) as HTMLInputElement;
+
+        if (emailInput && user.email) emailInput.value = user.email;
+        if (firstNameInput && user.first_name)
+          firstNameInput.value = user.first_name;
+        if (lastNameInput && user.last_name)
+          lastNameInput.value = user.last_name;
+      }
+    } catch (error) {
+      // Ignore errors - user might not be logged in
+    }
+  }
+
+  // Handle form submission
+  async function handleSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+
+    if (!stripe || !cardElement || !clientSecret) {
+      showNotification("Payment system not ready. Please try again.", "error");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Get form data
+      const formData = new FormData(
+        domElements.checkoutForm as HTMLFormElement,
+      );
+      const customerData = {
+        email: formData.get("email") as string,
+        first_name: formData.get("first_name") as string,
+        last_name: formData.get("last_name") as string,
+        notes: formData.get("notes") as string,
+      };
+
+      // Validate required fields
+      if (!customerData.email) {
+        showNotification("Email address is required", "error");
+        setLoading(false);
+        return;
+      }
+
+      // Confirm payment with Stripe
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              email: customerData.email,
+              name: `${customerData.first_name} ${customerData.last_name}`.trim(),
+            },
+          },
+        },
+      );
+
+      if (error) {
+        console.error("Payment failed:", error);
+        showNotification(error.message || "Payment failed", "error");
+        setLoading(false);
+        return;
+      }
+
+      // Payment succeeded, create order
+      await createOrder(customerData, paymentIntent.id);
+    } catch (error) {
+      console.error("Checkout error:", error);
+      showNotification("An error occurred during checkout", "error");
+      setLoading(false);
+    }
+  }
+
+  // Create order after successful payment
+  async function createOrder(
+    customerData: any,
+    paymentIntentId: string,
+  ): Promise<void> {
+    try {
+      const cartToken = cartManager.getCartToken();
+
+      const response = await fetch(`${API_BASE_URL}/create-order/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(cartToken && { Authorization: `Bearer ${cartToken}` }),
+        },
+        body: JSON.stringify({
+          ...customerData,
+          payment_intent_id: paymentIntentId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create order");
+      }
+
+      const orderData = await response.json();
+
+      // Clear cart
+      await cartManager.clearCart();
+
+      // Redirect to confirmation page
+      window.location.href = `/order-confirmation/${orderData.order.order_number}`;
+    } catch (error) {
+      console.error("Error creating order:", error);
+      showNotification(
+        "Payment successful but order creation failed. Please contact support.",
+        "error",
+      );
+      setLoading(false);
+    }
+  }
+
+  // Set loading state
+  function setLoading(loading: boolean): void {
+    if (domElements.submitButton) {
+      domElements.submitButton.disabled = loading;
+    }
+
+    if (domElements.buttonText && domElements.buttonSpinner) {
+      if (loading) {
+        domElements.buttonText.classList.add("hidden");
+        domElements.buttonSpinner.classList.remove("hidden");
+      } else {
+        domElements.buttonText.classList.remove("hidden");
+        domElements.buttonSpinner.classList.add("hidden");
+      }
+    }
+  }
+
+  // Show notification
+  function showNotification(message: string, type: string = "info"): void {
+    const notification = document.createElement("div");
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm ${
+      type === "success"
+        ? "bg-green-500 text-white"
+        : type === "error"
+          ? "bg-red-500 text-white"
+          : "bg-blue-500 text-white"
+    }`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.remove();
+    }, 5000);
+  }
+
+  // State management functions
+  function showLoadingState(): void {
+    hideAllStates();
+    domElements.checkoutLoading?.classList.remove("hidden");
+  }
+
+  function showCheckoutContent(): void {
+    hideAllStates();
+    domElements.checkoutContent?.classList.remove("hidden");
+  }
+
+  function showEmptyCartState(): void {
+    hideAllStates();
+    domElements.emptyCartRedirect?.classList.remove("hidden");
+  }
+
+  function showErrorState(message: string): void {
+    hideAllStates();
+    if (domElements.errorMessage)
+      domElements.errorMessage.textContent = message;
+    domElements.checkoutError?.classList.remove("hidden");
+  }
+
+  function hideAllStates(): void {
+    domElements.checkoutLoading?.classList.add("hidden");
+    domElements.checkoutContent?.classList.add("hidden");
+    domElements.emptyCartRedirect?.classList.add("hidden");
+    domElements.checkoutError?.classList.add("hidden");
+  }
+
+  // Event listeners
+  function setupEventListeners(): void {
+    // Form submission
+    domElements.checkoutForm?.addEventListener("submit", handleSubmit);
+
+    // Retry button
+    domElements.retryBtn?.addEventListener("click", initializeCheckout);
+  }
+
+  // Initialize when DOM is ready
+  document.addEventListener("DOMContentLoaded", () => {
+    setupEventListeners();
+    initializeCheckout();
+  });
+</script>

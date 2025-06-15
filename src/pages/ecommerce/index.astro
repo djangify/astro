@@ -5,20 +5,19 @@ import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
 
 // SERVER-SIDE DATA FETCHING FOR SEO
-let products = [];
-let categories = [];
-let featuredProducts = [];
+let products: any[] = [];
+let categories: any[] = [];
+let featuredProducts: any[] = [];
 let statsData = {
   totalProducts: 0,
   totalCategories: 0,
   digitalProducts: 0,
-  physicalProducts: 0
 };
 
 try {
   // Fetch products and categories server-side for SEO
   const [productsResponse, categoriesResponse] = await Promise.all([
-    fetch("https://corrison.corrisonapi.com/api/v1/products/"),
+    fetch("https://corrison.corrisonapi.com/api/v1/products/?product_type=digital"),
     fetch("https://corrison.corrisonapi.com/api/v1/categories/")
   ]);
 
@@ -27,10 +26,9 @@ try {
     products = productsData.results || productsData;
     featuredProducts = products.slice(0, 6); // Get first 6 for featured section
     
-    // Calculate stats
+    // Calculate stats - digital only
     statsData.totalProducts = productsData.count || products.length;
-    statsData.digitalProducts = products.filter((p: any) => p.product_type === "digital").length;
-    statsData.physicalProducts = products.filter((p: any) => p.product_type === "physical").length;
+    statsData.digitalProducts = products.length; // All products are digital
   }
 
   if (categoriesResponse.ok) {
@@ -61,8 +59,8 @@ function getCategoryImageUrl(category: any): string {
 }
 
 // SEO meta information
-const metaTitle = "Shop – Corrison Ecommerce Platform";
-const metaDescription = "Discover our comprehensive ecommerce platform featuring both physical and digital products with advanced filtering, search, and cart functionality.";
+const metaTitle = "Digital Products – Corrison Ecommerce Platform";
+const metaDescription = "Discover our digital product marketplace featuring downloadable content, courses, and digital goods with instant delivery.";
 ---
 
 <script define:vars={{ products, categories, featuredProducts, statsData }}>
@@ -80,39 +78,38 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
   <meta slot="head" property="og:description" content={metaDescription} />
   <meta slot="head" property="og:type" content="website" />
 
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-blue-50">
     <!-- Hero Section with Animated Background -->
-    <section class="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700">
+    <section class="relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700">
       <!-- Animated Background Elements -->
       <div class="absolute inset-0">
         <div class="absolute top-0 left-0 w-72 h-72 bg-white opacity-10 rounded-full mix-blend-multiply animate-pulse"></div>
-        <div class="absolute top-0 right-0 w-96 h-96 bg-pink-300 opacity-10 rounded-full mix-blend-multiply animate-pulse delay-1000"></div>
-        <div class="absolute bottom-0 left-1/3 w-80 h-80 bg-yellow-300 opacity-10 rounded-full mix-blend-multiply animate-pulse delay-2000"></div>
+        <div class="absolute top-0 right-0 w-96 h-96 bg-purple-300 opacity-10 rounded-full mix-blend-multiply animate-pulse delay-1000"></div>
+        <div class="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-300 opacity-10 rounded-full mix-blend-multiply animate-pulse delay-2000"></div>
       </div>
 
       <div class="relative container mx-auto px-4 py-20">
         <div class="text-center max-w-4xl mx-auto">
           <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-in">
-            Next-Gen
-            <span class="bg-gradient-to-r from-yellow-400 to-pink-400 bg-clip-text text-transparent">
-              Ecommerce
+            Digital
+            <span class="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Marketplace
             </span>
           </h1>
-          <p class="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto animate-fade-in-delay">
-            Showcase of a powerful headless commerce platform supporting both
-            physical and digital products with advanced features and modern
-            design.
+          <p class="text-xl md:text-2xl text-purple-100 mb-8 max-w-3xl mx-auto animate-fade-in-delay">
+            Instant downloads, courses, and digital products. Built with modern 
+            headless commerce technology for seamless digital delivery.
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-delay-2">
             <button
               id="explore-products-btn"
-              class="bg-white text-blue-600 hover:bg-blue-50 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg"
+              class="bg-white text-purple-600 hover:bg-purple-50 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg"
             >
-              Explore Products
+              Explore Digital Products
             </button>
             <button
               id="view-categories-btn"
-              class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105"
+              class="border-2 border-white text-white hover:bg-white hover:text-purple-600 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105"
             >
               Browse Categories
             </button>
@@ -132,74 +129,46 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
     <section class="py-20 bg-white">
       <div class="container mx-auto px-4">
         <div class="text-center mb-16">
-          <h2 class="text-4xl font-bold text-gray-900 mb-6">Platform Capabilities</h2>
+          <h2 class="text-4xl font-bold text-gray-900 mb-6">Digital-First Platform</h2>
           <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            A comprehensive headless ecommerce solution built with Django REST API and modern frontend technologies.
+            A modern digital marketplace built for instant delivery and seamless customer experience.
           </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <!-- Feature Cards with Hover Animations -->
-          <div class="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-8 text-white transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-            <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="relative z-10">
-              <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                </svg>
-              </div>
-              <h3 class="text-xl font-bold mb-3">Physical Products</h3>
-              <p class="text-blue-100">
-                Complete inventory management with shipping calculations, stock tracking, and variant support.
-              </p>
-            </div>
-          </div>
-
+          <!-- Digital Download Feature -->
           <div class="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-8 text-white transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-            <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div class="relative z-10">
               <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-4">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                 </svg>
               </div>
-              <h3 class="text-xl font-bold mb-3">Digital Downloads</h3>
+              <h3 class="text-xl font-bold mb-3">Instant Downloads</h3>
               <p class="text-purple-100">
-                Secure digital product delivery with download limits, expiry controls, and instant access.
+                Secure digital product delivery with download limits, expiry controls, and immediate access after purchase.
               </p>
             </div>
           </div>
 
-          <div class="group relative bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-8 text-white transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-            <div class="absolute inset-0 bg-gradient-to-br from-green-400 to-teal-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <!-- Smart Cart Feature -->
+          <div class="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-8 text-white transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div class="relative z-10">
               <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-4">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"></path>
                 </svg>
               </div>
-              <h3 class="text-xl font-bold mb-3">Smart Cart & Checkout</h3>
-              <p class="text-green-100">
-                Advanced cart management with Stripe integration, order tracking, and seamless checkout flow.
+              <h3 class="text-xl font-bold mb-3">Simplified Checkout</h3>
+              <p class="text-blue-100">
+                Streamlined cart and checkout process optimized for digital products with Stripe integration.
               </p>
             </div>
           </div>
 
-          <div class="group relative bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-8 text-white transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-            <div class="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="relative z-10">
-              <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-              </div>
-              <h3 class="text-xl font-bold mb-3">Advanced Search & Filters</h3>
-              <p class="text-orange-100">
-                Powerful search capabilities with category filtering, price ranges, and real-time results.
-              </p>
-            </div>
-          </div>
-
+          <!-- API First Feature -->
           <div class="group relative bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl p-8 text-white transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
             <div class="absolute inset-0 bg-gradient-to-br from-teal-400 to-blue-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div class="relative z-10">
@@ -208,24 +177,9 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                 </svg>
               </div>
-              <h3 class="text-xl font-bold mb-3">REST API First</h3>
+              <h3 class="text-xl font-bold mb-3">Headless Architecture</h3>
               <p class="text-teal-100">
-                Headless architecture with comprehensive REST API for maximum flexibility and integration.
-              </p>
-            </div>
-          </div>
-
-          <div class="group relative bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl p-8 text-white transform transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-            <div class="absolute inset-0 bg-gradient-to-br from-pink-400 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div class="relative z-10">
-              <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center mb-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                </svg>
-              </div>
-              <h3 class="text-xl font-bold mb-3">User Experience</h3>
-              <p class="text-pink-100">
-                Wishlist functionality, user accounts, order history, and personalized recommendations.
+                REST API-first design for maximum flexibility and easy integration with any frontend.
               </p>
             </div>
           </div>
@@ -237,37 +191,31 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
     <section class="py-20 bg-gray-900 text-white">
       <div class="container mx-auto px-4">
         <div class="text-center mb-16">
-          <h2 class="text-4xl font-bold mb-6">See It In Action</h2>
+          <h2 class="text-4xl font-bold mb-6">Live Digital Marketplace</h2>
           <p class="text-xl text-gray-300 max-w-3xl mx-auto">
-            Explore our live product catalog with real data, powered by Django REST API and modern frontend technologies.
+            Explore our digital product catalog with real data, powered by Django REST API.
           </p>
         </div>
 
         <!-- Quick Stats - SERVER-SIDE RENDERED -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           <div class="text-center">
-            <div class="text-4xl font-bold text-blue-400 mb-2" id="products-count">
+            <div class="text-4xl font-bold text-purple-400 mb-2" id="products-count">
               {statsData.totalProducts}
             </div>
-            <div class="text-gray-400">Products</div>
+            <div class="text-gray-400">Digital Products</div>
           </div>
           <div class="text-center">
-            <div class="text-4xl font-bold text-purple-400 mb-2" id="categories-count">
+            <div class="text-4xl font-bold text-blue-400 mb-2" id="categories-count">
               {statsData.totalCategories}
             </div>
             <div class="text-gray-400">Categories</div>
           </div>
           <div class="text-center">
-            <div class="text-4xl font-bold text-green-400 mb-2" id="digital-count">
+            <div class="text-4xl font-bold text-teal-400 mb-2" id="digital-count">
               {statsData.digitalProducts}
             </div>
-            <div class="text-gray-400">Digital Items</div>
-          </div>
-          <div class="text-center">
-            <div class="text-4xl font-bold text-orange-400 mb-2" id="physical-count">
-              {statsData.physicalProducts}
-            </div>
-            <div class="text-gray-400">Physical Items</div>
+            <div class="text-gray-400">Available Downloads</div>
           </div>
         </div>
 
@@ -275,9 +223,9 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
         <div class="flex flex-col sm:flex-row gap-6 justify-center">
           <a
             href="/ecommerce/products"
-            class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg text-center"
+            class="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg text-center"
           >
-            Browse Full Catalog
+            Browse Digital Catalog
           </a>
           <a
             href="#featured-products"
@@ -293,13 +241,13 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
     <section id="featured-products" class="py-20 bg-white">
       <div class="container mx-auto px-4">
         <div class="text-center mb-16">
-          <h2 class="text-4xl font-bold text-gray-900 mb-6">Featured Products</h2>
+          <h2 class="text-4xl font-bold text-gray-900 mb-6">Featured Digital Products</h2>
           <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover our hand-picked selection of premium products showcasing the platform's capabilities.
+            Discover our hand-picked selection of premium digital downloads and courses.
           </p>
         </div>
 
-        <!-- Featured Products Grid - SERVER-SIDE RENDERED -->
+        <!-- Featured Products Grid - MASONRY STYLE WITH LARGE/SMALL CARDS -->
         {featuredProducts.length > 0 ? (
           <div id="featured-products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
             {featuredProducts.map((product: any, index: number) => {
@@ -314,26 +262,20 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
                           bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl 
                           transform transition-all duration-300 hover:scale-105 cursor-pointer`}
                   data-product-slug={product.slug}
-                  onclick={`window.location.href='/ecommerce/${product.slug}'`}
                 >
-                  <!-- SIMPLIFIED IMAGE CONTAINER -->
+                  <!-- FEATURED IMAGE CONTAINER -->
                   <div class={`relative ${isLarge ? "h-64 lg:h-full" : "h-48"}`}>
                     <img 
                       src={imageUrl}
                       alt={product.name}
                       class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      onerror="this.src='/static/images/placeholder.png'"
                       loading="lazy"
                     />
                     
-                    <!-- Product Type Badge -->
+                    <!-- Digital Product Badge -->
                     <div class="absolute top-4 left-4">
-                      <span class={`px-3 py-1 text-xs font-semibold rounded-full ${
-                        product.product_type === "digital"
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}>
-                        {product.product_type === "digital" ? "Digital" : "Physical"}
+                      <span class="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                        Digital Download
                       </span>
                     </div>
 
@@ -346,7 +288,7 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
                       </div>
                     )}
 
-                    <!-- Hover Overlay -->
+                    <!-- Hover Overlay with Animation -->
                     <div class="absolute inset-0 bg-transparent group-hover:bg-black group-hover:bg-opacity-30 
                                 transition-all duration-300 flex items-center justify-center pointer-events-none group-hover:pointer-events-auto">
                       <div class="transform translate-y-8 group-hover:translate-y-0 
@@ -355,8 +297,8 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
                                        hover:bg-gray-100 transition-colors mr-2">
                           View Details
                         </button>
-                        <button class="bg-blue-600 text-white px-6 py-2 rounded-full font-semibold 
-                                       hover:bg-blue-700 transition-colors">
+                        <button class="bg-purple-600 text-white px-6 py-2 rounded-full font-semibold 
+                                       hover:bg-purple-700 transition-colors">
                           Add to Cart
                         </button>
                       </div>
@@ -365,15 +307,19 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
                   
                   <div class="p-6">
                     <div class="flex items-start justify-between mb-2">
-                      <h3 class="font-bold text-lg text-gray-900 group-hover:text-blue-600 
+                      <h3 class="font-bold text-lg text-gray-900 group-hover:text-purple-600 
                                  transition-colors line-clamp-2">
                         {product.name}
                       </h3>
                     </div>
                     
-                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {product.description || "Premium quality product with excellent features and value."}
-                    </p>
+                    {product.description ? (
+                      <div set:html={product.description} class="text-gray-600 text-sm mb-4 line-clamp-2" />
+                    ) : (
+                      <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                        Premium digital content with instant download access.
+                      </p>
+                    )}
                     
                     <div class="flex items-center justify-between">
                       <div class="flex items-center space-x-2">
@@ -399,23 +345,23 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
             })}
           </div>
         ) : (
-          <!-- Loading State (Only shows if no server-side data) -->
+          <!-- Loading State -->
           <div id="featured-loading" class="text-center py-16">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p class="text-gray-600">Loading featured products...</p>
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">Loading digital products...</p>
           </div>
         )}
 
         <!-- Error State -->
         <div id="featured-error" class="hidden text-center py-16">
-          <div class="text-6xl mb-4">🛒</div>
+          <div class="text-6xl mb-4">🔄</div>
           <h3 class="text-2xl font-bold text-gray-900 mb-4">Unable to Load Products</h3>
           <p class="text-gray-600 mb-6">
-            We're having trouble connecting to our product catalog. This might be because the demo backend is not currently running.
+            We're having trouble connecting to our product catalog. The demo backend may not be running.
           </p>
           <a
             href="/ecommerce/products"
-            class="inline-block bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-3 rounded-lg transition-colors"
+            class="inline-block bg-purple-600 text-white hover:bg-purple-700 font-medium px-6 py-3 rounded-lg transition-colors"
           >
             Try Product Catalog
           </a>
@@ -423,35 +369,33 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
       </div>
     </section>
 
-    <!-- Categories Preview - SERVER-SIDE RENDERED -->
+    <!-- Categories Preview -->
     <section class="py-20 bg-gray-50">
       <div class="container mx-auto px-4">
         <div class="text-center mb-16">
           <h2 class="text-4xl font-bold text-gray-900 mb-6">Shop by Category</h2>
           <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Organized product categories with intelligent filtering and search capabilities.
+            Organized digital product categories for easy browsing and discovery.
           </p>
         </div>
 
-        <!-- Categories Grid - SERVER-SIDE RENDERED -->
+        <!-- Categories Grid -->
         {categories.length > 0 ? (
           <div id="categories-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {categories.map((category: any) => {
               const imageUrl = getCategoryImageUrl(category);
 
               return (
-                <div 
-                  class="group cursor-pointer" 
-                  onclick={`window.location.href='/ecommerce/products?category=${category.slug}'`}
+                <a 
+                  href={`/ecommerce/products?category=${category.slug}`}
+                  class="group cursor-pointer block"
                 >
                   <div class="relative rounded-xl overflow-hidden h-32 mb-4 transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                     <img 
                       src={imageUrl}
                       alt={category.name}
                       class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      onerror="this.src='/static/images/placeholder.png'"
                       loading="lazy"
-                      style="background-color: #f3f4f6;"
                     />
                   
                     <!-- Overlay -->
@@ -462,61 +406,47 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
                   <div class="text-center">
                     <h4 class="font-semibold text-gray-900 mb-1">{category.name}</h4>
                     <p class="text-sm text-gray-600">
-                      {category.description || "Explore our collection"}
+                      {category.description || "Explore digital products"}
                     </p>
                   </div>
-                </div>
+                </a>
               );
             })}
           </div>
         ) : (
           <!-- Categories Loading -->
           <div id="categories-loading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <!-- Loading skeletons -->
-            <div class="animate-pulse">
-              <div class="bg-gray-200 rounded-lg h-32 mb-4"></div>
-              <div class="bg-gray-200 h-4 rounded mb-2"></div>
-              <div class="bg-gray-200 h-3 rounded w-2/3"></div>
-            </div>
-            <div class="animate-pulse">
-              <div class="bg-gray-200 rounded-lg h-32 mb-4"></div>
-              <div class="bg-gray-200 h-4 rounded mb-2"></div>
-              <div class="bg-gray-200 h-3 rounded w-2/3"></div>
-            </div>
-            <div class="animate-pulse">
-              <div class="bg-gray-200 rounded-lg h-32 mb-4"></div>
-              <div class="bg-gray-200 h-4 rounded mb-2"></div>
-              <div class="bg-gray-200 h-3 rounded w-2/3"></div>
-            </div>
-            <div class="animate-pulse">
-              <div class="bg-gray-200 rounded-lg h-32 mb-4"></div>
-              <div class="bg-gray-200 h-4 rounded mb-2"></div>
-              <div class="bg-gray-200 h-3 rounded w-2/3"></div>
-            </div>
+            {Array.from({length: 4}).map((_, index) => (
+              <div class="animate-pulse">
+                <div class="bg-gray-200 rounded-lg h-32 mb-4"></div>
+                <div class="bg-gray-200 h-4 rounded mb-2"></div>
+                <div class="bg-gray-200 h-3 rounded w-2/3"></div>
+              </div>
+            ))}
           </div>
         )}
       </div>
     </section>
 
     <!-- CTA Section -->
-    <section class="py-20 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 text-white">
+    <section class="py-20 bg-gradient-to-r from-gray-900 via-purple-900 to-blue-900 text-white">
       <div class="container mx-auto px-4 text-center">
-        <h2 class="text-4xl md:text-5xl font-bold mb-6">Ready to Build Your Store?</h2>
-        <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-          This is just a glimpse of what's possible with our headless ecommerce platform. Start building your own custom shopping experience today.
+        <h2 class="text-4xl md:text-5xl font-bold mb-6">Ready for Digital Commerce?</h2>
+        <p class="text-xl text-purple-100 mb-8 max-w-3xl mx-auto">
+          Experience the future of digital product delivery with our headless commerce platform.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <a
             href="/contact"
-            class="bg-white text-blue-600 hover:bg-blue-50 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg"
+            class="bg-white text-purple-600 hover:bg-purple-50 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             Get Started
           </a>
           <a
             href="/ecommerce/products"
-            class="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105"
+            class="border-2 border-white text-white hover:bg-white hover:text-purple-600 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105"
           >
-            Explore More
+            Explore Products
           </a>
         </div>
       </div>
@@ -527,70 +457,26 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
 </BaseLayout>
 
 <script>
-  // ALL EXISTING JAVASCRIPT FUNCTIONALITY REMAINS EXACTLY THE SAME
-  // Define types
-  interface Product {
-    slug: string;
-    name: string;
-    description?: string;
-    price: number;
-    sale_price?: number;
-    main_image?: string;
-    featured_image?: string;
-    product_type: "digital" | "physical";
-    category?: {
-      name: string;
-      slug: string;
-    };
-  }
+  // SIMPLIFIED JAVASCRIPT FOR DIGITAL-ONLY MARKETPLACE
 
-  interface Category {
-    slug: string;
-    name: string;
-    description?: string;
-    image?: string;
-  }
-
-  interface ApiResponse<T> {
-    results?: T[];
-    count?: number;
-  }
-
-  // Animation classes for fade-in effects
+  // Animation classes
   const style: HTMLStyleElement = document.createElement("style");
   style.textContent = `
-      @keyframes fadeInUp {
-        from {
-          transform: translateY(30px);
-        }
-        to {
-          transform: translateY(0);
-        }
-      }
-      
-      .animate-fade-in {
-        animation: fadeInUp 0.8s ease-out;
-      }
-      
-      .animate-fade-in-delay {
-        animation: fadeInUp 0.8s ease-out 0.2s both;
-      }
-      
-      .animate-fade-in-delay-2 {
-        animation: fadeInUp 0.8s ease-out 0.4s both;
-      }
-    `;
+    @keyframes fadeInUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .animate-fade-in { animation: fadeInUp 0.8s ease-out; }
+    .animate-fade-in-delay { animation: fadeInUp 0.8s ease-out 0.2s both; }
+    .animate-fade-in-delay-2 { animation: fadeInUp 0.8s ease-out 0.4s both; }
+  `;
   document.head.appendChild(style);
 
-  // API configuration
   const API_BASE_URL: string = "https://corrison.corrisonapi.com/api/v1";
 
   // Animated counter function
-  function animateCounter(
-    element: HTMLElement | null,
-    target: number,
-    duration: number = 2000,
-  ): void {
+  function animateCounter(element: HTMLElement | null, target: number, duration: number = 2000): void {
     if (!element) return;
 
     const start: number = 0;
@@ -607,106 +493,63 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
     }, 16);
   }
 
-  // Load and animate stats using server-side data or fetch fresh data
+  // Load and animate stats
   async function loadStats(): Promise<void> {
     try {
-      // Use preloaded stats data if available
       const preloadedStats = (window as any).preloadedStatsData;
       
       if (preloadedStats && preloadedStats.totalProducts > 0) {
-        // Use server-rendered data and animate from current values
         setTimeout(() => {
-          const currentProductsCount = parseInt(document.getElementById("products-count")?.textContent || "0");
-          const currentCategoriesCount = parseInt(document.getElementById("categories-count")?.textContent || "0");
-          const currentDigitalCount = parseInt(document.getElementById("digital-count")?.textContent || "0");
-          const currentPhysicalCount = parseInt(document.getElementById("physical-count")?.textContent || "0");
-
-          // Only animate if the current values are different (for subsequent loads)
-          if (currentProductsCount !== preloadedStats.totalProducts) {
-            animateCounter(document.getElementById("products-count"), preloadedStats.totalProducts);
-          }
-          if (currentCategoriesCount !== preloadedStats.totalCategories) {
-            animateCounter(document.getElementById("categories-count"), preloadedStats.totalCategories);
-          }
-          if (currentDigitalCount !== preloadedStats.digitalProducts) {
-            animateCounter(document.getElementById("digital-count"), preloadedStats.digitalProducts);
-          }
-          if (currentPhysicalCount !== preloadedStats.physicalProducts) {
-            animateCounter(document.getElementById("physical-count"), preloadedStats.physicalProducts);
-          }
+          animateCounter(document.getElementById("products-count"), preloadedStats.totalProducts);
+          animateCounter(document.getElementById("categories-count"), preloadedStats.totalCategories);
+          animateCounter(document.getElementById("digital-count"), preloadedStats.digitalProducts);
         }, 1000);
         return;
       }
 
-      // Fallback: fetch from API if no server-side data
-      const [productsResponse, categoriesResponse]: [Response, Response] =
-        await Promise.all([
-          fetch(`${API_BASE_URL}/products/`),
-          fetch(`${API_BASE_URL}/categories/`),
-        ]);
+      // Fallback: fetch digital products only
+      const response: Response = await fetch(`${API_BASE_URL}/products/?product_type=digital`);
+      const categoriesResponse: Response = await fetch(`${API_BASE_URL}/categories/`);
 
-      if (productsResponse.ok && categoriesResponse.ok) {
-        const productsData: ApiResponse<Product> = await productsResponse.json();
-        const categories: ApiResponse<Category> = await categoriesResponse.json();
+      if (response.ok && categoriesResponse.ok) {
+        const productsData = await response.json();
+        const categoriesData = await categoriesResponse.json();
 
-        const productsArray: Product[] = productsData.results || (productsData as Product[]);
-        const categoriesArray: Category[] = categories.results || (categories as Category[]);
+        const productsArray = productsData.results || productsData;
+        const categoriesArray = categoriesData.results || categoriesData;
 
-        const digitalCount: number = productsArray.filter(
-          (p: Product) => p.product_type === "digital",
-        ).length;
-        const physicalCount: number = productsArray.filter(
-          (p: Product) => p.product_type === "physical",
-        ).length;
-
-        // Animate counters
         setTimeout(() => {
           animateCounter(document.getElementById("products-count"), productsArray.length);
           animateCounter(document.getElementById("categories-count"), categoriesArray.length);
-          animateCounter(document.getElementById("digital-count"), digitalCount);
-          animateCounter(document.getElementById("physical-count"), physicalCount);
+          animateCounter(document.getElementById("digital-count"), productsArray.length);
         }, 1000);
       }
     } catch (error) {
       console.log("Stats loading failed:", error);
-      // Show static demo numbers
+      // Show demo numbers
       setTimeout(() => {
-        animateCounter(document.getElementById("products-count"), 24);
-        animateCounter(document.getElementById("categories-count"), 8);
+        animateCounter(document.getElementById("products-count"), 12);
+        animateCounter(document.getElementById("categories-count"), 6);
         animateCounter(document.getElementById("digital-count"), 12);
-        animateCounter(document.getElementById("physical-count"), 12);
       }, 1000);
     }
   }
 
-  // Load featured products using preloaded data or fetch if needed
+  // Load featured products
   async function loadFeaturedProducts(): Promise<void> {
     const loadingEl: HTMLElement | null = document.getElementById("featured-loading");
-    const gridEl: HTMLElement | null = document.getElementById("featured-products-grid");
     const errorEl: HTMLElement | null = document.getElementById("featured-error");
 
     try {
-      // Use the products already fetched at build time
       const preloadedFeaturedProducts = (window as any).preloadedFeaturedProducts || [];
       
       if (preloadedFeaturedProducts.length > 0) {
-        // Products are already rendered server-side, just add click handlers if needed
-        if (gridEl) {
-          gridEl.querySelectorAll(".product-card").forEach((card: Element) => {
-            card.addEventListener("click", () => {
-              const slug: string | null = (card as HTMLElement).dataset.productSlug || null;
-              if (slug) {
-                window.location.href = `/ecommerce/${slug}`;
-              }
-            });
-          });
-        }
-
+        // Products are already rendered server-side
         if (loadingEl) loadingEl.classList.add("hidden");
         return;
       }
 
-      // Fallback: client-side loading if no server-side data
+      // Fallback: client-side loading
       const allProducts = (window as any).preloadedProducts || [];
       const featuredProducts = allProducts.slice(0, 6);
 
@@ -714,126 +557,6 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
         throw new Error("No products found");
       }
 
-      // Helper function to get safe image URL
-      function getProductImageUrl(product: Product): string {
-        const imageUrl: string | undefined = product.featured_image || product.main_image;
-        if (!imageUrl || imageUrl === "null" || imageUrl === "" || imageUrl === undefined) {
-          return "/static/images/placeholder.png";
-        }
-        return imageUrl;
-      }
-
-      // Create masonry-style grid
-      if (gridEl) {
-        gridEl.innerHTML = featuredProducts
-          .map((product: Product, index: number) => {
-            const isLarge: boolean = index === 0 || index === 3;
-            const imageUrl: string = getProductImageUrl(product);
-            const price: number = product.sale_price || product.price;
-            const originalPrice: number | null = product.sale_price ? product.price : null;
-
-            return `
-              <div class="group product-card ${isLarge ? "lg:col-span-2 lg:row-span-2" : ""} 
-                          bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl 
-                          transform transition-all duration-300 hover:scale-105 cursor-pointer"
-                   data-product-slug="${product.slug}">
-                
-                <!-- SIMPLIFIED IMAGE CONTAINER -->
-                <div class="relative ${isLarge ? "h-64 lg:h-full" : "h-48"}">
-                  <img src="${imageUrl}" 
-                    alt="${product.name}" 
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    onerror="this.src='/static/images/placeholder.png'"
-                    loading="lazy">
-                  
-                  <!-- Product Type Badge -->
-                  <div class="absolute top-2 left-2">
-                    <span class="px-2 py-1 text-xs font-semibold rounded ${
-                      product.product_type === "digital"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-blue-100 text-blue-800"
-                    }">
-                      ${product.product_type === "digital" ? "Digital" : "Physical"}
-                    </span>
-                  </div>
-
-                  <!-- Sale Badge -->
-                  ${originalPrice ? `
-                  <div class="absolute top-2 right-2">
-                    <span class="px-2 py-1 text-xs font-bold bg-red-500 text-white rounded-full">
-                      SALE
-                    </span>
-                  </div>
-                  ` : ""}
-
-                  <!-- Hover Overlay -->
-                  <div class="absolute inset-0 bg-transparent group-hover:bg-black group-hover:bg-opacity-30 
-                              transition-all duration-300 flex items-center justify-center pointer-events-none group-hover:pointer-events-auto">
-                    <div class="transform translate-y-8 group-hover:translate-y-0 
-                                opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-auto">
-                      <button class="bg-white text-gray-900 px-6 py-2 rounded-full font-semibold 
-                                     hover:bg-gray-100 transition-colors mr-2">
-                        View Details
-                      </button>
-                      <button class="bg-blue-600 text-white px-6 py-2 rounded-full font-semibold 
-                                     hover:bg-blue-700 transition-colors">
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="p-6">
-                  <div class="flex items-start justify-between mb-2">
-                    <h3 class="font-bold text-lg text-gray-900 group-hover:text-blue-600 
-                               transition-colors line-clamp-2">
-                      ${product.name}
-                    </h3>
-                  </div>
-                  
-                  <p class="text-gray-600 text-sm mb-4 line-clamp-2">
-                    ${product.description || "Premium quality product with excellent features and value."}
-                  </p>
-                  
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                      <span class="text-2xl font-bold text-gray-900">
-                        $${parseFloat(price.toString()).toFixed(2)}
-                      </span>
-                      ${originalPrice ? `
-                      <span class="text-lg text-gray-500 line-through">
-                        $${parseFloat(originalPrice.toString()).toFixed(2)}
-                      </span>
-                      ` : ""}
-                    </div>
-                    
-                    ${product.category ? `
-                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      ${product.category.name}
-                    </span>
-                    ` : ""}
-                  </div>
-                </div>
-              </div>
-            `;
-          })
-          .join("");
-
-        // Setup masonry grid
-        gridEl.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr";
-
-        // Add click handlers
-        gridEl.querySelectorAll(".product-card").forEach((card: Element) => {
-          card.addEventListener("click", () => {
-            const slug: string | null = (card as HTMLElement).dataset.productSlug || null;
-            if (slug) {
-              window.location.href = `/ecommerce/${slug}`;
-            }
-          });
-        });
-      }
-
-      // Show grid, hide loading
       if (loadingEl) loadingEl.classList.add("hidden");
     } catch (error) {
       console.log("Featured products loading failed:", error);
@@ -842,135 +565,10 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
     }
   }
 
-  // Load categories - they should already be server-rendered
-  async function loadCategories(): Promise<void> {
-    const loadingEl: HTMLElement | null = document.getElementById("categories-loading");
-    const gridEl: HTMLElement | null = document.getElementById("categories-grid");
-
-    // If categories are already rendered, just hide loading
-    if (gridEl && !gridEl.classList.contains("hidden")) {
-      loadingEl?.classList.add("hidden");
-      return;
-    }
-
-    // Fallback for client-side loading (if server-side failed)
-    try {
-      const preloadedCategories = (window as any).preloadedCategories || [];
-      
-      if (preloadedCategories.length > 0) {
-        // Categories should already be rendered, just ensure loading is hidden
-        loadingEl?.classList.add("hidden");
-        return;
-      }
-
-      const response: Response = await fetch(`${API_BASE_URL}/categories/`);
-
-      if (!response.ok) throw new Error("Failed to fetch");
-
-      const data: ApiResponse<Category> = await response.json();
-      const categories: Category[] = (data.results || (data as Category[])).slice(0, 8);
-
-      // Helper function to get safe category image URL
-      function getCategoryImageUrl(category: Category): string {
-        const imageUrl = category.image || (category as any).main_image || (category as any).featured_image || (category as any).category_image;
-
-        if (imageUrl && imageUrl !== "null" && imageUrl !== "" && imageUrl !== undefined) {
-          return imageUrl;
-        }
-        return "/static/images/placeholder.png";
-      }
-
-      if (categories.length > 0 && gridEl) {
-        gridEl.innerHTML = categories
-          .map((category: Category) => {
-            const imageUrl: string = getCategoryImageUrl(category);
-
-            return `
-            <div class="group cursor-pointer" onclick="window.location.href='/ecommerce/products?category=${category.slug}'">
-              <div class="relative rounded-xl overflow-hidden h-32 mb-4 transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                <img src="${imageUrl}" 
-                  alt="${category.name}" 
-                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  onerror="this.src='/static/images/placeholder.png'"
-                  loading="lazy"
-                  style="background-color: #f3f4f6;">
-                
-                <!-- Overlay -->
-                <div class="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-60 transition-all duration-300 flex items-center justify-center">
-                  <h3 class="font-bold text-lg text-white text-center px-4">${category.name}</h3>
-                </div>
-              </div>
-              <div class="text-center">
-                <h4 class="font-semibold text-gray-900 mb-1">${category.name}</h4>
-                <p class="text-sm text-gray-600">
-                  ${category.description || "Explore our collection"}
-                </p>
-              </div>
-            </div>
-          `;
-          })
-          .join("");
-
-        gridEl.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6";
-      }
-
-      loadingEl?.classList.add("hidden");
-      gridEl?.classList.remove("hidden");
-    } catch (error) {
-      console.log("Categories loading failed:", error);
-      loadingEl?.classList.add("hidden");
-
-      // Show demo categories with placeholder images
-      if (gridEl) {
-        gridEl.innerHTML = `
-          <div class="text-center col-span-full py-8">
-            <p class="text-gray-600 mb-4">Demo categories (backend not connected)</p>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-              ${["Electronics", "Clothing", "Books", "Home & Garden"]
-                .map(
-                  (name: string) => `
-                <div class="relative rounded-lg overflow-hidden h-24">
-                  <img src="/static/images/placeholder.png" 
-                    alt="${name}" 
-                    class="w-full h-full object-cover"
-                    style="background-color: #f3f4f6;">
-                  <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                    <div class="font-semibold text-white text-center">${name}</div>
-                  </div>
-                </div>
-              `,
-                )
-                .join("")}
-            </div>
-          </div>
-        `;
-        gridEl.classList.remove("hidden");
-      }
-    }
-  }
-
-  // Smooth scrolling for anchor links
-  document.querySelectorAll('a[href^="#"]').forEach((anchor: Element) => {
-    anchor.addEventListener("click", function (this: HTMLAnchorElement, e: Event) {
-      e.preventDefault();
-      const href: string | null = this.getAttribute("href");
-      if (href) {
-        const target: HTMLElement | null = document.querySelector(href);
-        if (target) {
-          target.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        }
-      }
-    });
-  });
-
-  // Initialize everything when page loads
+  // Initialize everything
   document.addEventListener("DOMContentLoaded", () => {
     loadStats();
     loadFeaturedProducts();
-    loadCategories();
 
     // Button click handlers
     document.getElementById("explore-products-btn")?.addEventListener("click", () => {
@@ -980,6 +578,36 @@ const metaDescription = "Discover our comprehensive ecommerce platform featuring
     document.getElementById("view-categories-btn")?.addEventListener("click", () => {
       document.getElementById("featured-products")?.scrollIntoView({
         behavior: "smooth",
+      });
+    });
+
+    // Product card click handlers
+    document.querySelectorAll('.product-card').forEach((card: Element) => {
+      card.addEventListener('click', () => {
+        const slug: string | null = (card as HTMLElement).dataset.productSlug || null;
+        if (slug) {
+          window.location.href = `/ecommerce/${slug}`;
+        }
+      });
+    });
+
+    // Category click handlers  
+    document.querySelectorAll('#categories-grid a').forEach((categoryLink: Element) => {
+      // Categories are now proper <a> tags, so they'll navigate automatically
+      // No need for click handlers
+    });
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach((anchor: Element) => {
+      anchor.addEventListener("click", function(this: HTMLAnchorElement, e: Event) {
+        e.preventDefault();
+        const href: string | null = this.getAttribute("href");
+        if (href) {
+          const target: HTMLElement | null = document.querySelector(href);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
       });
     });
   });
