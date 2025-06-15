@@ -222,9 +222,9 @@ const metaDescription =
   <Footer slot="footer" />
 </BaseLayout>
 
-<script>
-  // Import cart manager and types
-  import { cartManager } from "../lib/cart.ts";
+<script type="module">
+  // Import cart manager properly
+  import { cartManager } from "../lib/cart.js";
 
   // DOM elements
   const elements = {
@@ -243,11 +243,12 @@ const metaDescription =
     retryCartBtn: document.getElementById("retry-cart-btn"),
   };
 
-  let currentCartData: any = null;
+  let currentCartData = null;
 
   // Initialize cart page
-  async function initializeCartPage(): Promise<void> {
+  async function initializeCartPage() {
     try {
+      console.log("Initializing cart page...");
       showLoadingState();
       await loadCartData();
     } catch (error) {
@@ -257,8 +258,9 @@ const metaDescription =
   }
 
   // Load cart data
-  async function loadCartData(): Promise<void> {
+  async function loadCartData() {
     try {
+      console.log("Loading cart data...");
       const cartData = await cartManager.loadCartData();
 
       if (!cartData || cartData.total_items === 0) {
@@ -277,13 +279,13 @@ const metaDescription =
   }
 
   // Render cart items
-  function renderCartItems(): void {
+  function renderCartItems() {
     if (!currentCartData || !elements.cartItemsList) return;
 
     const items = currentCartData.items || [];
 
     elements.cartItemsList.innerHTML = items
-      .map((item: any) => createCartItemHTML(item))
+      .map((item) => createCartItemHTML(item))
       .join("");
 
     // Update counts
@@ -294,7 +296,7 @@ const metaDescription =
   }
 
   // Create cart item HTML
-  function createCartItemHTML(item: any): string {
+  function createCartItemHTML(item) {
     const product = item.product;
     const imageUrl = product.main_image || "/static/images/placeholder.png";
     const unitPrice =
@@ -404,7 +406,7 @@ const metaDescription =
   }
 
   // Update cart summary
-  function updateCartSummary(): void {
+  function updateCartSummary() {
     if (!currentCartData) return;
 
     const subtotal =
@@ -424,10 +426,7 @@ const metaDescription =
   }
 
   // Update item quantity
-  async function updateQuantity(
-    itemId: string,
-    newQuantity: number,
-  ): Promise<void> {
+  async function updateQuantity(itemId, newQuantity) {
     if (newQuantity < 1 || newQuantity > 10) return;
 
     try {
@@ -453,7 +452,7 @@ const metaDescription =
   }
 
   // Remove cart item
-  async function removeCartItem(itemId: string): Promise<void> {
+  async function removeCartItem(itemId) {
     try {
       showNotification("Removing item...", "info");
 
@@ -480,7 +479,7 @@ const metaDescription =
   }
 
   // Clear entire cart
-  async function clearCart(): Promise<void> {
+  async function clearCart() {
     if (!confirm("Are you sure you want to clear your cart?")) return;
 
     try {
@@ -501,7 +500,7 @@ const metaDescription =
   }
 
   // Show notification
-  function showNotification(message: string, type: string = "info"): void {
+  function showNotification(message, type = "info") {
     const notification = document.createElement("div");
     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm ${
       type === "success"
@@ -520,27 +519,27 @@ const metaDescription =
   }
 
   // State management functions
-  function showLoadingState(): void {
+  function showLoadingState() {
     hideAllStates();
     elements.cartLoading?.classList.remove("hidden");
   }
 
-  function showCartContent(): void {
+  function showCartContent() {
     hideAllStates();
     elements.cartContent?.classList.remove("hidden");
   }
 
-  function showEmptyCartState(): void {
+  function showEmptyCartState() {
     hideAllStates();
     elements.emptyCart?.classList.remove("hidden");
   }
 
-  function showErrorState(): void {
+  function showErrorState() {
     hideAllStates();
     elements.cartError?.classList.remove("hidden");
   }
 
-  function hideAllStates(): void {
+  function hideAllStates() {
     elements.cartLoading?.classList.add("hidden");
     elements.cartContent?.classList.add("hidden");
     elements.emptyCart?.classList.add("hidden");
@@ -548,7 +547,7 @@ const metaDescription =
   }
 
   // Event listeners
-  function setupEventListeners(): void {
+  function setupEventListeners() {
     // Clear cart button
     elements.clearCartBtn?.addEventListener("click", clearCart);
 
@@ -562,12 +561,10 @@ const metaDescription =
   }
 
   // Make functions globally available
-  (window as any).updateQuantity = updateQuantity;
-  (window as any).removeCartItem = removeCartItem;
+  window.updateQuantity = updateQuantity;
+  window.removeCartItem = removeCartItem;
 
   // Initialize when DOM is ready
-  document.addEventListener("DOMContentLoaded", () => {
-    setupEventListeners();
-    initializeCartPage();
-  });
+  setupEventListeners();
+  initializeCartPage();
 </script>

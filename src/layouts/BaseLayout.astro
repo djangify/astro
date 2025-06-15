@@ -64,6 +64,62 @@ const isDashboardPage = authPagePaths.some(path => currentPath.startsWith(path))
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
 
+    <!-- Cart Manager - Load Before Other Scripts -->
+    <script type="module">
+      // Import and initialize cart manager globally
+      try {
+        const { cartManager } = await import('/src/lib/cart.js');
+        
+        // Make cart manager available globally
+        window.cartManager = cartManager;
+        console.log('CartManager loaded and attached to window');
+        
+        // Auto-load cart data when DOM is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initializeCart);
+        } else {
+          initializeCart();
+        }
+        
+        async function initializeCart() {
+          try {
+            console.log('Initializing cart data...');
+            await cartManager.loadCartData();
+            console.log('Cart data loaded successfully');
+            
+            // Dispatch cart ready event for other components
+            document.dispatchEvent(new CustomEvent('cartReady', {
+              detail: { cartManager }
+            }));
+          } catch (error) {
+            console.error('Failed to load cart data:', error);
+            // Still dispatch ready event even if loading fails
+            document.dispatchEvent(new CustomEvent('cartReady', {
+              detail: { cartManager }
+            }));
+          }
+        }
+        
+      } catch (error) {
+        console.error('Failed to load cart manager:', error);
+        
+        // Create a fallback empty cart manager to prevent undefined errors
+        window.cartManager = {
+          loadCartData: () => Promise.resolve(null),
+          addToCart: () => Promise.resolve({ success: false, message: 'Cart unavailable' }),
+          updateCartItem: () => Promise.resolve({ success: false, message: 'Cart unavailable' }),
+          removeCartItem: () => Promise.resolve({ success: false, message: 'Cart unavailable' }),
+          clearCart: () => Promise.resolve({ success: false, message: 'Cart unavailable' }),
+          getCartData: () => null,
+          getItemCount: () => 0,
+          getSubtotal: () => 0,
+          subscribe: () => () => {}
+        };
+        
+        console.log('Fallback cart manager created');
+      }
+    </script>
+
     <slot name="head" />
   </head>
   <body

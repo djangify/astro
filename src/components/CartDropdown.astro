@@ -200,154 +200,184 @@ const { className = "" } = Astro.props;
   </div>
 </div>
 
-<script>
-  // Enhanced Cart Dropdown functionality
-  document.addEventListener("DOMContentLoaded", function () {
-    const clearCartButton = document.getElementById("clear-cart-button");
-    const retryButton = document.getElementById("enhanced-retry-cart-load");
+<script type="module">
+  // Wait for cart manager to be available
+  function waitForCartManager() {
+    return new Promise((resolve) => {
+      if (window.cartManager) {
+        resolve(window.cartManager);
+        return;
+      }
 
-    // Clear cart functionality
-    clearCartButton?.addEventListener("click", async function () {
-      if (
-        confirm(
-          "Are you sure you want to clear your cart? This action cannot be undone.",
-        )
-      ) {
-        clearCartButton.textContent = "Clearing...";
-        clearCartButton.classList.add("opacity-50");
+      document.addEventListener("cartReady", (event) => {
+        resolve(event.detail.cartManager);
+      });
 
-        try {
-          const result = await window.cartManager.clearCart();
-          if (result.success) {
-            // Cart will automatically update via the cart manager
-          } else {
-            alert(result.message || "Failed to clear cart");
-          }
-        } catch (error) {
-          console.error("Error clearing cart:", error);
-          alert("Failed to clear cart. Please try again.");
+      // Fallback check
+      const checkInterval = setInterval(() => {
+        if (window.cartManager) {
+          clearInterval(checkInterval);
+          resolve(window.cartManager);
         }
-
-        clearCartButton.textContent = "Clear All";
-        clearCartButton.classList.remove("opacity-50");
-      }
+      }, 100);
     });
+  }
 
-    // Enhanced retry functionality
-    retryButton?.addEventListener("click", function () {
-      if (typeof window.cartManager !== "undefined") {
-        window.cartManager.loadCartData();
-      }
-    });
+  // Enhanced Cart Dropdown functionality
+  document.addEventListener("DOMContentLoaded", async function () {
+    try {
+      const cartManager = await waitForCartManager();
 
-    // Subscribe to cart changes for enhanced UI updates
-    if (typeof window.cartManager !== "undefined") {
-      window.cartManager.subscribe((cartData) => {
+      const clearCartButton = document.getElementById("clear-cart-button");
+      const retryButton = document.getElementById("enhanced-retry-cart-load");
+
+      // Clear cart functionality
+      clearCartButton?.addEventListener("click", async function () {
+        if (
+          confirm(
+            "Are you sure you want to clear your cart? This action cannot be undone.",
+          )
+        ) {
+          clearCartButton.textContent = "Clearing...";
+          clearCartButton.classList.add("opacity-50");
+
+          try {
+            const result = await cartManager.clearCart();
+            if (result.success) {
+              // Cart will automatically update via the cart manager
+            } else {
+              alert(result.message || "Failed to clear cart");
+            }
+          } catch (error) {
+            console.error("Error clearing cart:", error);
+            alert("Failed to clear cart. Please try again.");
+          }
+
+          clearCartButton.textContent = "Clear All";
+          clearCartButton.classList.remove("opacity-50");
+        }
+      });
+
+      // Enhanced retry functionality
+      retryButton?.addEventListener("click", function () {
+        cartManager.loadCartData();
+      });
+
+      // Subscribe to cart changes for enhanced UI updates
+      cartManager.subscribe((cartData) => {
         updateEnhancedCartUI(cartData);
       });
-    }
 
-    // Enhanced cart UI update function
-    function updateEnhancedCartUI(cartData: any) {
-      const itemsSummary = document.getElementById("cart-items-summary");
-      const enhancedItemsList = document.getElementById(
-        "enhanced-cart-items-list",
-      );
-      const enhancedSubtotal = document.getElementById(
-        "enhanced-cart-subtotal",
-      );
-      const enhancedTypeBadge = document.getElementById(
-        "enhanced-cart-type-badge",
-      );
-      const enhancedTypeIcon = document.getElementById(
-        "enhanced-cart-type-icon",
-      );
-      const enhancedTypeText = document.getElementById(
-        "enhanced-cart-type-text",
-      );
+      // Enhanced cart UI update function
+      function updateEnhancedCartUI(cartData) {
+        const itemsSummary = document.getElementById("cart-items-summary");
+        const enhancedItemsList = document.getElementById(
+          "enhanced-cart-items-list",
+        );
+        const enhancedSubtotal = document.getElementById(
+          "enhanced-cart-subtotal",
+        );
+        const enhancedTypeBadge = document.getElementById(
+          "enhanced-cart-type-badge",
+        );
+        const enhancedTypeIcon = document.getElementById(
+          "enhanced-cart-type-icon",
+        );
+        const enhancedTypeText = document.getElementById(
+          "enhanced-cart-type-text",
+        );
 
-      if (!cartData) return;
+        if (!cartData) return;
 
-      // Update items summary
-      if (itemsSummary) {
-        const itemText = cartData.item_count === 1 ? "item" : "items";
-        itemsSummary.textContent = `${cartData.item_count} ${itemText}`;
-      }
+        // Update items summary
+        if (itemsSummary) {
+          const itemText = cartData.total_items === 1 ? "item" : "items";
+          itemsSummary.textContent = `${cartData.total_items} ${itemText}`;
+        }
 
-      // Update subtotal
-      if (enhancedSubtotal) {
-        enhancedSubtotal.textContent = `$${cartData.subtotal.toFixed(2)}`;
-      }
+        // Update subtotal
+        if (enhancedSubtotal) {
+          const subtotal =
+            typeof cartData.subtotal === "string"
+              ? parseFloat(cartData.subtotal)
+              : cartData.subtotal;
+          enhancedSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+        }
 
-      // Update cart type badge
-      if (
-        cartData.cart_type &&
-        enhancedTypeBadge &&
-        enhancedTypeIcon &&
-        enhancedTypeText
-      ) {
-        const isDigital = cartData.cart_type === "digital";
+        // Update cart type badge
+        if (
+          cartData.has_digital_items &&
+          enhancedTypeBadge &&
+          enhancedTypeIcon &&
+          enhancedTypeText
+        ) {
+          const isDigital = cartData.is_digital_only;
 
-        enhancedTypeIcon.textContent = isDigital ? "📱" : "📦";
-        enhancedTypeText.textContent = isDigital
-          ? "Digital Downloads"
-          : "Physical Products";
+          enhancedTypeIcon.textContent = isDigital ? "📱" : "📦";
+          enhancedTypeText.textContent = isDigital
+            ? "Digital Downloads"
+            : cartData.has_physical_items
+              ? "Mixed Items"
+              : "Physical Products";
 
-        enhancedTypeBadge.className = `inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-          isDigital
-            ? "bg-purple-100 text-purple-800"
-            : "bg-blue-100 text-blue-800"
-        }`;
-        enhancedTypeBadge.classList.remove("hidden");
-      }
+          enhancedTypeBadge.className = `inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            isDigital
+              ? "bg-purple-100 text-purple-800"
+              : "bg-blue-100 text-blue-800"
+          }`;
+          enhancedTypeBadge.classList.remove("hidden");
+        }
 
-      // Render enhanced cart items
-      if (enhancedItemsList) {
-        if (cartData.items && cartData.items.length > 0) {
-          enhancedItemsList.innerHTML = cartData.items
-            .map(
-              (item: any, index: number) => `
-            <div class="flex items-center p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
-              <div class="relative">
-                <img 
-                  src="${item.product.main_image || item.product.featured_image || "https://via.placeholder.com/60x60/e5e7eb/6b7280?text=No+Image"}" 
-                  alt="${item.product.name}"
-                  class="w-14 h-14 object-cover rounded-lg shadow-sm"
-                >
-                <span class="absolute -top-1 -right-1 bg-teal-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                  ${item.quantity}
-                </span>
-              </div>
-              
-              <div class="flex-1 ml-4">
-                <h4 class="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">${item.product.name}</h4>
-                <div class="flex items-center justify-between mt-2">
-                  <span class="text-xs text-gray-500">
-                    ${item.product.product_type === "digital" ? "📱" : "📦"} 
-                    $${item.unit_price.toFixed(2)} each
+        // Render enhanced cart items
+        if (enhancedItemsList && cartData.items) {
+          if (cartData.items.length > 0) {
+            enhancedItemsList.innerHTML = cartData.items
+              .map(
+                (item, index) => `
+              <div class="flex items-center p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
+                <div class="relative">
+                  <img 
+                    src="${item.product.main_image || item.product.featured_image || "https://via.placeholder.com/60x60/e5e7eb/6b7280?text=No+Image"}" 
+                    alt="${item.product.name}"
+                    class="w-14 h-14 object-cover rounded-lg shadow-sm"
+                  >
+                  <span class="absolute -top-1 -right-1 bg-teal-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                    ${item.quantity}
                   </span>
-                  <span class="text-sm font-bold text-teal-600">$${item.total_price.toFixed(2)}</span>
+                </div>
+                
+                <div class="flex-1 ml-4">
+                  <h4 class="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">${item.product.name}</h4>
+                  <div class="flex items-center justify-between mt-2">
+                    <span class="text-xs text-gray-500">
+                      ${item.product.product_type === "digital" ? "📱" : "📦"} 
+                      $${item.unit_price.toFixed(2)} each
+                    </span>
+                    <span class="text-sm font-bold text-teal-600">$${item.total_price.toFixed(2)}</span>
+                  </div>
+                </div>
+                
+                <div class="ml-3 flex flex-col space-y-1">
+                  <button 
+                    onclick="cartManager.removeCartItem('${item.id}')" 
+                    class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                    aria-label="Remove ${item.product.name}"
+                    title="Remove item"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
                 </div>
               </div>
-              
-              <div class="ml-3 flex flex-col space-y-1">
-                <button 
-                  onclick="window.cartManager.removeCartItem('${item.id}')" 
-                  class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
-                  aria-label="Remove ${item.product.name}"
-                  title="Remove item"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          `,
-            )
-            .join("");
+            `,
+              )
+              .join("");
+          }
         }
       }
+    } catch (error) {
+      console.error("Failed to initialize cart dropdown:", error);
     }
   });
 </script>
