@@ -355,8 +355,9 @@ const metaDescription =
 
   <Footer slot="footer" />
 </BaseLayout>
-
 <script type="module">
+  import { cartManager } from "../lib/cart.js";
+
   // Stripe configuration
   const STRIPE_PUBLISHABLE_KEY = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const API_BASE_URL = "https://corrison.corrisonapi.com/api/v1";
@@ -365,7 +366,6 @@ const metaDescription =
   let stripe = null;
   let elements = null;
   let cardElement = null;
-  let cartManager = null;
 
   // DOM elements
   const domElements = {
@@ -389,66 +389,13 @@ const metaDescription =
   let currentCartData = null;
   let clientSecret = "";
 
-  // Initialize cart manager
-  async function initializeCartManager() {
-    try {
-      // Check if cart manager is already available globally
-      if (window.cartManager) {
-        cartManager = window.cartManager;
-        console.log("Using global cart manager");
-        return cartManager;
-      }
-
-      // Wait for cart ready event if it's not available yet
-      return new Promise((resolve, reject) => {
-        if (window.cartManager) {
-          cartManager = window.cartManager;
-          resolve(cartManager);
-          return;
-        }
-
-        // Listen for cart ready event
-        const timeout = setTimeout(() => {
-          reject(new Error("Cart manager initialization timeout"));
-        }, 5000);
-
-        document.addEventListener(
-          "cartReady",
-          (event) => {
-            clearTimeout(timeout);
-            cartManager = event.detail.cartManager;
-            console.log("Cart manager ready from event");
-            resolve(cartManager);
-          },
-          { once: true },
-        );
-
-        // Fallback: try to import directly
-        import("../lib/cart.js")
-          .then((module) => {
-            clearTimeout(timeout);
-            cartManager = module.cartManager;
-            console.log("Cart manager imported directly");
-            resolve(cartManager);
-          })
-          .catch((error) => {
-            console.error("Failed to import cart manager:", error);
-            // Don't reject here, let the timeout handle it
-          });
-      });
-    } catch (error) {
-      console.error("Error initializing cart manager:", error);
-      throw error;
-    }
-  }
-
   // Initialize checkout page
   async function initializeCheckout() {
     try {
       showLoadingState();
 
-      // Initialize cart manager first
-      await initializeCartManager();
+      // Wait for cart manager to be ready
+      await waitForCartManager();
 
       // Initialize Stripe
       await initializeStripe();
@@ -459,6 +406,30 @@ const metaDescription =
       console.error("Error initializing checkout:", error);
       showErrorState("Failed to initialize checkout. Please try again.");
     }
+  }
+
+  // Wait for cart manager to be available
+  async function waitForCartManager() {
+    if (cartManager) {
+      console.log("Cart manager already available");
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Cart manager initialization timeout"));
+      }, 5000);
+
+      document.addEventListener(
+        "cartReady",
+        () => {
+          clearTimeout(timeout);
+          console.log("Cart manager ready from event");
+          resolve();
+        },
+        { once: true },
+      );
+    });
   }
 
   // Initialize Stripe
@@ -505,10 +476,6 @@ const metaDescription =
   // Load checkout data
   async function loadCheckoutData() {
     try {
-      if (!cartManager) {
-        throw new Error("Cart manager not available");
-      }
-
       // Load cart data
       const cartData = await cartManager.loadCartData();
 
@@ -535,10 +502,6 @@ const metaDescription =
   // Create Stripe payment intent
   async function createPaymentIntent() {
     try {
-      if (!cartManager) {
-        throw new Error("Cart manager not available");
-      }
-
       const cartToken = cartManager.getCartToken();
 
       const response = await fetch(`${API_BASE_URL}/create-payment-intent/`, {
@@ -698,10 +661,6 @@ const metaDescription =
   // Create order after successful payment
   async function createOrder(customerData, paymentIntentId) {
     try {
-      if (!cartManager) {
-        throw new Error("Cart manager not available");
-      }
-
       const cartToken = cartManager.getCartToken();
 
       const response = await fetch(`${API_BASE_URL}/create-order/`, {

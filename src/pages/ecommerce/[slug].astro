@@ -675,85 +675,52 @@ const metaDescription = product.description
 <script is:inline define:vars={{ product }}>
   window.preloadedProduct = product;
 </script>
-// src/pages/ecommerce/[slug].astro - Script section only (lines 558-850)
+
 <script>
+  // @ts-nocheck
   // Simple cart manager and product functionality
-  let cartManager: any = null;
-  let currentProduct: any = null;
+  let cartManager = null;
+  let currentProduct = null;
 
   const elements = {
-    addToCartBtn: document.getElementById(
-      "add-to-cart-btn",
-    ) as HTMLButtonElement | null,
-    quantityInput: document.getElementById(
-      "quantity-input",
-    ) as HTMLInputElement | null,
-    decreaseQtyBtn: document.getElementById(
-      "decrease-qty",
-    ) as HTMLButtonElement | null,
-    increaseQtyBtn: document.getElementById(
-      "increase-qty",
-    ) as HTMLButtonElement | null,
-    mainImage: document.getElementById("main-image") as HTMLImageElement | null,
-    thumbnailContainer: document.getElementById(
-      "thumbnail-container",
-    ) as HTMLElement | null,
-    prevImageBtn: document.getElementById(
-      "prev-image",
-    ) as HTMLButtonElement | null,
-    nextImageBtn: document.getElementById(
-      "next-image",
-    ) as HTMLButtonElement | null,
-    galleryTrigger: document.getElementById(
-      "gallery-trigger",
-    ) as HTMLButtonElement | null,
-    wishlistBtn: document.getElementById(
-      "wishlist-btn",
-    ) as HTMLButtonElement | null,
-    shareBtn: document.getElementById("share-btn") as HTMLButtonElement | null,
-    productTypeBadge: document.getElementById(
-      "product-type-badge",
-    ) as HTMLElement | null,
-    saleBadge: document.getElementById("sale-badge") as HTMLElement | null,
-    originalPrice: document.getElementById(
-      "original-price",
-    ) as HTMLElement | null,
-    savingsAmount: document.getElementById(
-      "savings-amount",
-    ) as HTMLElement | null,
-    savingsBadge: document.getElementById(
-      "savings-badge",
-    ) as HTMLElement | null,
-    digitalInfo: document.getElementById("digital-info") as HTMLElement | null,
-    physicalInfo: document.getElementById(
-      "physical-info",
-    ) as HTMLElement | null,
-    downloadDays: document.getElementById(
-      "download-days",
-    ) as HTMLElement | null,
-    downloadLimit: document.getElementById(
-      "download-limit",
-    ) as HTMLElement | null,
-    stockStatus: document.getElementById("stock-status") as HTMLElement | null,
-    categoryTag: document.getElementById("category-tag") as HTMLElement | null,
-    productSpecs: document.getElementById(
-      "product-specs",
-    ) as HTMLElement | null,
-    relatedProductsGrid: document.getElementById(
-      "related-products-grid",
-    ) as HTMLElement | null,
+    addToCartBtn: document.getElementById("add-to-cart-btn"),
+    quantityInput: document.getElementById("quantity-input"),
+    decreaseQtyBtn: document.getElementById("decrease-qty"),
+    increaseQtyBtn: document.getElementById("increase-qty"),
+    mainImage: document.getElementById("main-image"),
+    thumbnailContainer: document.getElementById("thumbnail-container"),
+    prevImageBtn: document.getElementById("prev-image"),
+    nextImageBtn: document.getElementById("next-image"),
+    galleryTrigger: document.getElementById("gallery-trigger"),
+    wishlistBtn: document.getElementById("wishlist-btn"),
+    shareBtn: document.getElementById("share-btn"),
+    productTypeBadge: document.getElementById("product-type-badge"),
+    saleBadge: document.getElementById("sale-badge"),
+    originalPrice: document.getElementById("original-price"),
+    savingsAmount: document.getElementById("savings-amount"),
+    savingsBadge: document.getElementById("savings-badge"),
+    digitalInfo: document.getElementById("digital-info"),
+    physicalInfo: document.getElementById("physical-info"),
+    downloadDays: document.getElementById("download-days"),
+    downloadLimit: document.getElementById("download-limit"),
+    stockStatus: document.getElementById("stock-status"),
+    categoryTag: document.getElementById("category-tag"),
+    productSpecs: document.getElementById("product-specs"),
+    relatedProductsGrid: document.getElementById("related-products-grid"),
   };
 
-  let productImages: string[] = [];
-  let currentImageIndex: number = 0;
+  let productImages = [];
+  let currentImageIndex = 0;
 
   // Initialize cart manager
-  async function initializeCartManager(): Promise<void> {
+  async function initializeCartManager() {
     try {
       const cartModule = await import("../../lib/cart.js");
       cartManager = cartModule.cartManager;
-      await cartManager.loadCartData();
-      console.log("Cart Manager initialized successfully");
+      if (cartManager) {
+        await cartManager.loadCartData();
+        console.log("Cart Manager initialized successfully");
+      }
     } catch (error) {
       console.error("Failed to initialize Cart Manager:", error);
       cartManager = null;
@@ -761,8 +728,10 @@ const metaDescription = product.description
   }
 
   // Initialize product data
-  function initializeProduct(): void {
-    currentProduct = (window as any).preloadedProduct;
+  function initializeProduct() {
+    if (typeof window !== "undefined" && window.preloadedProduct) {
+      currentProduct = window.preloadedProduct;
+    }
 
     if (currentProduct) {
       updateProductDisplay();
@@ -772,12 +741,11 @@ const metaDescription = product.description
   }
 
   // Update product display based on data
-  function updateProductDisplay(): void {
+  function updateProductDisplay() {
     if (!currentProduct) return;
 
-    const isDigital: boolean = currentProduct.product_type === "digital";
-    const hasCategory: boolean =
-      currentProduct.category && currentProduct.category.name;
+    const isDigital = currentProduct.product_type === "digital";
+    const hasCategory = currentProduct.category && currentProduct.category.name;
 
     // Update product type badge
     if (elements.productTypeBadge) {
@@ -874,7 +842,7 @@ const metaDescription = product.description
   }
 
   // Setup product images
-  function setupProductImages(): void {
+  function setupProductImages() {
     if (!currentProduct) return;
 
     // Build images array
@@ -882,8 +850,8 @@ const metaDescription = product.description
     if (currentProduct.main_image)
       productImages.push(currentProduct.main_image);
     if (currentProduct.images && Array.isArray(currentProduct.images)) {
-      currentProduct.images.forEach((img: any) => {
-        const imageUrl: string = typeof img === "object" ? img.image : img;
+      currentProduct.images.forEach((img) => {
+        const imageUrl = typeof img === "object" ? img.image : img;
         if (imageUrl && !productImages.includes(imageUrl)) {
           productImages.push(imageUrl);
         }
@@ -903,7 +871,7 @@ const metaDescription = product.description
     if (elements.thumbnailContainer && productImages.length > 1) {
       elements.thumbnailContainer.innerHTML = productImages
         .map(
-          (img: string, index: number) => `
+          (img, index) => `
         <button class="thumbnail-btn border-2 ${index === 0 ? "border-blue-500" : "border-gray-200"} rounded-lg overflow-hidden hover:border-blue-300 transition-colors" data-index="${index}">
           <img src="${img}" alt="Product image ${index + 1}" class="w-full h-20 object-cover">
         </button>
@@ -914,9 +882,10 @@ const metaDescription = product.description
       // Add thumbnail click listeners
       elements.thumbnailContainer
         .querySelectorAll(".thumbnail-btn")
-        .forEach((btn: Element) => {
+        .forEach((btn) => {
           btn.addEventListener("click", () => {
-            const index = parseInt((btn as HTMLElement).dataset.index || "0");
+            const indexAttr = btn.getAttribute("data-index");
+            const index = indexAttr ? parseInt(indexAttr) : 0;
             selectImage(index);
           });
         });
@@ -924,7 +893,7 @@ const metaDescription = product.description
   }
 
   // Select image by index
-  function selectImage(index: number): void {
+  function selectImage(index) {
     if (index < 0 || index >= productImages.length) return;
 
     currentImageIndex = index;
@@ -937,20 +906,18 @@ const metaDescription = product.description
     if (elements.thumbnailContainer) {
       elements.thumbnailContainer
         .querySelectorAll(".thumbnail-btn")
-        .forEach((btn: Element, i: number) => {
-          (btn as HTMLElement).className =
-            `thumbnail-btn border-2 ${i === index ? "border-blue-500" : "border-gray-200"} rounded-lg overflow-hidden hover:border-blue-300 transition-colors`;
+        .forEach((btn, i) => {
+          btn.className = `thumbnail-btn border-2 ${i === index ? "border-blue-500" : "border-gray-200"} rounded-lg overflow-hidden hover:border-blue-300 transition-colors`;
         });
     }
   }
 
   // Setup event listeners
-  function setupEventListeners(): void {
+  function setupEventListeners() {
     // Quantity controls
     if (elements.decreaseQtyBtn && elements.quantityInput) {
       elements.decreaseQtyBtn.addEventListener("click", () => {
-        const current: number =
-          parseInt(elements.quantityInput?.value || "1") || 1;
+        const current = parseInt(elements.quantityInput.value || "1") || 1;
         if (current > 1 && elements.quantityInput) {
           elements.quantityInput.value = (current - 1).toString();
         }
@@ -959,12 +926,11 @@ const metaDescription = product.description
 
     if (elements.increaseQtyBtn && elements.quantityInput) {
       elements.increaseQtyBtn.addEventListener("click", () => {
-        const current: number =
-          parseInt(elements.quantityInput?.value || "1") || 1;
-        const max: number =
-          currentProduct?.product_type === "digital"
+        const current = parseInt(elements.quantityInput.value || "1") || 1;
+        const max =
+          currentProduct && currentProduct.product_type === "digital"
             ? 10
-            : currentProduct?.stock_qty || 10;
+            : (currentProduct && currentProduct.stock_qty) || 10;
         if (current < max && elements.quantityInput) {
           elements.quantityInput.value = (current + 1).toString();
         }
@@ -974,7 +940,7 @@ const metaDescription = product.description
     // Image navigation
     if (elements.prevImageBtn) {
       elements.prevImageBtn.addEventListener("click", () => {
-        const prevIndex: number =
+        const prevIndex =
           currentImageIndex > 0
             ? currentImageIndex - 1
             : productImages.length - 1;
@@ -984,7 +950,7 @@ const metaDescription = product.description
 
     if (elements.nextImageBtn) {
       elements.nextImageBtn.addEventListener("click", () => {
-        const nextIndex: number =
+        const nextIndex =
           currentImageIndex < productImages.length - 1
             ? currentImageIndex + 1
             : 0;
@@ -1001,7 +967,7 @@ const metaDescription = product.description
 
     // Add to cart - FIXED FOR PROPER ID HANDLING
     if (elements.addToCartBtn) {
-      elements.addToCartBtn.addEventListener("click", async (e: Event) => {
+      elements.addToCartBtn.addEventListener("click", async (e) => {
         e.preventDefault();
 
         if (!cartManager || !currentProduct) {
@@ -1015,7 +981,7 @@ const metaDescription = product.description
           return;
         }
 
-        const quantity: number = elements.quantityInput
+        const quantity = elements.quantityInput
           ? parseInt(elements.quantityInput.value) || 1
           : 1;
 
@@ -1094,8 +1060,8 @@ const metaDescription = product.description
   }
 
   // Simple notification system
-  function showNotification(message: string, type: string = "info"): void {
-    const notification: HTMLDivElement = document.createElement("div");
+  function showNotification(message, type) {
+    const notification = document.createElement("div");
     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm ${
       type === "success"
         ? "bg-green-500 text-white"
@@ -1113,11 +1079,11 @@ const metaDescription = product.description
   }
 
   // Toggle wishlist
-  function toggleWishlist(): void {
+  function toggleWishlist() {
     if (!elements.wishlistBtn) return;
 
     // Simple wishlist toggle - you can enhance this with API calls
-    const isInWishlist: boolean =
+    const isInWishlist =
       elements.wishlistBtn.classList.contains("text-red-600");
 
     if (isInWishlist) {
@@ -1132,9 +1098,9 @@ const metaDescription = product.description
   }
 
   // Share product
-  function shareProduct(): void {
-    if ((navigator as any).share && currentProduct) {
-      (navigator as any).share({
+  function shareProduct() {
+    if (navigator.share && currentProduct) {
+      navigator.share({
         title: currentProduct.name,
         text: currentProduct.description,
         url: window.location.href,
@@ -1153,8 +1119,13 @@ const metaDescription = product.description
   }
 
   // Load related products (simplified)
-  async function loadRelatedProducts(): Promise<void> {
-    if (!elements.relatedProductsGrid || !currentProduct?.category?.slug)
+  async function loadRelatedProducts() {
+    if (
+      !elements.relatedProductsGrid ||
+      !currentProduct ||
+      !currentProduct.category ||
+      !currentProduct.category.slug
+    )
       return;
 
     try {
@@ -1165,13 +1136,13 @@ const metaDescription = product.description
 
       const data = await response.json();
       const products = (data.results || data)
-        .filter((p: any) => p.slug !== currentProduct.slug)
+        .filter((p) => p.slug !== currentProduct.slug)
         .slice(0, 4);
 
       if (products.length > 0) {
         elements.relatedProductsGrid.innerHTML = products
           .map(
-            (product: any) => `
+            (product) => `
           <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
             <a href="/ecommerce/${product.slug}" class="block">
               <div class="aspect-square bg-gray-100">
@@ -1185,7 +1156,7 @@ const metaDescription = product.description
                 </h3>
                 <div class="flex items-center justify-between">
                   <span class="text-lg font-bold text-gray-900">
-                    ${(product.sale_price || product.price).toFixed(2)}
+                    $${(product.sale_price || product.price).toFixed(2)}
                   </span>
                   <span class="text-xs px-2 py-1 rounded-full ${
                     product.product_type === "digital"
@@ -1208,7 +1179,7 @@ const metaDescription = product.description
   }
 
   // Initialize everything when DOM is ready
-  async function initialize(): Promise<void> {
+  async function initialize() {
     await initializeCartManager();
     initializeProduct();
     loadRelatedProducts();
