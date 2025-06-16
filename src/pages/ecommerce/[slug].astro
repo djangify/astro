@@ -670,6 +670,11 @@ const metaDescription = product.description
   </div>
 
   <Footer slot="footer" />
+  <!-- Pass product data to JavaScript - FIXED -->
+  <script is:inline define:vars={{ product }}>
+    window.preloadedProduct = product;
+    console.log("Product data set:", window.preloadedProduct);
+  </script>
 
   <script is:inline>
     (function () {
@@ -717,8 +722,15 @@ const metaDescription = product.description
         var q = parseInt(qty) || 1;
         var pid = parseInt(product.id);
 
-        if (!pid) {
-          showMsg("Invalid product", false);
+        console.log("Attempting to add to cart:", {
+          product: product,
+          quantity: q,
+          productId: pid,
+        });
+
+        if (!pid || isNaN(pid)) {
+          console.error("Invalid product ID:", product.id);
+          showMsg("Invalid product ID", false);
           return;
         }
 
@@ -734,6 +746,7 @@ const metaDescription = product.description
             throw new Error("Failed");
           })
           .then(function (data) {
+            console.log("Add to cart success:", data);
             if (data.cart_token) setToken(data.cart_token);
             showMsg("Added to cart!", true);
 
@@ -741,6 +754,10 @@ const metaDescription = product.description
             if (btn) {
               btn.textContent = "Added!";
               btn.style.backgroundColor = "#10b981";
+
+              // NOTIFY CARTICON TO UPDATE
+              window.dispatchEvent(new CustomEvent("cartUpdated"));
+
               setTimeout(function () {
                 btn.textContent = "Add to Cart";
                 btn.disabled = false;
@@ -748,7 +765,8 @@ const metaDescription = product.description
               }, 2000);
             }
           })
-          .catch(function () {
+          .catch(function (error) {
+            console.error("Add to cart failed:", error);
             showMsg("Failed to add", false);
             var btn = document.getElementById("add-to-cart-btn");
             if (btn) {
@@ -758,68 +776,9 @@ const metaDescription = product.description
           });
       }
 
-      function loadCart() {
-        fetch(API_BASE + "/cart/", { headers: makeHeaders() })
-          .then(function (r) {
-            if (r.ok) return r.json();
-            return null;
-          })
-          .then(function (cart) {
-            console.log("Cart response:", cart);
-
-            var loading = document.getElementById("cart-loading");
-            var empty = document.getElementById("empty-cart");
-            var content = document.getElementById("cart-content");
-            var checkoutLoading = document.getElementById("checkout-loading");
-            var emptyCheckout = document.getElementById("empty-cart-redirect");
-            var checkoutContent = document.getElementById("checkout-content");
-
-            // Hide loading states
-            if (loading) loading.style.display = "none";
-            if (checkoutLoading) checkoutLoading.style.display = "none";
-
-            // Check if cart is empty - FIXED LOGIC
-            if (!cart || cart.total_items === 0 || cart.total_items === "0") {
-              console.log("Cart is empty, showing empty state");
-              if (empty) empty.style.display = "block";
-              if (content) content.style.display = "none";
-              if (emptyCheckout) emptyCheckout.style.display = "block";
-              if (checkoutContent) checkoutContent.style.display = "none";
-            } else {
-              console.log("Cart has items, showing cart content");
-              if (empty) empty.style.display = "none";
-              if (content) content.style.display = "block";
-              if (emptyCheckout) emptyCheckout.style.display = "none";
-              if (checkoutContent) checkoutContent.style.display = "block";
-
-              var count = document.getElementById("cart-item-count");
-              var subtotal = document.getElementById("cart-subtotal");
-              var total = document.getElementById("cart-total");
-
-              if (count) count.textContent = cart.total_items;
-              if (subtotal && cart.subtotal)
-                subtotal.textContent =
-                  "$" + parseFloat(cart.subtotal).toFixed(2);
-              if (total && cart.subtotal)
-                total.textContent = "$" + parseFloat(cart.subtotal).toFixed(2);
-            }
-          })
-          .catch(function (error) {
-            console.log("Cart load error:", error);
-            var loading = document.getElementById("cart-loading");
-            var checkoutLoading = document.getElementById("checkout-loading");
-            var empty = document.getElementById("empty-cart");
-            var emptyCheckout = document.getElementById("empty-cart-redirect");
-
-            if (loading) loading.style.display = "none";
-            if (checkoutLoading) checkoutLoading.style.display = "none";
-            if (empty) empty.style.display = "block";
-            if (emptyCheckout) emptyCheckout.style.display = "block";
-          });
-      }
-
       function init() {
-        console.log("Initializing cart script");
+        console.log("Initializing product cart script");
+        console.log("Product data available:", window.preloadedProduct);
 
         var addBtn = document.getElementById("add-to-cart-btn");
         if (addBtn && window.preloadedProduct) {
@@ -831,14 +790,8 @@ const metaDescription = product.description
             addBtn.textContent = "Adding...";
             addToCart(window.preloadedProduct, qty);
           });
-        }
-
-        if (
-          document.getElementById("cart-content") ||
-          document.getElementById("checkout-content")
-        ) {
-          console.log("Loading cart data");
-          loadCart();
+        } else {
+          console.error("Missing add button or product data");
         }
       }
 

@@ -1,174 +1,10 @@
 ---
-// src/components/CartIcon.astro - FIXED - No Dynamic Imports
-
 export interface Props {
   className?: string;
 }
 
 const { className = "" } = Astro.props;
 ---
-
-<div class={`cart-icon relative ${className}`} id="cart-icon-container">
-  <!-- Cart Button -->
-  <button
-    type="button"
-    id="cart-button"
-    class="relative flex items-center text-gray-700 hover:text-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 p-2 rounded-md transition-colors"
-    aria-label="View shopping cart"
-  >
-    <!-- Cart SVG Icon -->
-    <svg
-      class="w-6 h-6"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"
-      ></path>
-    </svg>
-
-    <!-- Item Count Badge -->
-    <span
-      id="cart-count-badge"
-      class="absolute -top-1 -right-1 bg-teal-600 text-white text-xs font-bold rounded-full h-5 w-5 items-center justify-center hidden"
-      aria-hidden="true"
-    >
-      0
-    </span>
-  </button>
-
-  <!-- Cart Dropdown (initially hidden) -->
-  <div
-    id="cart-dropdown"
-    class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
-    role="menu"
-    aria-orientation="vertical"
-    aria-labelledby="cart-button"
-  >
-    <!-- Dropdown content will be populated by JavaScript -->
-    <div id="cart-dropdown-content">
-      <!-- Loading state -->
-      <div id="cart-loading" class="p-4 text-center text-gray-500">
-        <svg class="animate-spin h-5 w-5 mx-auto mb-2" viewBox="0 0 24 24">
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-            fill="none"></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
-        </svg>
-        Loading cart...
-      </div>
-
-      <!-- Empty cart state -->
-      <div id="cart-empty" class="hidden p-6 text-center">
-        <svg
-          class="w-12 h-12 mx-auto mb-4 text-gray-300"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16"
-          ></path>
-        </svg>
-        <p class="text-gray-500 mb-4">Your cart is empty</p>
-        <a
-          href="/ecommerce"
-          class="inline-block bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors text-sm font-medium"
-        >
-          Start Shopping
-        </a>
-      </div>
-
-      <!-- Cart items container -->
-      <div id="cart-items" class="hidden">
-        <div class="p-4 border-b border-gray-100">
-          <h3 class="text-lg font-semibold text-gray-900">Shopping Cart</h3>
-        </div>
-
-        <!-- Items list -->
-        <div id="cart-items-list" class="max-h-64 overflow-y-auto">
-          <!-- Cart items will be populated here -->
-        </div>
-
-        <!-- Cart summary -->
-        <div class="p-4 border-t border-gray-100 bg-gray-50">
-          <div class="flex justify-between items-center mb-3">
-            <span class="text-sm text-gray-600">Subtotal:</span>
-            <span id="cart-subtotal" class="font-semibold text-gray-900"
-              >$0.00</span
-            >
-          </div>
-
-          <!-- Cart type indicator -->
-          <div id="cart-type-indicator" class="hidden mb-3">
-            <span
-              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-            >
-              <span id="cart-type-icon" class="mr-1"></span>
-              <span id="cart-type-text"></span>
-            </span>
-          </div>
-
-          <div class="space-y-2">
-            <a
-              href="/cart"
-              class="block w-full text-center bg-gray-100 text-gray-800 hover:bg-gray-200 font-medium py-2 px-4 rounded-md transition-colors text-sm"
-            >
-              View Cart
-            </a>
-            <a
-              href="/checkout"
-              id="checkout-button"
-              class="block w-full text-center bg-teal-600 text-white hover:bg-teal-700 font-medium py-2 px-4 rounded-md transition-colors text-sm"
-            >
-              Checkout
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Error state -->
-      <div id="cart-error" class="hidden p-6 text-center">
-        <svg
-          class="w-12 h-12 mx-auto mb-4 text-red-300"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <p class="text-red-600 mb-4">Failed to load cart</p>
-        <button
-          id="retry-cart-load"
-          class="inline-block bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors text-sm font-medium"
-        >
-          Try Again
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- Cart Icon Component -->
 <div class={`relative ${className}`}>
@@ -178,13 +14,7 @@ const { className = "" } = Astro.props;
     class="relative p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200"
     aria-label="Shopping cart"
   >
-    <svg
-      class="w-6 h-6"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -197,7 +27,6 @@ const { className = "" } = Astro.props;
     <span
       id="cart-count"
       class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
-      data-cart-count
     >
       0
     </span>
@@ -232,7 +61,7 @@ const { className = "" } = Astro.props;
       </div>
     </div>
 
-    <!-- Cart Items -->
+    <!-- Cart Items Container -->
     <div id="cart-items-container" class="max-h-64 overflow-y-auto">
       <!-- Loading State -->
       <div id="cart-loading" class="p-4 text-center text-gray-500">
@@ -257,7 +86,13 @@ const { className = "" } = Astro.props;
             stroke-width="2"
             d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
         </svg>
-        <p>Your cart is empty</p>
+        <p class="text-sm">Your cart is empty</p>
+        <a
+          href="/ecommerce"
+          class="inline-block mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+        >
+          Start Shopping
+        </a>
       </div>
 
       <!-- Cart Items List -->
@@ -270,9 +105,7 @@ const { className = "" } = Astro.props;
     <div id="cart-footer" class="p-4 border-t border-gray-100 hidden">
       <div class="flex justify-between items-center mb-3">
         <span class="font-semibold">Total:</span>
-        <span id="cart-total" class="font-bold text-lg" data-cart-subtotal
-          >$0.00</span
-        >
+        <span id="cart-total" class="font-bold text-lg">$0.00</span>
       </div>
 
       <div class="space-y-2">
@@ -317,6 +150,8 @@ const { className = "" } = Astro.props;
       var countEl = document.getElementById("cart-count");
       var totalEl = document.getElementById("cart-total");
 
+      console.log("Updating cart icon with data:", cart);
+
       if (cart && cart.total_items > 0) {
         if (countEl) {
           countEl.textContent = cart.total_items;
@@ -344,6 +179,8 @@ const { className = "" } = Astro.props;
 
       if (!dropdown) return;
 
+      console.log("Showing cart dropdown with data:", cart);
+
       // Hide loading
       if (loading) loading.classList.add("hidden");
 
@@ -358,20 +195,32 @@ const { className = "" } = Astro.props;
         if (itemsList) itemsList.classList.remove("hidden");
         if (footer) footer.classList.remove("hidden");
 
-        // Render items (simplified)
+        // Render items
         if (itemsList && cart.items) {
           itemsList.innerHTML = cart.items
             .map(function (item) {
               var product = item.product || {};
               var price = parseFloat(item.total_price || product.price || 0);
+              var imageUrl =
+                product.main_image ||
+                product.featured_image ||
+                "/static/images/placeholder.png";
+
               return (
                 '<div class="p-3 border-b border-gray-100 flex items-center space-x-3">' +
+                '<img src="' +
+                imageUrl +
+                '" alt="' +
+                (product.name || "Product") +
+                '" class="w-12 h-12 object-cover rounded">' +
                 '<div class="flex-1">' +
                 '<h4 class="font-medium text-sm">' +
                 (product.name || "Product") +
                 "</h4>" +
                 '<p class="text-xs text-gray-500">Qty: ' +
                 (item.quantity || 1) +
+                " × $" +
+                parseFloat(item.unit_price || product.price || 0).toFixed(2) +
                 "</p>" +
                 "</div>" +
                 '<span class="font-medium text-sm">$' +
@@ -394,20 +243,29 @@ const { className = "" } = Astro.props;
     }
 
     function loadCartData() {
+      console.log("Loading cart data...");
       return fetch(API_BASE + "/cart/", { headers: makeHeaders() })
         .then(function (r) {
+          console.log("Cart API response status:", r.status);
           return r.ok ? r.json() : null;
         })
-        .catch(function () {
+        .then(function (cart) {
+          console.log("Cart data loaded:", cart);
+          return cart;
+        })
+        .catch(function (error) {
+          console.error("Error loading cart data:", error);
           return null;
         });
     }
 
     function initCartIcon() {
+      console.log("Initializing CartIcon script");
+
       var cartButton = document.getElementById("cart-button");
       var closeButton = document.getElementById("close-cart-dropdown");
 
-      // Load and display cart data
+      // Load and display cart data on page load
       loadCartData().then(function (cart) {
         updateCartIcon(cart);
       });
@@ -446,6 +304,14 @@ const { className = "" } = Astro.props;
         ) {
           hideCartDropdown();
         }
+      });
+
+      // LISTEN FOR CART UPDATES FROM OTHER COMPONENTS
+      window.addEventListener("cartUpdated", function () {
+        console.log("Cart updated event received, refreshing cart icon");
+        loadCartData().then(function (cart) {
+          updateCartIcon(cart);
+        });
       });
     }
 
