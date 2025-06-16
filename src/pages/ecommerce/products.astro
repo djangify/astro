@@ -40,7 +40,7 @@ function getProductImageUrl(product: any): string {
     imageUrl === "" ||
     imageUrl === undefined
   ) {
-    return "/static/images/placeholder.png";
+    return "/images/placeholder.png";
   }
   return imageUrl;
 }
@@ -307,7 +307,7 @@ const metaDescription =
                             src={imageUrl}
                             alt={product.name}
                             class="w-full h-full object-cover"
-                            onerror="this.src='/static/images/placeholder.png'"
+                            onerror="this.src='/images/placeholder.png'"
                             loading="lazy"
                           />
 
@@ -714,7 +714,7 @@ const metaDescription =
         imageUrl === "" ||
         imageUrl === undefined
       ) {
-        return "/static/images/placeholder.png";
+        return "/images/placeholder.png";
       }
       return imageUrl;
     }
@@ -739,7 +739,7 @@ const metaDescription =
                   src="${imageUrl}" 
                   alt="${product.name}" 
                   class="w-full h-full object-cover"
-                  onerror="this.src='/static/images/placeholder.png'"
+                  onerror="this.src='/images/placeholder.png'"
                   loading="lazy"
                 >
                 

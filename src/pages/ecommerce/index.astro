@@ -45,7 +45,7 @@ try {
 function getProductImageUrl(product: any): string {
   const imageUrl = product.featured_image || product.main_image;
   if (!imageUrl || imageUrl === "null" || imageUrl === "" || imageUrl === undefined) {
-    return "/static/images/placeholder.png";
+    return "/images/placeholder.png";
   }
   return imageUrl;
 }
@@ -55,7 +55,7 @@ function getCategoryImageUrl(category: any): string {
   if (imageUrl && imageUrl !== "null" && imageUrl !== "" && imageUrl !== undefined) {
     return imageUrl;
   }
-  return "/static/images/placeholder.png";
+  return "/images/placeholder.png";
 }
 
 // SEO meta information

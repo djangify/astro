@@ -86,7 +86,7 @@ function getProductImageUrl(product: ProductData): string {
     imageUrl === "" ||
     imageUrl === undefined
   ) {
-    return "/static/images/placeholder.png";
+    return "/images/placeholder.png";
   }
   return imageUrl;
 }
@@ -101,7 +101,7 @@ function getProductImages(product: ProductData): string[] {
       ),
     );
   }
-  return images.length > 0 ? images : ["/static/images/placeholder.png"];
+  return images.length > 0 ? images : ["/images/placeholder.png"];
 }
 
 // Pre-calculate ALL values for server-side rendering - NO CONDITIONALS IN TEMPLATE
