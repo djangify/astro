@@ -676,14 +676,6 @@ const metaDescription = product.description
     console.log("Product data set:", window.preloadedProduct);
   </script>
 
-  <!-- Replace the existing script section at the bottom of [slug].astro with this: -->
-
-  <!-- Pass product data to JavaScript -->
-  <script is:inline define:vars={{ product }}>
-    window.preloadedProduct = product;
-    console.log("Product data set:", window.preloadedProduct);
-  </script>
-
   <!-- Complete Product Detail JavaScript for Digital Products -->
   <script is:inline>
     (function () {
@@ -1132,178 +1124,6 @@ const metaDescription = product.description
         switchImage(prevIndex);
       }
 
-      // Gallery Modal Functions - COMMENTED OUT FOR PDF PRODUCTS
-      // Keeping this code for potential future use with other product types
-      /*
-  function openGalleryModal() {
-    if (productImages.length === 0) return;
-
-    // Create modal overlay
-    const modal = document.createElement('div');
-    modal.id = 'gallery-modal';
-    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90';
-    modal.style.opacity = '0';
-    modal.style.transition = 'opacity 0.3s ease-in-out';
-
-    // Create modal content
-    modal.innerHTML = `
-      <div class="relative w-full h-full flex items-center justify-center p-4">
-        <!-- Close button -->
-        <button id="close-gallery" class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10">
-          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-
-        <!-- Image counter -->
-        <div class="absolute top-4 left-4 text-white text-sm font-medium">
-          <span id="current-image-num">${currentImageIndex + 1}</span> / ${productImages.length}
-        </div>
-
-        <!-- Main image container -->
-        <div class="relative max-w-5xl max-h-[90vh] w-full h-full flex items-center justify-center">
-          <img id="modal-image" src="${productImages[currentImageIndex]}" 
-               alt="${window.preloadedProduct?.name || 'Product image'}" 
-               class="max-w-full max-h-full object-contain">
-          
-          <!-- Navigation arrows -->
-          ${productImages.length > 1 ? `
-            <button id="modal-prev" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-75 transition-all">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-              </svg>
-            </button>
-            <button id="modal-next" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-75 transition-all">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-              </svg>
-            </button>
-          ` : ''}
-        </div>
-
-        <!-- Thumbnail strip -->
-        ${productImages.length > 1 ? `
-          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 max-w-full overflow-x-auto p-2 bg-black bg-opacity-50 rounded-lg">
-            ${productImages.map((img, index) => `
-              <button class="modal-thumb ${index === currentImageIndex ? 'ring-2 ring-white' : ''}" data-index="${index}">
-                <img src="${img}" alt="Thumbnail ${index + 1}" class="w-16 h-16 object-cover rounded">
-              </button>
-            `).join('')}
-          </div>
-        ` : ''}
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-    document.body.style.overflow = 'hidden'; // Prevent scrolling
-
-    // Fade in
-    setTimeout(() => {
-      modal.style.opacity = '1';
-    }, 10);
-
-    // Add event listeners
-    const closeBtn = document.getElementById('close-gallery');
-    const modalPrev = document.getElementById('modal-prev');
-    const modalNext = document.getElementById('modal-next');
-    const modalImage = document.getElementById('modal-image');
-    const imageNum = document.getElementById('current-image-num');
-
-    // Close modal
-    const closeModal = () => {
-      modal.style.opacity = '0';
-      setTimeout(() => {
-        if (modal.parentNode) {
-          modal.parentNode.removeChild(modal);
-        }
-        document.body.style.overflow = ''; // Restore scrolling
-      }, 300);
-    };
-
-    closeBtn.addEventListener('click', closeModal);
-    
-    // Close on backdrop click
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
-    });
-
-    // Close on escape key
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        closeModal();
-        document.removeEventListener('keydown', handleEscape);
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-
-    // Navigation in modal
-    const switchModalImage = (index) => {
-      currentImageIndex = index;
-      modalImage.style.opacity = '0';
-      setTimeout(() => {
-        modalImage.src = productImages[index];
-        modalImage.style.opacity = '1';
-        imageNum.textContent = index + 1;
-        
-        // Update thumbnail selection
-        document.querySelectorAll('.modal-thumb').forEach((thumb, i) => {
-          if (i === index) {
-            thumb.classList.add('ring-2', 'ring-white');
-          } else {
-            thumb.classList.remove('ring-2', 'ring-white');
-          }
-        });
-      }, 150);
-      
-      // Also update main page
-      switchImage(index);
-    };
-
-    if (modalPrev) {
-      modalPrev.addEventListener('click', () => {
-        const prevIndex = currentImageIndex === 0 ? productImages.length - 1 : currentImageIndex - 1;
-        switchModalImage(prevIndex);
-      });
-    }
-
-    if (modalNext) {
-      modalNext.addEventListener('click', () => {
-        const nextIndex = (currentImageIndex + 1) % productImages.length;
-        switchModalImage(nextIndex);
-      });
-    }
-
-    // Thumbnail clicks
-    document.querySelectorAll('.modal-thumb').forEach(thumb => {
-      thumb.addEventListener('click', () => {
-        const index = parseInt(thumb.dataset.index);
-        switchModalImage(index);
-      });
-    });
-
-    // Keyboard navigation in modal
-    const handleModalKeys = (e) => {
-      if (productImages.length > 1) {
-        if (e.key === 'ArrowLeft') {
-          const prevIndex = currentImageIndex === 0 ? productImages.length - 1 : currentImageIndex - 1;
-          switchModalImage(prevIndex);
-        } else if (e.key === 'ArrowRight') {
-          const nextIndex = (currentImageIndex + 1) % productImages.length;
-          switchModalImage(nextIndex);
-        }
-      }
-    };
-    document.addEventListener('keydown', handleModalKeys);
-
-    // Clean up keyboard listener on close
-    const originalClose = closeModal;
-    closeModal = () => {
-      document.removeEventListener('keydown', handleModalKeys);
-      originalClose();
-    };
-  }
-  */
-
       // Related Products
       async function loadRelatedProducts() {
         const container = document.getElementById("related-products-grid");
@@ -1601,16 +1421,6 @@ const metaDescription = product.description
         if (prevBtn) prevBtn.addEventListener("click", prevImage);
         if (nextBtn) nextBtn.addEventListener("click", nextImage);
 
-        // Gallery modal trigger - COMMENTED OUT FOR PDF PRODUCTS
-        /*
-    const galleryTrigger = document.getElementById('gallery-trigger');
-    if (galleryTrigger) {
-      galleryTrigger.addEventListener('click', () => {
-        openGalleryModal();
-      });
-    }
-    */
-
         // Update product display for digital products
         updateProductDisplay();
 
@@ -1639,5 +1449,238 @@ const metaDescription = product.description
         init();
       }
     })();
+    // This script goes inside src/pages/ecommerce/[slug].astro
+    // Place it within a <script is:inline> tag at the bottom of the file
+
+    // Wishlist functionality for product detail page
+    function setupWishlist() {
+      // Check if user is authenticated
+      function checkAuthentication() {
+        var token = localStorage.getItem("access"); // Changed from 'access_token' to 'access'
+        return !!token;
+      }
+
+      // Check if product is in wishlist
+      function checkWishlistStatus() {
+        if (!checkAuthentication()) {
+          updateWishlistButton(false);
+          return;
+        }
+
+        var token = localStorage.getItem("access");
+
+        fetch("https://corrison.corrisonapi.com/api/v1/wishlist/", {
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+        })
+          .then(function (response) {
+            if (response.ok) {
+              return response.json();
+            }
+            throw new Error("Failed to fetch wishlist");
+          })
+          .then(function (data) {
+            var wishlistItems = data || [];
+            var isInWishlist = false;
+
+            // Check if current product is in wishlist
+            for (var i = 0; i < wishlistItems.length; i++) {
+              var item = wishlistItems[i];
+              if (
+                item.product &&
+                item.product.id === window.preloadedProduct.id
+              ) {
+                isInWishlist = true;
+                break;
+              }
+            }
+
+            updateWishlistButton(isInWishlist);
+          })
+          .catch(function (error) {
+            console.error("Failed to check wishlist status:", error);
+            updateWishlistButton(false);
+          });
+      }
+
+      // Update wishlist button appearance
+      function updateWishlistButton(isInWishlist) {
+        var btn = document.getElementById("wishlist-btn");
+        if (!btn) return;
+
+        if (!checkAuthentication()) {
+          btn.innerHTML =
+            '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>' +
+            "</svg>" +
+            "Login to Wishlist";
+          btn.classList.remove("bg-red-50", "border-red-300", "text-red-700");
+          btn.classList.add("border-gray-300", "text-gray-700");
+          return;
+        }
+
+        if (isInWishlist) {
+          btn.innerHTML =
+            '<svg class="w-5 h-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 24 24">' +
+            '<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>' +
+            "</svg>" +
+            "In Wishlist";
+          btn.classList.add("bg-red-50", "border-red-300", "text-red-700");
+          btn.classList.remove("border-gray-300", "text-gray-700");
+        } else {
+          btn.innerHTML =
+            '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>' +
+            "</svg>" +
+            "Add to Wishlist";
+          btn.classList.remove("bg-red-50", "border-red-300", "text-red-700");
+          btn.classList.add("border-gray-300", "text-gray-700");
+        }
+      }
+
+      // Toggle wishlist (add/remove)
+      function toggleWishlist(product) {
+        if (!checkAuthentication()) {
+          // Redirect to login
+          window.location.href =
+            "/login?next=" + encodeURIComponent(window.location.pathname);
+          return;
+        }
+
+        var btn = document.getElementById("wishlist-btn");
+        if (btn) btn.disabled = true;
+
+        var token = localStorage.getItem("access");
+
+        // First check if item is already in wishlist
+        fetch("https://corrison.corrisonapi.com/api/v1/wishlist/", {
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+        })
+          .then(function (response) {
+            if (response.ok) {
+              return response.json();
+            }
+            throw new Error("Failed to fetch wishlist");
+          })
+          .then(function (data) {
+            var wishlistItems = data || [];
+            var existingItem = null;
+
+            // Find if product is already in wishlist
+            for (var i = 0; i < wishlistItems.length; i++) {
+              var item = wishlistItems[i];
+              if (item.product && item.product.id === product.id) {
+                existingItem = item;
+                break;
+              }
+            }
+
+            if (existingItem) {
+              // Remove from wishlist
+              return fetch(
+                "https://corrison.corrisonapi.com/api/v1/wishlist/" +
+                  existingItem.id +
+                  "/",
+                {
+                  method: "DELETE",
+                  headers: {
+                    Authorization: "Bearer " + token,
+                  },
+                },
+              ).then(function (response) {
+                if (response.ok || response.status === 204) {
+                  showNotification("Removed from wishlist", "success");
+                  updateWishlistButton(false);
+                } else {
+                  throw new Error("Failed to remove from wishlist");
+                }
+              });
+            } else {
+              // Add to wishlist
+              return fetch(
+                "https://corrison.corrisonapi.com/api/v1/wishlist/",
+                {
+                  method: "POST",
+                  headers: {
+                    Authorization: "Bearer " + token,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    product: product.id,
+                  }),
+                },
+              )
+                .then(function (response) {
+                  if (response.ok) {
+                    return response.json();
+                  }
+                  throw new Error("Failed to add to wishlist");
+                })
+                .then(function (data) {
+                  showNotification("Added to wishlist", "success");
+                  updateWishlistButton(true);
+                });
+            }
+          })
+          .catch(function (error) {
+            console.error("Wishlist error:", error);
+            showNotification("Error updating wishlist", "error");
+          })
+          .finally(function () {
+            if (btn) btn.disabled = false;
+          });
+      }
+
+      // Show notification
+      function showNotification(message, type) {
+        // Remove any existing notification
+        var existing = document.querySelector(".notification-toast");
+        if (existing) {
+          existing.remove();
+        }
+
+        var notification = document.createElement("div");
+        notification.className =
+          "notification-toast fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white z-50";
+        notification.style.backgroundColor =
+          type === "success" ? "#10b981" : "#ef4444";
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(function () {
+          notification.style.opacity = "0";
+          setTimeout(function () {
+            notification.remove();
+          }, 300);
+        }, 3000);
+      }
+
+      // Initialize wishlist on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        // Check if product data exists
+        if (window.preloadedProduct) {
+          // Setup wishlist button click handler
+          var wishlistBtn = document.getElementById("wishlist-btn");
+          if (wishlistBtn) {
+            wishlistBtn.addEventListener("click", function () {
+              toggleWishlist(window.preloadedProduct);
+            });
+          }
+
+          // Check initial wishlist status
+          checkWishlistStatus();
+        }
+      });
+    }
+
+    // Initialize wishlist functionality
+    setupWishlist();
   </script>
 </BaseLayout>

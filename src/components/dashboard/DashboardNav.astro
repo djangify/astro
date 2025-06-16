@@ -36,6 +36,9 @@ const getIcon = (iconName: string) => {
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
     </svg>`,
+    heart: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+    </svg>`,
   };
   return icons[iconName] || icons.dashboard;
 };
@@ -268,7 +271,8 @@ const getIcon = (iconName: string) => {
   import { authStore } from "../../stores/authStore";
 
   document.addEventListener("DOMContentLoaded", function () {
-    // Define all navigation items - FIXED NAMING AND ROUTING
+    // Define all navigation items
+
     const allNavItems = [
       {
         label: "Overview",
@@ -284,11 +288,10 @@ const getIcon = (iconName: string) => {
       },
       // CUSTOMER APPOINTMENTS - All users can see their own appointments
       {
-        label: "My Appointments", // Renamed from "Appointments" for clarity
+        label: "My Appointments",
         href: "/calendar/appointment",
-        icon: "appointments", // Using different icon
+        icon: "appointments",
         id: "customer-appointments",
-        // NO permission requirement - all users can see their own appointments
       },
       {
         label: "My Courses",
@@ -308,6 +311,13 @@ const getIcon = (iconName: string) => {
         icon: "shopping",
         id: "orders",
       },
+      // ADD WISHLIST HERE
+      {
+        label: "My Wishlist",
+        href: "/wishlist",
+        icon: "heart",
+        id: "wishlist",
+      },
       {
         label: "Settings",
         href: "/auth/settings",
@@ -316,11 +326,11 @@ const getIcon = (iconName: string) => {
       },
       // STAFF/ADMIN APPOINTMENTS MANAGEMENT - Only for staff/superuser
       {
-        label: "Manage Calendar", // Renamed from "My Appointments" for clarity
+        label: "Manage Calendar",
         href: "/calendar/my-appointments",
-        icon: "manage", // Using different icon to distinguish
+        icon: "manage",
         id: "manage-appointments",
-        requiresStaffOrSuperuser: true, // Only staff/superuser can manage calendar
+        requiresStaffOrSuperuser: true,
       },
     ];
 
@@ -405,7 +415,7 @@ const getIcon = (iconName: string) => {
       renderMobileNavigation(visibleNavItems, currentPage);
     }
 
-    // Function to get current page ID (you might need to adjust this based on your routing)
+    // Function to get current page ID
     function getPageId() {
       const path = window.location.pathname;
       if (path === "/auth/dashboard") return "dashboard";
@@ -413,6 +423,7 @@ const getIcon = (iconName: string) => {
       if (path === "/calendar/appointment") return "customer-appointments";
       if (path === "/courses/my-courses") return "courses";
       if (path === "/calendar") return "calendar";
+      if (path === "/wishlist") return "wishlist";
       if (path === "/orders") return "orders";
       if (path === "/auth/settings") return "settings";
       if (path === "/calendar/my-appointments") return "manage-appointments";

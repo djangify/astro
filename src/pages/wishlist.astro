@@ -1,0 +1,288 @@
+---
+// src/pages/wishlist.astro
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">My Wishlist - Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content="View and manage your wishlist items"
+  />
+
+  <main class="min-h-screen bg-gray-50 py-12">
+    <div class="container mx-auto px-4 max-w-6xl">
+      <h1 class="text-3xl font-bold text-gray-900 mb-8">My Wishlist</h1>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden text-center py-12">
+        <svg
+          class="mx-auto h-24 w-24 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+          ></path>
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">
+          Your wishlist is empty
+        </h3>
+        <p class="mt-2 text-gray-600">Start adding products you love!</p>
+        <a
+          href="/products"
+          class="mt-6 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Browse Products
+        </a>
+      </div>
+
+      <!-- Login Required State -->
+      <div id="login-state" class="hidden text-center py-12">
+        <svg
+          class="mx-auto h-24 w-24 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          ></path>
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-gray-900">
+          Please login to view your wishlist
+        </h3>
+        <p class="mt-2 text-gray-600">
+          You need to be logged in to save and view your favorite products.
+        </p>
+        <a
+          href="/login"
+          class="mt-6 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Login
+        </a>
+      </div>
+
+      <!-- Wishlist Grid -->
+      <div
+        id="wishlist-grid"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      >
+        <!-- Items will be inserted here -->
+      </div>
+    </div>
+  </main>
+
+  <Footer slot="footer" />
+</BaseLayout>
+
+<script is:inline>
+  document.addEventListener("DOMContentLoaded", function () {
+    var emptyState = document.getElementById("empty-state");
+    var loginState = document.getElementById("login-state");
+    var wishlistGrid = document.getElementById("wishlist-grid");
+
+    // Check if user is logged in
+    var token = localStorage.getItem("access");
+
+    if (!token) {
+      // Show login required state
+      loginState.classList.remove("hidden");
+      return;
+    }
+
+    // Load wishlist
+    loadWishlist();
+
+    function loadWishlist() {
+      fetch("https://corrison.corrisonapi.com/api/v1/wishlist/", {
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            if (response.status === 401) {
+              // Token expired or invalid
+              localStorage.removeItem("access");
+              localStorage.removeItem("refresh");
+              loginState.classList.remove("hidden");
+              return;
+            }
+            throw new Error("Failed to load wishlist");
+          }
+          return response.json();
+        })
+        .then(function (items) {
+          if (!items) return;
+
+          if (items.length === 0) {
+            // Show empty state
+            emptyState.classList.remove("hidden");
+          } else {
+            // Show wishlist items
+            renderWishlistItems(items);
+          }
+        })
+        .catch(function (error) {
+          console.error("Error loading wishlist:", error);
+          wishlistGrid.innerHTML =
+            '<p class="text-red-600 text-center col-span-full">Error loading wishlist. Please try again.</p>';
+        });
+    }
+
+    function renderWishlistItems(items) {
+      var html = "";
+
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var product = item.product;
+        var imageUrl = product.image || "/placeholder-product.jpg";
+        var price = parseFloat(product.price).toFixed(2);
+
+        html +=
+          '<div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow" data-wishlist-id="' +
+          item.id +
+          '">';
+        html += '<a href="/products/' + product.slug + '" class="block">';
+        html += '<div class="aspect-w-1 aspect-h-1 bg-gray-100">';
+        html +=
+          '<img src="' +
+          imageUrl +
+          '" alt="' +
+          product.name +
+          '" class="w-full h-64 object-cover">';
+        html += "</div>";
+        html += "</a>";
+        html += '<div class="p-6">';
+        html += '<h3 class="font-semibold text-lg mb-2">';
+        html +=
+          '<a href="/products/' +
+          product.slug +
+          '" class="text-gray-900 hover:text-blue-600 transition-colors">';
+        html += product.name;
+        html += "</a>";
+        html += "</h3>";
+        html +=
+          '<p class="text-2xl font-bold text-gray-900 mb-4">$' + price + "</p>";
+        html += '<div class="flex gap-3">';
+        html +=
+          '<a href="/products/' +
+          product.slug +
+          '" class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">';
+        html += "View Details";
+        html += "</a>";
+        html +=
+          "<button onclick=\"removeFromWishlist('" +
+          item.id +
+          '\')" class="flex-1 bg-red-50 text-red-600 py-2 px-4 rounded-lg hover:bg-red-100 transition-colors">';
+        html += "Remove";
+        html += "</button>";
+        html += "</div>";
+        html += "</div>";
+        html += "</div>";
+      }
+
+      wishlistGrid.innerHTML = html;
+    }
+
+    // Make removeFromWishlist available globally
+    window.removeFromWishlist = function (itemId) {
+      if (!confirm("Remove this item from your wishlist?")) {
+        return;
+      }
+
+      var token = localStorage.getItem("access");
+
+      fetch(
+        "https://corrison.corrisonapi.com/api/v1/wishlist/" + itemId + "/",
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        },
+      )
+        .then(function (response) {
+          if (response.ok || response.status === 204) {
+            // Remove item from DOM
+            var itemElement = document.querySelector(
+              '[data-wishlist-id="' + itemId + '"]',
+            );
+            if (itemElement) {
+              itemElement.remove();
+            }
+
+            // Check if wishlist is now empty
+            var remainingItems =
+              wishlistGrid.querySelectorAll("[data-wishlist-id]");
+            if (remainingItems.length === 0) {
+              emptyState.classList.remove("hidden");
+            }
+
+            // Show success message
+            showNotification("Item removed from wishlist", "success");
+          }
+        })
+        .catch(function (error) {
+          console.error("Error removing item:", error);
+          showNotification("Error removing item", "error");
+        });
+    };
+
+    function showNotification(message, type) {
+      // Remove any existing notification
+      var existing = document.querySelector(".notification");
+      if (existing) {
+        existing.remove();
+      }
+
+      var notification = document.createElement("div");
+      notification.className =
+        "notification fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white z-50";
+      notification.style.backgroundColor =
+        type === "success" ? "#10b981" : "#ef4444";
+      notification.textContent = message;
+
+      document.body.appendChild(notification);
+
+      // Remove after 3 seconds
+      setTimeout(function () {
+        notification.style.opacity = "0";
+        setTimeout(function () {
+          notification.remove();
+        }, 300);
+      }, 3000);
+    }
+  });
+</script>
+
+<style>
+  /* Aspect ratio fallback for older browsers */
+  .aspect-w-1 {
+    position: relative;
+    padding-bottom: 100%;
+  }
+
+  .aspect-w-1 > * {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+</style>
