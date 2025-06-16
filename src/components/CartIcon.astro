@@ -96,7 +96,7 @@ const { className = "" } = Astro.props;
     <div id="cart-footer" class="p-4 border-t border-gray-100 hidden">
       <div class="flex justify-between items-center mb-3">
         <span class="font-semibold">Total:</span>
-        <span id="cart-total" class="font-bold text-lg">$0.00</span>
+        <span id="cart-dropdown-total" class="font-bold text-lg">$0.00</span>
       </div>
 
       <div class="space-y-2">
@@ -140,7 +140,7 @@ const { className = "" } = Astro.props;
 
     function updateCartIcon(cart) {
       var countEl = document.getElementById("cart-count");
-      var totalEl = document.getElementById("cart-total");
+      var totalEl = document.getElementById("cart-dropdown-total");
 
       console.log("Updating cart icon with data:", cart);
 

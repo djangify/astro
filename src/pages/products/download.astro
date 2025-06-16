@@ -1,10 +1,8 @@
 ---
-// src/pages/products/[id]/download.astro
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import Header from "../../../components/Header.astro";
-import Footer from "../../../components/Footer.astro";
-
-const { id } = Astro.params;
+// src/pages/products/download.astro
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
 
 // SEO meta information
 const metaTitle = "Download Product – Corrison";
@@ -161,10 +159,16 @@ const metaDescription = "Access your purchased digital product.";
 
   <Footer slot="footer" />
 
-  <script is:inline define:vars={{ productId: id }}>
+  <script is:inline>
     var API_BASE =
       import.meta.env.PUBLIC_API_BASE_URL ||
       "https://corrison.corrisonapi.com/api/v1";
+
+    function getProductIdFromUrl() {
+      // Get product ID from URL query parameter
+      var urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get("id");
+    }
 
     function showLoading() {
       document.getElementById("loading-state").classList.remove("hidden");
@@ -188,6 +192,13 @@ const metaDescription = "Access your purchased digital product.";
     }
 
     function loadPurchasedProduct() {
+      var productId = getProductIdFromUrl();
+
+      if (!productId) {
+        showError("No product specified");
+        return;
+      }
+
       var token = localStorage.getItem("access_token");
       if (!token) {
         showError("Please log in to access your purchases");

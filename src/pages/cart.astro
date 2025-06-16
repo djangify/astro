@@ -107,14 +107,6 @@ const metaDescription = "Review and manage items in your cart before checkout.";
                     <span>Items (<span id="summary-item-count">0</span>)</span>
                     <span id="cart-subtotal">$0.00</span>
                   </div>
-                  <div class="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span id="cart-shipping">Free</span>
-                  </div>
-                  <div class="flex justify-between text-gray-600">
-                    <span>Tax</span>
-                    <span id="cart-tax">$0.00</span>
-                  </div>
                   <div class="border-t pt-3">
                     <div class="flex justify-between font-semibold text-lg">
                       <span>Total</span>
@@ -255,19 +247,21 @@ const metaDescription = "Review and manage items in your cart before checkout.";
         var itemCount = document.getElementById("cart-item-count");
         var summaryItemCount = document.getElementById("summary-item-count");
         var subtotal = document.getElementById("cart-subtotal");
-        var tax = document.getElementById("cart-tax");
         var total = document.getElementById("cart-total");
 
         if (itemCount) itemCount.textContent = cart.total_items || 0;
         if (summaryItemCount)
           summaryItemCount.textContent = cart.total_items || 0;
-        if (subtotal)
-          subtotal.textContent =
-            "$" + parseFloat(cart.subtotal || 0).toFixed(2);
-        if (tax) tax.textContent = "$" + parseFloat(cart.tax || 0).toFixed(2);
-        if (total)
-          total.textContent =
-            "$" + parseFloat(cart.total || cart.subtotal || 0).toFixed(2);
+        if (subtotal) {
+          var subtotalValue = parseFloat(cart.subtotal || 0);
+          console.log("Setting subtotal to:", subtotalValue);
+          subtotal.textContent = "$" + subtotalValue.toFixed(2);
+        }
+        if (total) {
+          var totalValue = parseFloat(cart.total || 0);
+          console.log("Setting total to:", totalValue);
+          total.textContent = "$" + totalValue.toFixed(2);
+        }
       }
 
       function renderCartItems(cart) {
@@ -360,13 +354,18 @@ const metaDescription = "Review and manage items in your cart before checkout.";
           })
           .then(function (cart) {
             console.log("Cart data loaded:", cart);
+            console.log("Cart subtotal:", cart.subtotal);
+            console.log("Cart total:", cart.total);
             cartData = cart; // Store cart data
 
             if (!cart || cart.total_items === 0) {
               showEmpty();
             } else {
               showContent();
-              updateCartSummary(cart);
+              // Add a small delay to ensure DOM is ready
+              setTimeout(function () {
+                updateCartSummary(cart);
+              }, 100);
               renderCartItems(cart);
             }
           })

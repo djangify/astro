@@ -375,7 +375,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
                                 <p class="text-sm text-gray-500">Digital Download</p>
                               </div>
                             </div>
-                            <a href="/products/${item.product.id}/download" 
+                            <a href="/products/download?id=${item.product.id}" 
                                class="text-blue-600 hover:text-blue-700 font-medium text-sm">
                               Download
                             </a>
@@ -484,7 +484,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
         // In a real implementation, this might zip all files or show a download modal
         order.items.forEach((item) => {
           if (item.product) {
-            window.open(`/products/${item.product.id}/download`, "_blank");
+            window.open(`/products/download?id=${item.product.id}`, "_blank");
           }
         });
       }
