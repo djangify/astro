@@ -9,7 +9,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
   <meta
     slot="head"
     name="description"
-    content="View your order history, track shipments, and manage your purchases."
+    content="View your digital purchases, download products, and access your courses."
   />
 
   <!-- Dashboard Navigation -->
@@ -23,24 +23,12 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
         <section>
           <div class="container mx-auto px-4 py-12">
             <div class="max-w-4xl mx-auto">
-              <!-- Loading state for header content -->
-              <div id="header-loading" class="animate-pulse">
-                <div class="h-8 bg-gray-200 rounded mb-4 max-w-md"></div>
-                <div class="h-6 bg-gray-200 rounded max-w-lg"></div>
-              </div>
-
-              <!-- Actual header content (hidden initially) -->
-              <div id="header-content" class="hidden">
-                <h1
-                  id="page-title"
-                  class="text-3xl font-semibold text-gray-900 mb-4"
-                >
-                  Order History
-                </h1>
-                <p id="page-description" class="text-xl text-gray-600">
-                  Track your orders, view details, and manage your purchases.
-                </p>
-              </div>
+              <h1 class="text-3xl font-semibold text-gray-900 mb-4">
+                My Purchases
+              </h1>
+              <p class="text-xl text-gray-600">
+                Access your digital products and course enrollments
+              </p>
             </div>
           </div>
         </section>
@@ -51,7 +39,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
             class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
           >
           </div>
-          <p class="text-gray-600">Loading your orders...</p>
+          <p class="text-gray-600">Loading your purchases...</p>
         </div>
 
         <!-- Not Authenticated State -->
@@ -71,7 +59,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
           </svg>
           <h2 class="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h2>
           <p class="text-gray-600 mb-6">
-            You need to be signed in to view your orders.
+            You need to be signed in to view your purchases.
           </p>
           <a
             href="/auth/login"
@@ -83,32 +71,35 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
 
         <!-- Orders Content -->
         <div id="orders-content" class="hidden">
-          <!-- Order Statistics -->
+          <!-- Purchase Statistics -->
           <div id="order-stats" class="mb-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div class="bg-white rounded-lg shadow-sm p-6 text-center">
-                <div class="text-3xl font-bold text-gray-900" id="total-orders">
-                  0
-                </div>
-                <div class="text-sm text-gray-600">Total Orders</div>
-              </div>
-              <div class="bg-white rounded-lg shadow-sm p-6 text-center">
                 <div
-                  class="text-3xl font-bold text-green-600"
-                  id="completed-orders"
+                  class="text-3xl font-bold text-gray-900"
+                  id="total-purchases"
                 >
                   0
                 </div>
-                <div class="text-sm text-gray-600">Completed</div>
+                <div class="text-sm text-gray-600">Total Purchases</div>
               </div>
               <div class="bg-white rounded-lg shadow-sm p-6 text-center">
                 <div
                   class="text-3xl font-bold text-blue-600"
-                  id="pending-orders"
+                  id="total-products"
                 >
                   0
                 </div>
-                <div class="text-sm text-gray-600">Processing</div>
+                <div class="text-sm text-gray-600">Digital Products</div>
+              </div>
+              <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+                <div
+                  class="text-3xl font-bold text-purple-600"
+                  id="total-courses"
+                >
+                  0
+                </div>
+                <div class="text-sm text-gray-600">Course Enrollments</div>
               </div>
               <div class="bg-white rounded-lg shadow-sm p-6 text-center">
                 <div class="text-3xl font-bold text-teal-700" id="total-spent">
@@ -119,67 +110,38 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
             </div>
           </div>
 
-          <!-- Filter Controls -->
+          <!-- Filter Tabs -->
           <div class="mb-6">
-            <div
-              class="flex flex-col md:flex-row gap-4 items-center justify-between"
-            >
-              <div class="flex flex-wrap gap-4">
-                <select
-                  id="status-filter"
-                  class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            <div class="border-b border-gray-200">
+              <nav class="-mb-px flex space-x-8">
+                <button
+                  id="tab-all"
+                  onclick="switchTab('all')"
+                  class="tab-button border-b-2 border-teal-700 text-teal-700 py-2 px-1 text-sm font-medium"
                 >
-                  <option value="all">All Orders</option>
-                  <option value="pending">Pending</option>
-                  <option value="processing">Processing</option>
-                  <option value="shipped">Shipped</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-
-                <select
-                  id="sort-filter"
-                  class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  All Purchases
+                </button>
+                <button
+                  id="tab-products"
+                  onclick="switchTab('products')"
+                  class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
                 >
-                  <option value="recent">Most Recent</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="amount-high">Highest Amount</option>
-                  <option value="amount-low">Lowest Amount</option>
-                </select>
-              </div>
-
-              <div class="text-sm text-gray-600">
-                <span id="orders-count">0</span> orders found
-              </div>
+                  Digital Products
+                </button>
+                <button
+                  id="tab-courses"
+                  onclick="switchTab('courses')"
+                  class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
+                >
+                  Courses
+                </button>
+              </nav>
             </div>
           </div>
 
           <!-- Orders List -->
           <div id="orders-list" class="space-y-6">
             <!-- Orders will be populated by JavaScript -->
-          </div>
-
-          <!-- Pagination -->
-          <div id="pagination" class="hidden mt-8 justify-center">
-            <nav class="flex space-x-2">
-              <button
-                id="prev-page"
-                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled
-              >
-                Previous
-              </button>
-              <span id="page-info" class="px-3 py-2 text-sm text-gray-700">
-                Page 1 of 1
-              </span>
-              <button
-                id="next-page"
-                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled
-              >
-                Next
-              </button>
-            </nav>
           </div>
         </div>
 
@@ -195,19 +157,29 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"></path>
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            ></path>
           </svg>
-          <h2 class="text-2xl font-bold text-gray-900 mb-4">No Orders Yet</h2>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            No Purchases Yet
+          </h2>
           <p class="text-gray-600 mb-6">
-            You haven't placed any orders yet. Start shopping to see your order
-            history here.
+            Start exploring our digital products and courses.
           </p>
-          <a
-            href="/courses"
-            class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
-          >
-            Browse Courses
-          </a>
+          <div class="flex justify-center space-x-4">
+            <a
+              href="/products"
+              class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+            >
+              Browse Products
+            </a>
+            <a
+              href="/courses"
+              class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium px-6 py-3 rounded-lg transition-colors"
+            >
+              View Courses
+            </a>
+          </div>
         </div>
       </div>
     </main>
@@ -217,17 +189,15 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
 <script is:inline>
   document.addEventListener("DOMContentLoaded", function () {
     let allOrders = [];
-    let filteredOrders = [];
-    let currentPage = 1;
-    const ordersPerPage = 10;
+    let currentTab = "all";
+    const API_BASE = window.location.origin.includes("localhost")
+      ? "http://localhost:8000"
+      : "https://corrison.corrisonapi.com";
 
     // Initialize page
     initializePage();
 
     async function initializePage() {
-      // Initialize page settings first
-      await initializePageSettings();
-
       try {
         // Check authentication
         const isAuthenticated = checkAuthentication();
@@ -255,75 +225,6 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       }
     }
 
-    async function initializePageSettings() {
-      await loadOrderSettings();
-    }
-
-    async function loadOrderSettings() {
-      try {
-        const API_BASE = window.location.origin.includes("localhost")
-          ? "http://localhost:8000"
-          : "https://corrison.corrisonapi.com";
-
-        const response = await fetch(`${API_BASE}/api/v1/order-settings/`, {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Order Settings Response:", data);
-
-          // Handle both single object and array responses
-          const settings = Array.isArray(data) ? data[0] : data;
-          updateHeaderContent(settings);
-        } else {
-          console.error("Failed to load order settings:", response.status);
-          showDefaultHeaderContent();
-        }
-      } catch (error) {
-        console.error("Error loading order settings:", error);
-        showDefaultHeaderContent();
-      }
-    }
-
-    function updateHeaderContent(settings) {
-      const headerLoading = document.getElementById("header-loading");
-      const headerContent = document.getElementById("header-content");
-      const pageTitle = document.getElementById("page-title");
-      const pageDescription = document.getElementById("page-description");
-
-      if (settings) {
-        // Update title
-        if (pageTitle && settings.page_title) {
-          pageTitle.textContent = settings.page_title;
-        }
-
-        // Update description - use innerHTML for HTML content
-        if (pageDescription && settings.page_description) {
-          pageDescription.innerHTML = settings.page_description;
-        }
-      }
-
-      // Show actual content and hide loading
-      if (headerLoading) headerLoading.classList.add("hidden");
-      if (headerContent) headerContent.classList.remove("hidden");
-    }
-
-    function showDefaultHeaderContent() {
-      const headerLoading = document.getElementById("header-loading");
-      const headerContent = document.getElementById("header-content");
-
-      // Keep default content - no changes needed since fallback text is already in HTML
-
-      // Show actual content and hide loading
-      if (headerLoading) headerLoading.classList.add("hidden");
-      if (headerContent) headerContent.classList.remove("hidden");
-    }
-
     function checkAuthentication() {
       const token = localStorage.getItem("access_token");
       return !!token;
@@ -331,9 +232,6 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
 
     async function loadOrdersData() {
       try {
-        const API_BASE = window.location.origin.includes("localhost")
-          ? "http://localhost:8000"
-          : "https://corrison.corrisonapi.com";
         const token = localStorage.getItem("access_token");
 
         const response = await fetch(`${API_BASE}/api/v1/orders/`, {
@@ -349,189 +247,203 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
         }
 
         allOrders = await response.json();
-        filteredOrders = [...allOrders];
+        // Filter only completed/paid orders
+        allOrders = allOrders.filter(
+          (order) =>
+            order.payment_status === "paid" ||
+            order.order_status === "completed",
+        );
       } catch (error) {
         console.error("Error loading orders:", error);
         allOrders = [];
-        filteredOrders = [];
       }
     }
 
     function updateStatistics() {
-      const totalOrders = allOrders.length;
-      const completedOrders = allOrders.filter(
-        (order) => order.status === "delivered",
-      ).length;
-      const pendingOrders = allOrders.filter((order) =>
-        ["pending", "processing", "shipped"].includes(order.status),
-      ).length;
+      const totalPurchases = allOrders.length;
+      let totalProducts = 0;
+      let totalCourses = 0;
       const totalSpent = allOrders.reduce(
         (sum, order) => sum + parseFloat(order.total || 0),
         0,
       );
 
-      const totalOrdersEl = document.getElementById("total-orders");
-      const completedOrdersEl = document.getElementById("completed-orders");
-      const pendingOrdersEl = document.getElementById("pending-orders");
-      const totalSpentEl = document.getElementById("total-spent");
+      // Count products and courses
+      allOrders.forEach((order) => {
+        if (order.items) {
+          order.items.forEach((item) => {
+            if (item.product) totalProducts++;
+            if (item.course) totalCourses++;
+          });
+        }
+      });
 
-      if (totalOrdersEl) totalOrdersEl.textContent = totalOrders.toString();
-      if (completedOrdersEl)
-        completedOrdersEl.textContent = completedOrders.toString();
-      if (pendingOrdersEl)
-        pendingOrdersEl.textContent = pendingOrders.toString();
-      if (totalSpentEl) totalSpentEl.textContent = `$${totalSpent.toFixed(2)}`;
+      document.getElementById("total-purchases").textContent = totalPurchases;
+      document.getElementById("total-products").textContent = totalProducts;
+      document.getElementById("total-courses").textContent = totalCourses;
+      document.getElementById("total-spent").textContent =
+        `$${totalSpent.toFixed(2)}`;
     }
 
     function renderOrders() {
-      applyFilters();
-
       const ordersList = document.getElementById("orders-list");
-      const ordersCount = document.getElementById("orders-count");
 
-      // Update count
-      if (ordersCount)
-        ordersCount.textContent = filteredOrders.length.toString();
+      // Filter orders based on current tab
+      let filteredOrders = allOrders;
 
-      // Paginate orders
-      const startIndex = (currentPage - 1) * ordersPerPage;
-      const endIndex = startIndex + ordersPerPage;
-      const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-
-      // Render orders
-      if (ordersList) {
-        ordersList.innerHTML = paginatedOrders
-          .map((order) => createOrderCard(order))
-          .join("");
+      if (currentTab === "products") {
+        filteredOrders = allOrders.filter(
+          (order) => order.items && order.items.some((item) => item.product),
+        );
+      } else if (currentTab === "courses") {
+        filteredOrders = allOrders.filter(
+          (order) => order.items && order.items.some((item) => item.course),
+        );
       }
 
-      // Update pagination
-      updatePagination();
+      if (filteredOrders.length === 0) {
+        ordersList.innerHTML = `
+          <div class="text-center py-12">
+            <p class="text-gray-500">No ${currentTab === "all" ? "purchases" : currentTab} found</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Sort by most recent
+      filteredOrders.sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+
+      // Render orders
+      ordersList.innerHTML = filteredOrders
+        .map((order) => createOrderCard(order))
+        .join("");
     }
 
     function createOrderCard(order) {
       const orderDate = new Date(order.created_at).toLocaleDateString();
-      const statusColors = {
-        pending: "bg-yellow-100 text-yellow-800",
-        processing: "bg-blue-100 text-blue-800",
-        shipped: "bg-purple-100 text-purple-800",
-        delivered: "bg-green-100 text-green-800",
-        cancelled: "bg-red-100 text-red-800",
-        refunded: "bg-gray-100 text-gray-800",
-      };
+      const hasProducts =
+        order.items && order.items.some((item) => item.product);
+      const hasCourses = order.items && order.items.some((item) => item.course);
 
       return `
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-            <div>
-              <h3 class="text-lg font-medium text-gray-900 mb-1">
-                Order #${order.order_number || "N/A"}
-              </h3>
-              <p class="text-sm text-gray-600">
-                Placed on ${orderDate}
-              </p>
-            </div>
-            <div class="mt-3 md:mt-0 flex items-center space-x-4">
-              <span class="px-3 py-1 text-sm font-medium rounded-full ${statusColors[order.status] || "bg-gray-100 text-gray-800"}">
-                ${order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : "Unknown"}
-              </span>
-              <span class="text-lg font-bold text-gray-900">
-                $${parseFloat(order.total || 0).toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          <div class="border-t border-gray-200 pt-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div class="p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
               <div>
-                <p class="text-sm text-gray-600">Payment Status</p>
-                <p class="font-medium ${order.payment_status === "paid" ? "text-green-600" : "text-yellow-600"}">
-                  ${order.payment_status === "paid" ? "Paid" : "Pending"}
+                <h3 class="text-lg font-medium text-gray-900 mb-1">
+                  Order #${order.id || "N/A"}
+                </h3>
+                <p class="text-sm text-gray-600">
+                  Purchased on ${orderDate}
                 </p>
               </div>
-              
-              ${
-                order.shipping_method
-                  ? `
-                <div>
-                  <p class="text-sm text-gray-600">Shipping Method</p>
-                  <p class="font-medium text-gray-900">${order.shipping_method}</p>
-                </div>
-              `
-                  : ""
-              }
-
-              ${
-                order.tracking_number
-                  ? `
-                <div>
-                  <p class="text-sm text-gray-600">Tracking Number</p>
-                  <p class="font-medium text-gray-900">${order.tracking_number}</p>
-                </div>
-              `
-                  : ""
-              }
+              <div class="mt-3 md:mt-0 flex items-center space-x-4">
+                <span class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">
+                  Completed
+                </span>
+                <span class="text-lg font-bold text-gray-900">
+                  $${parseFloat(order.total || 0).toFixed(2)}
+                </span>
+              </div>
             </div>
 
             ${
               order.items && order.items.length > 0
                 ? `
-              <div class="mb-4">
-                <p class="text-sm text-gray-600 mb-2">Items (${order.items.length})</p>
-                <div class="space-y-2">
+              <div class="border-t border-gray-200 pt-4">
+                <div class="space-y-3">
                   ${order.items
-                    .slice(0, 3)
-                    .map(
-                      (item) => `
-                    <div class="flex justify-between items-center text-sm">
-                      <span class="text-gray-900">${item.product_name || "Unknown Product"}</span>
-                      <span class="text-gray-600">Qty: ${item.quantity || 0}</span>
-                    </div>
-                  `,
-                    )
+                    .map((item) => {
+                      if (item.product) {
+                        return `
+                          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                              ${
+                                item.product.image
+                                  ? `<img src="${item.product.image}" alt="${item.product.name}" class="w-12 h-12 object-cover rounded">`
+                                  : `<div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                  <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10H7z"></path>
+                                  </svg>
+                                </div>`
+                              }
+                              <div>
+                                <p class="font-medium text-gray-900">${item.product.name || "Digital Product"}</p>
+                                <p class="text-sm text-gray-500">Digital Download</p>
+                              </div>
+                            </div>
+                            <a href="/products/${item.product.id}/download" 
+                               class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                              Download
+                            </a>
+                          </div>
+                        `;
+                      } else if (item.course) {
+                        return `
+                          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-3">
+                              ${
+                                item.course.thumbnail
+                                  ? `<img src="${item.course.thumbnail}" alt="${item.course.title}" class="w-12 h-12 object-cover rounded">`
+                                  : `<div class="w-12 h-12 bg-purple-100 rounded flex items-center justify-center">
+                                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                  </svg>
+                                </div>`
+                              }
+                              <div>
+                                <p class="font-medium text-gray-900">${item.course.title || "Course"}</p>
+                                <p class="text-sm text-gray-500">Course Enrollment</p>
+                              </div>
+                            </div>
+                            <a href="/courses/${item.course.slug || item.course.id}" 
+                               class="text-purple-600 hover:text-purple-700 font-medium text-sm">
+                              View Course
+                            </a>
+                          </div>
+                        `;
+                      }
+                      return "";
+                    })
                     .join("")}
-                  ${
-                    order.items.length > 3
-                      ? `
-                    <p class="text-sm text-gray-500">+ ${order.items.length - 3} more items</p>
-                  `
-                      : ""
-                  }
                 </div>
               </div>
             `
                 : ""
             }
 
-            <div class="flex flex-col sm:flex-row gap-3">
+            <div class="flex flex-col sm:flex-row gap-3 mt-4">
               <button
-                onclick="viewOrderDetails('${order.order_number || ""}')"
-                class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm text-center"
+                onclick="viewReceipt('${order.id}')"
+                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors text-sm text-center"
               >
-                View Details
+                View Receipt
               </button>
               
               ${
-                order.status === "delivered"
+                hasProducts
                   ? `
                 <button
-                  onclick="reorderItems('${order.id || ""}')"
-                  class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors text-sm text-center"
+                  onclick="viewAllDownloads('${order.id}')"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm text-center"
                 >
-                  Order Again
+                  Download All
                 </button>
               `
                   : ""
               }
-
+              
               ${
-                ["pending", "processing"].includes(order.status)
+                order.stripe_payment_intent_id
                   ? `
                 <button
-                  onclick="cancelOrder('${order.id || ""}')"
-                  class="flex-1 bg-red-100 hover:bg-red-200 text-red-800 font-medium py-2 px-4 rounded-lg transition-colors text-sm text-center"
+                  onclick="contactSupport('${order.id}')"
+                  class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors text-sm text-center"
                 >
-                  Cancel Order
+                  Get Help
                 </button>
               `
                   : ""
@@ -542,131 +454,69 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       `;
     }
 
-    function applyFilters() {
-      const statusFilterEl = document.getElementById("status-filter");
-      const sortFilterEl = document.getElementById("sort-filter");
+    // Tab switching
+    window.switchTab = function (tab) {
+      currentTab = tab;
 
-      const statusFilter = statusFilterEl ? statusFilterEl.value : "all";
-      const sortFilter = sortFilterEl ? sortFilterEl.value : "recent";
-
-      // Filter by status
-      filteredOrders = allOrders.filter((order) => {
-        return statusFilter === "all" || order.status === statusFilter;
+      // Update tab styles
+      document.querySelectorAll(".tab-button").forEach((btn) => {
+        btn.classList.remove("border-teal-700", "text-teal-700", "border-b-2");
+        btn.classList.add("border-transparent", "text-gray-500");
       });
 
-      // Sort orders
-      filteredOrders.sort((a, b) => {
-        switch (sortFilter) {
-          case "oldest":
-            return (
-              new Date(a.created_at).getTime() -
-              new Date(b.created_at).getTime()
-            );
-          case "amount-high":
-            return parseFloat(b.total || 0) - parseFloat(a.total || 0);
-          case "amount-low":
-            return parseFloat(a.total || 0) - parseFloat(b.total || 0);
-          case "recent":
-          default:
-            return (
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
-            );
-        }
-      });
+      const activeTab = document.getElementById(`tab-${tab}`);
+      activeTab.classList.remove("border-transparent", "text-gray-500");
+      activeTab.classList.add("border-teal-700", "text-teal-700", "border-b-2");
 
-      // Reset to first page when filtering
-      currentPage = 1;
-    }
-
-    function updatePagination() {
-      const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-      const pagination = document.getElementById("pagination");
-      const prevButton = document.getElementById("prev-page");
-      const nextButton = document.getElementById("next-page");
-      const pageInfo = document.getElementById("page-info");
-
-      if (totalPages > 1) {
-        if (pagination) pagination.classList.remove("hidden");
-        if (pageInfo)
-          pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-
-        if (prevButton) prevButton.disabled = currentPage === 1;
-        if (nextButton) nextButton.disabled = currentPage === totalPages;
-      } else {
-        if (pagination) pagination.classList.add("hidden");
-      }
-    }
-
-    // Event listeners
-    const statusFilter = document.getElementById("status-filter");
-    const sortFilter = document.getElementById("sort-filter");
-    const prevPage = document.getElementById("prev-page");
-    const nextPage = document.getElementById("next-page");
-
-    if (statusFilter) statusFilter.addEventListener("change", renderOrders);
-    if (sortFilter) sortFilter.addEventListener("change", renderOrders);
-
-    if (prevPage) {
-      prevPage.addEventListener("click", () => {
-        if (currentPage > 1) {
-          currentPage--;
-          renderOrders();
-        }
-      });
-    }
-
-    if (nextPage) {
-      nextPage.addEventListener("click", () => {
-        const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-        if (currentPage < totalPages) {
-          currentPage++;
-          renderOrders();
-        }
-      });
-    }
+      renderOrders();
+    };
 
     // Global functions for order actions
-    window.viewOrderDetails = function (orderNumber) {
-      window.location.href = `/orders/${orderNumber}`;
+    window.viewReceipt = function (orderId) {
+      // Could open a modal or navigate to a receipt page
+      console.log("View receipt for order:", orderId);
+      alert("Receipt view coming soon!");
     };
 
-    window.reorderItems = function (orderId) {
-      // Implementation for reordering
-      console.log("Reorder items for order:", orderId);
-      alert("Reorder functionality coming soon!");
-    };
-
-    window.cancelOrder = function (orderId) {
-      if (confirm("Are you sure you want to cancel this order?")) {
-        // Implementation for canceling order
-        console.log("Cancel order:", orderId);
-        alert("Order cancellation functionality coming soon!");
+    window.viewAllDownloads = function (orderId) {
+      const order = allOrders.find((o) => o.id == orderId);
+      if (order && order.items) {
+        // In a real implementation, this might zip all files or show a download modal
+        order.items.forEach((item) => {
+          if (item.product) {
+            window.open(`/products/${item.product.id}/download`, "_blank");
+          }
+        });
       }
+    };
+
+    window.contactSupport = function (orderId) {
+      window.location.href = `/support?order=${orderId}`;
     };
 
     function hideLoadingState() {
-      const loadingState = document.getElementById("loading-state");
-      if (loadingState) loadingState.classList.add("hidden");
+      document.getElementById("loading-state").classList.add("hidden");
     }
 
     function showNotAuthenticatedState() {
       hideLoadingState();
-      const notAuthenticatedState =
-        document.getElementById("not-authenticated");
-      if (notAuthenticatedState)
-        notAuthenticatedState.classList.remove("hidden");
+      document.getElementById("not-authenticated").classList.remove("hidden");
     }
 
     function showOrdersContent() {
-      const ordersContent = document.getElementById("orders-content");
-      if (ordersContent) ordersContent.classList.remove("hidden");
+      document.getElementById("orders-content").classList.remove("hidden");
     }
 
     function showEmptyState() {
       hideLoadingState();
-      const emptyState = document.getElementById("empty-state");
-      if (emptyState) emptyState.classList.remove("hidden");
+      document.getElementById("empty-state").classList.remove("hidden");
     }
   });
 </script>
+
+<style>
+  .tab-button {
+    border-bottom-width: 2px;
+    transition: all 0.2s ease;
+  }
+</style>

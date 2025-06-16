@@ -1,0 +1,315 @@
+---
+// src/pages/products/[id]/download.astro
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Header from "../../../components/Header.astro";
+import Footer from "../../../components/Footer.astro";
+
+const { id } = Astro.params;
+
+// SEO meta information
+const metaTitle = "Download Product – Corrison";
+const metaDescription = "Access your purchased digital product.";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">{metaTitle}</title>
+  <meta slot="head" name="description" content={metaDescription} />
+  <meta slot="head" property="og:title" content={metaTitle} />
+  <meta slot="head" property="og:description" content={metaDescription} />
+  <meta slot="head" property="og:type" content="website" />
+
+  <div class="min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+      <div class="max-w-4xl mx-auto">
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-16">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
+          >
+          </div>
+          <p class="text-gray-600">Loading product details...</p>
+        </div>
+
+        <!-- Product Content -->
+        <div id="product-content" class="hidden">
+          <div
+            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+          >
+            <!-- Product Header -->
+            <div class="p-6 border-b border-gray-200">
+              <div class="flex items-start space-x-6">
+                <img
+                  id="product-image"
+                  class="w-32 h-32 object-cover rounded-lg"
+                  alt=""
+                />
+                <div class="flex-1">
+                  <h1
+                    id="product-name"
+                    class="text-2xl font-bold text-gray-900 mb-2"
+                  >
+                  </h1>
+                  <p id="product-description" class="text-gray-600 mb-4"></p>
+                  <div
+                    class="flex items-center space-x-4 text-sm text-gray-500"
+                  >
+                    <span>Purchased: <span id="purchase-date"></span></span>
+                    <span>Order #<span id="order-id"></span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="p-6">
+              <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                Downloads
+              </h2>
+              <div id="download-section" class="space-y-3">
+                <!-- Download links will be inserted here -->
+              </div>
+
+              <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h3 class="font-medium text-blue-900 mb-2">
+                  Download Instructions
+                </h3>
+                <ul class="text-sm text-blue-800 space-y-1">
+                  <li>
+                    • Click the download button to save the file to your device
+                  </li>
+                  <li>• Downloads are available indefinitely</li>
+                  <li>
+                    • Contact support if you have any issues accessing your
+                    files
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Product Details -->
+            <div
+              id="product-details"
+              class="p-6 border-t border-gray-200 hidden"
+            >
+              <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                Product Details
+              </h2>
+              <div
+                id="product-details-content"
+                class="prose prose-sm max-w-none"
+              >
+              </div>
+            </div>
+          </div>
+
+          <!-- Support Section -->
+          <div
+            class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+          >
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Need Help?</h2>
+            <p class="text-gray-600 mb-4">
+              If you're having trouble downloading or accessing your purchase,
+              we're here to help.
+            </p>
+            <a
+              href="/support"
+              class="inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Contact Support
+            </a>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="hidden">
+          <div
+            class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center"
+          >
+            <div
+              class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6"
+            >
+              <svg
+                class="w-10 h-10 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                ></path>
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+            <p id="error-message" class="text-gray-600 mb-8">
+              You don't have access to this product.
+            </p>
+            <a
+              href="/products"
+              class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Browse Products
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Footer slot="footer" />
+
+  <script is:inline define:vars={{ productId: id }}>
+    var API_BASE =
+      import.meta.env.PUBLIC_API_BASE_URL ||
+      "https://corrison.corrisonapi.com/api/v1";
+
+    function showLoading() {
+      document.getElementById("loading-state").classList.remove("hidden");
+      document.getElementById("product-content").classList.add("hidden");
+      document.getElementById("error-state").classList.add("hidden");
+    }
+
+    function showContent() {
+      document.getElementById("loading-state").classList.add("hidden");
+      document.getElementById("product-content").classList.remove("hidden");
+      document.getElementById("error-state").classList.add("hidden");
+    }
+
+    function showError(message) {
+      document.getElementById("loading-state").classList.add("hidden");
+      document.getElementById("product-content").classList.add("hidden");
+      document.getElementById("error-state").classList.remove("hidden");
+
+      var errorMsg = document.getElementById("error-message");
+      if (errorMsg) errorMsg.textContent = message;
+    }
+
+    function loadPurchasedProduct() {
+      var token = localStorage.getItem("access_token");
+      if (!token) {
+        showError("Please log in to access your purchases");
+        return;
+      }
+
+      showLoading();
+
+      // First, check if user has purchased this product
+      fetch(API_BASE + "/orders/", {
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      })
+        .then(function (r) {
+          if (r.ok) return r.json();
+          throw new Error("Failed to load orders");
+        })
+        .then(function (orders) {
+          // Find the product in user's orders
+          var purchasedProduct = null;
+          var purchaseOrder = null;
+
+          for (var i = 0; i < orders.length; i++) {
+            var order = orders[i];
+            if (order.items) {
+              for (var j = 0; j < order.items.length; j++) {
+                var item = order.items[j];
+                if (item.product && item.product.id == productId) {
+                  purchasedProduct = item.product;
+                  purchaseOrder = order;
+                  break;
+                }
+              }
+            }
+            if (purchasedProduct) break;
+          }
+
+          if (!purchasedProduct) {
+            showError("You haven't purchased this product yet");
+            return;
+          }
+
+          // Display product details
+          displayProduct(purchasedProduct, purchaseOrder);
+        })
+        .catch(function (error) {
+          console.error("Error loading product:", error);
+          showError("Failed to load product details");
+        });
+    }
+
+    function displayProduct(product, order) {
+      // Update product info
+      document.getElementById("product-name").textContent = product.name;
+      document.getElementById("product-description").textContent =
+        product.description || "";
+
+      var img = document.getElementById("product-image");
+      if (product.image) {
+        img.src = product.image;
+        img.alt = product.name;
+      } else {
+        img.parentElement.innerHTML =
+          '<div class="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center">' +
+          '<svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10H7z"></path>' +
+          "</svg></div>";
+      }
+
+      // Update purchase info
+      document.getElementById("purchase-date").textContent = new Date(
+        order.created_at,
+      ).toLocaleDateString();
+      document.getElementById("order-id").textContent = order.id;
+
+      // Display download section
+      var downloadSection = document.getElementById("download-section");
+      if (product.download_url || product.file) {
+        downloadSection.innerHTML =
+          '<div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">' +
+          '<div class="flex items-center space-x-3">' +
+          '<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>' +
+          "</svg>" +
+          "<div>" +
+          '<p class="font-medium text-gray-900">' +
+          product.name +
+          "</p>" +
+          '<p class="text-sm text-gray-500">Digital Download</p>' +
+          "</div>" +
+          "</div>" +
+          '<a href="' +
+          (product.download_url || product.file) +
+          '" download class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">' +
+          '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>' +
+          "</svg>" +
+          "Download" +
+          "</a>" +
+          "</div>";
+      } else {
+        downloadSection.innerHTML =
+          '<div class="p-4 bg-yellow-50 rounded-lg">' +
+          '<p class="text-yellow-800">Download link not available. Please contact support.</p>' +
+          "</div>";
+      }
+
+      // Display product details if available
+      if (product.content || product.long_description) {
+        document.getElementById("product-details").classList.remove("hidden");
+        document.getElementById("product-details-content").innerHTML =
+          product.content || product.long_description;
+      }
+
+      showContent();
+    }
+
+    // Load product on page load
+    document.addEventListener("DOMContentLoaded", function () {
+      loadPurchasedProduct();
+    });
+  </script>
+</BaseLayout>

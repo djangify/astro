@@ -1,0 +1,206 @@
+---
+// src/pages/order-success.astro
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+// SEO meta information
+const metaTitle = "Order Complete – Corrison";
+const metaDescription =
+  "Thank you for your purchase! Your digital products are ready for download.";
+---
+
+<BaseLayout>
+  <Header slot="header" />
+  <title slot="title">{metaTitle}</title>
+  <meta slot="head" name="description" content={metaDescription} />
+  <meta slot="head" property="og:title" content={metaTitle} />
+  <meta slot="head" property="og:description" content={metaDescription} />
+  <meta slot="head" property="og:type" content="website" />
+
+  <div class="min-h-screen bg-gray-50">
+    <div class="container mx-auto px-4 py-16">
+      <div class="max-w-2xl mx-auto">
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"
+          >
+          </div>
+          <p class="text-gray-600">Confirming your order...</p>
+        </div>
+
+        <!-- Success State -->
+        <div id="success-state" class="hidden">
+          <div
+            class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center"
+          >
+            <div
+              class="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6"
+            >
+              <svg
+                class="w-10 h-10 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">
+              Order Complete!
+            </h1>
+            <p class="text-lg text-gray-600 mb-8">
+              Thank you for your purchase. Your digital products are ready.
+            </p>
+
+            <div id="order-details" class="hidden">
+              <div class="bg-gray-50 rounded-lg p-6 mb-6 text-left">
+                <h2 class="font-semibold text-gray-900 mb-3">Order Details</h2>
+                <p class="text-sm text-gray-600">
+                  Order ID: <span id="order-id" class="font-mono"></span>
+                </p>
+                <p class="text-sm text-gray-600">
+                  Total: $<span id="order-total"></span>
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <a
+                href="/products"
+                class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Continue Shopping
+              </a>
+
+              <p class="text-sm text-gray-600">
+                Check your email for download links and receipt
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="hidden">
+          <div
+            class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center"
+          >
+            <div
+              class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6"
+            >
+              <svg
+                class="w-10 h-10 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </div>
+
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">
+              Payment Not Confirmed
+            </h1>
+            <p class="text-lg text-gray-600 mb-8">
+              We couldn't confirm your payment. Please contact support if you
+              were charged.
+            </p>
+
+            <div class="space-y-4">
+              <a
+                href="/checkout"
+                class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </a>
+
+              <p class="text-sm text-gray-600">
+                Contact support: support@corrison.com
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <Footer slot="footer" />
+
+  <script is:inline>
+    var API_BASE =
+      import.meta.env.PUBLIC_API_BASE_URL ||
+      "https://corrison.corrisonapi.com/api/v1";
+
+    function showLoading() {
+      document.getElementById("loading-state").classList.remove("hidden");
+      document.getElementById("success-state").classList.add("hidden");
+      document.getElementById("error-state").classList.add("hidden");
+    }
+
+    function showSuccess() {
+      document.getElementById("loading-state").classList.add("hidden");
+      document.getElementById("success-state").classList.remove("hidden");
+      document.getElementById("error-state").classList.add("hidden");
+    }
+
+    function showError() {
+      document.getElementById("loading-state").classList.add("hidden");
+      document.getElementById("success-state").classList.add("hidden");
+      document.getElementById("error-state").classList.remove("hidden");
+    }
+
+    function checkPaymentStatus() {
+      // Get payment intent from URL
+      var urlParams = new URLSearchParams(window.location.search);
+      var paymentIntent = urlParams.get("payment_intent");
+
+      if (!paymentIntent) {
+        showError();
+        return;
+      }
+
+      // Check payment status
+      fetch(API_BASE + "/check-payment-status/?payment_intent=" + paymentIntent)
+        .then(function (r) {
+          if (r.ok) return r.json();
+          throw new Error("Failed to check payment status");
+        })
+        .then(function (data) {
+          if (data.success) {
+            showSuccess();
+
+            // Show order details if available
+            if (data.order) {
+              document
+                .getElementById("order-details")
+                .classList.remove("hidden");
+              document.getElementById("order-id").textContent = data.order.id;
+              document.getElementById("order-total").textContent =
+                data.order.total.toFixed(2);
+            }
+          } else {
+            showError();
+          }
+        })
+        .catch(function (error) {
+          console.error("Error checking payment status:", error);
+          showError();
+        });
+    }
+
+    // Check payment status on page load
+    document.addEventListener("DOMContentLoaded", function () {
+      checkPaymentStatus();
+    });
+  </script>
+</BaseLayout>

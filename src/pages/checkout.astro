@@ -71,252 +71,11 @@ const metaDescription =
             Add some items to your cart before checking out.
           </p>
           <a
-            href="/ecommerce/products"
-            class="bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-3 rounded-lg transition-colors"
+            href="/products"
+            class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             Browse Products
           </a>
-        </div>
-
-        <!-- Checkout Content -->
-        <div id="checkout-content" class="hidden">
-          <form id="checkout-form" class="lg:grid lg:grid-cols-2 lg:gap-8">
-            <!-- Customer Information -->
-            <div class="space-y-6">
-              <!-- Customer Details -->
-              <div
-                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-              >
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">
-                  Customer Information
-                </h2>
-
-                <div class="space-y-4">
-                  <div>
-                    <label
-                      for="email"
-                      class="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Email Address *
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      required
-                      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="your@email.com"
-                    />
-                    <p class="mt-1 text-xs text-gray-500">
-                      Digital products will be delivered to this email
-                    </p>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        for="first-name"
-                        class="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        id="first-name"
-                        name="first_name"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        for="last-name"
-                        class="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        id="last-name"
-                        name="last_name"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Payment Method -->
-              <div
-                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-              >
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">
-                  Payment Method
-                </h2>
-
-                <!-- Stripe Elements will be mounted here -->
-                <div
-                  id="card-element"
-                  class="border border-gray-300 rounded-lg p-3 bg-white"
-                >
-                  <!-- Stripe Elements will create form elements here -->
-                </div>
-
-                <!-- Stripe errors will be displayed here -->
-                <div
-                  id="card-errors"
-                  role="alert"
-                  class="mt-2 text-sm text-red-600"
-                >
-                </div>
-
-                <!-- Payment Security Notice -->
-                <div class="mt-4 flex items-center text-sm text-gray-600">
-                  <svg
-                    class="w-5 h-5 text-green-500 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    ></path>
-                  </svg>
-                  Your payment information is secure and encrypted
-                </div>
-              </div>
-
-              <!-- Order Notes -->
-              <div
-                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-              >
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">
-                  Order Notes (Optional)
-                </h2>
-                <textarea
-                  id="order-notes"
-                  name="notes"
-                  rows="3"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Any special instructions or notes about your order..."
-                ></textarea>
-              </div>
-            </div>
-
-            <!-- Order Summary -->
-            <div class="mt-8 lg:mt-0">
-              <div
-                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-4"
-              >
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                  Order Summary
-                </h3>
-
-                <!-- Order Items -->
-                <div id="order-items" class="space-y-4 mb-6">
-                  <!-- Items will be populated by JavaScript -->
-                </div>
-
-                <!-- Order Totals -->
-                <div class="border-t border-gray-200 pt-4 space-y-3">
-                  <div class="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span id="order-subtotal">$0.00</span>
-                  </div>
-
-                  <div class="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span class="text-green-600">Free (Digital)</span>
-                  </div>
-
-                  <div class="flex justify-between text-gray-600">
-                    <span>Tax</span>
-                    <span id="order-tax">$0.00</span>
-                  </div>
-
-                  <div class="border-t border-gray-200 pt-3">
-                    <div
-                      class="flex justify-between text-xl font-bold text-gray-900"
-                    >
-                      <span>Total</span>
-                      <span id="order-total">$0.00</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Place Order Button -->
-                <button
-                  type="submit"
-                  id="submit-payment"
-                  class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  <span id="button-text">Complete Order</span>
-                  <span id="button-spinner" class="hidden">
-                    <svg
-                      class="animate-spin h-5 w-5 inline ml-2"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"></circle>
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                  </span>
-                </button>
-
-                <!-- Back to Cart -->
-                <a
-                  href="/cart"
-                  class="block w-full text-center text-blue-600 hover:text-blue-700 font-medium py-3 mt-3 transition-colors"
-                >
-                  ← Back to Cart
-                </a>
-
-                <!-- Digital Product Notice -->
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                  <div
-                    class="bg-purple-50 border border-purple-200 rounded-lg p-4"
-                  >
-                    <div class="flex items-start">
-                      <svg
-                        class="w-5 h-5 text-purple-600 mt-0.5 mr-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                        ></path>
-                      </svg>
-                      <div>
-                        <h4 class="text-sm font-semibold text-purple-900">
-                          Digital Delivery
-                        </h4>
-                        <p class="text-sm text-purple-700 mt-1">
-                          Download links will be sent to your email immediately
-                          after payment confirmation.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
         </div>
 
         <!-- Error State -->
@@ -325,7 +84,7 @@ const metaDescription =
             class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6"
           >
             <svg
-              class="w-10 h-10 text-red-600"
+              class="w-10 h-10 text-red-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -334,20 +93,205 @@ const metaDescription =
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-              ></path>
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
           </div>
-          <h2 class="text-2xl font-bold text-gray-900 mb-4">Checkout Error</h2>
-          <p class="text-gray-600 mb-8" id="error-message">
-            We're having trouble loading the checkout. Please try again.
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">
+            Something went wrong
+          </h2>
+          <p id="error-message" class="text-gray-600 mb-8">
+            Unable to load checkout. Please try again.
           </p>
           <button
-            id="retry-checkout-btn"
-            class="bg-blue-600 text-white hover:bg-blue-700 font-medium px-6 py-3 rounded-lg transition-colors"
+            onclick="window.location.reload()"
+            class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
           </button>
+        </div>
+
+        <!-- Checkout Content -->
+        <div id="checkout-content" class="hidden">
+          <!-- Messages/Alerts -->
+          <div id="checkout-messages" class="mb-6"></div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left Column: Form -->
+            <div>
+              <form id="checkout-form">
+                <!-- Customer Information (Simplified for Digital Products) -->
+                <div
+                  class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6"
+                >
+                  <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                    Customer Information
+                  </h2>
+                  <div class="space-y-4">
+                    <div>
+                      <label
+                        for="email"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="your@email.com"
+                      />
+                      <p class="mt-1 text-sm text-gray-500">
+                        We'll send your digital products to this email
+                      </p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <label
+                          for="first-name"
+                          class="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          id="first-name"
+                          name="first_name"
+                          required
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          for="last-name"
+                          class="block text-sm font-medium text-gray-700 mb-1"
+                        >
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          id="last-name"
+                          name="last_name"
+                          required
+                          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div
+                  class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                >
+                  <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                    Payment Method
+                  </h2>
+
+                  <!-- Stripe Elements will be mounted here -->
+                  <div
+                    id="card-element"
+                    class="border border-gray-300 rounded-lg p-3 bg-white"
+                  >
+                    <!-- Stripe Elements will create form elements here -->
+                  </div>
+
+                  <!-- Stripe errors will be displayed here -->
+                  <div
+                    id="card-errors"
+                    role="alert"
+                    class="mt-2 text-sm text-red-600"
+                  >
+                  </div>
+
+                  <!-- Payment Security Notice -->
+                  <div class="mt-4 flex items-center text-sm text-gray-600">
+                    <svg
+                      class="w-5 h-5 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      ></path>
+                    </svg>
+                    Your payment information is secure and encrypted
+                  </div>
+                </div>
+
+                <!-- Order Notes (Optional) -->
+                <div
+                  class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6"
+                >
+                  <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                    Order Notes (Optional)
+                  </h2>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    rows="3"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Any special instructions or notes about your order..."
+                  ></textarea>
+                </div>
+              </form>
+            </div>
+
+            <!-- Right Column: Order Summary -->
+            <div>
+              <div
+                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-24"
+              >
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                  Order Summary
+                </h2>
+
+                <!-- Order Items -->
+                <div id="order-items" class="space-y-3 mb-4">
+                  <!-- Items will be dynamically inserted here -->
+                </div>
+
+                <!-- Order Totals -->
+                <div class="border-t border-gray-200 pt-4 space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span>Subtotal</span>
+                    <span id="order-subtotal">$0.00</span>
+                  </div>
+                  <div class="flex justify-between font-semibold text-base">
+                    <span>Total</span>
+                    <span id="order-total">$0.00</span>
+                  </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                  id="submit-payment"
+                  type="submit"
+                  form="checkout-form"
+                  class="w-full mt-6 bg-blue-600 text-white font-medium py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  <span id="button-text">Complete Order</span>
+                  <span
+                    id="button-spinner"
+                    class="hidden ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+                  ></span>
+                </button>
+
+                <!-- Digital Product Notice -->
+                <div class="mt-4 text-sm text-gray-600 text-center">
+                  <p>
+                    Digital products will be available immediately after
+                    purchase
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -356,375 +300,307 @@ const metaDescription =
   <Footer slot="footer" />
 
   <script is:inline>
-    (function () {
-      var API_BASE = "https://corrison.corrisonapi.com/api/v1";
-      var stripe = null;
-      var elements = null;
-      var card = null;
+    var API_BASE =
+      import.meta.env.PUBLIC_API_BASE_URL ||
+      "https://corrison.corrisonapi.com/api/v1";
+    var STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    var stripe, elements, card;
 
-      function getToken() {
-        try {
-          return localStorage.getItem("cart_token");
-        } catch (e) {
-          return null;
-        }
+    function makeHeaders() {
+      var headers = {
+        "Content-Type": "application/json",
+      };
+      var cartToken = localStorage.getItem("cart_token");
+      if (cartToken) {
+        headers["Authorization"] = "Bearer " + cartToken;
       }
+      return headers;
+    }
 
-      function setToken(token) {
-        try {
-          if (token) localStorage.setItem("cart_token", token);
-        } catch (e) {}
+    function showLoading() {
+      document.getElementById("checkout-loading").classList.remove("hidden");
+      document.getElementById("empty-cart-redirect").classList.add("hidden");
+      document.getElementById("checkout-error").classList.add("hidden");
+      document.getElementById("checkout-content").classList.add("hidden");
+    }
+
+    function showEmpty() {
+      document.getElementById("checkout-loading").classList.add("hidden");
+      document.getElementById("empty-cart-redirect").classList.remove("hidden");
+      document.getElementById("checkout-error").classList.add("hidden");
+      document.getElementById("checkout-content").classList.add("hidden");
+    }
+
+    function showError(message) {
+      document.getElementById("checkout-loading").classList.add("hidden");
+      document.getElementById("empty-cart-redirect").classList.add("hidden");
+      document.getElementById("checkout-error").classList.remove("hidden");
+      document.getElementById("checkout-content").classList.add("hidden");
+      var errorMsg = document.getElementById("error-message");
+      if (errorMsg && message) {
+        errorMsg.textContent = message;
       }
+    }
 
-      function makeHeaders() {
-        var h = { "Content-Type": "application/json" };
-        var t = getToken();
-        if (t) h.Authorization = "Bearer " + t;
-        return h;
-      }
+    function showContent() {
+      document.getElementById("checkout-loading").classList.add("hidden");
+      document.getElementById("empty-cart-redirect").classList.add("hidden");
+      document.getElementById("checkout-error").classList.add("hidden");
+      document.getElementById("checkout-content").classList.remove("hidden");
+    }
 
-      function showMsg(text, good) {
-        var d = document.createElement("div");
-        d.style.position = "fixed";
-        d.style.top = "16px";
-        d.style.right = "16px";
-        d.style.padding = "16px";
-        d.style.borderRadius = "8px";
-        d.style.color = "white";
-        d.style.zIndex = "9999";
-        d.style.backgroundColor = good ? "#10b981" : "#ef4444";
-        d.textContent = text;
-        document.body.appendChild(d);
+    function showMsg(message, isSuccess) {
+      var messagesDiv = document.getElementById("checkout-messages");
+      if (!messagesDiv) return;
+
+      var alertClass = isSuccess
+        ? "bg-green-50 border-green-200 text-green-800"
+        : "bg-red-50 border-red-200 text-red-800";
+
+      messagesDiv.innerHTML =
+        '<div class="rounded-lg border p-4 ' +
+        alertClass +
+        '">' +
+        "<p>" +
+        message +
+        "</p>" +
+        "</div>";
+
+      // Auto-hide success messages after 5 seconds
+      if (isSuccess) {
         setTimeout(function () {
-          if (d.parentNode) d.parentNode.removeChild(d);
-        }, 3000);
+          messagesDiv.innerHTML = "";
+        }, 5000);
+      }
+    }
+
+    function updateOrderSummary(cart) {
+      var subtotal = document.getElementById("order-subtotal");
+      var total = document.getElementById("order-total");
+
+      if (subtotal) subtotal.textContent = "$" + cart.subtotal.toFixed(2);
+      if (total) total.textContent = "$" + cart.subtotal.toFixed(2);
+    }
+
+    function renderOrderItems(cart) {
+      var itemsContainer = document.getElementById("order-items");
+      if (!itemsContainer) return;
+
+      itemsContainer.innerHTML = cart.items
+        .map(function (item) {
+          return (
+            '<div class="flex justify-between items-start">' +
+            '<div class="flex-1">' +
+            '<h4 class="font-medium text-gray-900">' +
+            (item.product_name || item.course_name || "Item") +
+            "</h4>" +
+            '<p class="text-sm text-gray-500">Qty: ' +
+            item.quantity +
+            "</p>" +
+            "</div>" +
+            '<span class="text-gray-900">$' +
+            item.subtotal.toFixed(2) +
+            "</span>" +
+            "</div>"
+          );
+        })
+        .join("");
+    }
+
+    function initStripe() {
+      if (typeof Stripe === "undefined") {
+        console.error("Stripe not loaded");
+        showError("Payment system not available");
+        return false;
       }
 
-      function showLoading() {
-        var loading = document.getElementById("checkout-loading");
-        var empty = document.getElementById("empty-cart-redirect");
-        var content = document.getElementById("checkout-content");
-        var error = document.getElementById("checkout-error");
-
-        if (loading) loading.classList.remove("hidden");
-        if (empty) empty.classList.add("hidden");
-        if (content) content.classList.add("hidden");
-        if (error) error.classList.add("hidden");
+      if (!STRIPE_KEY) {
+        console.error("Stripe publishable key not configured");
+        showError("Payment system not configured");
+        return false;
       }
 
-      function showEmpty() {
-        var loading = document.getElementById("checkout-loading");
-        var empty = document.getElementById("empty-cart-redirect");
-        var content = document.getElementById("checkout-content");
-        var error = document.getElementById("checkout-error");
+      // Initialize Stripe
+      stripe = Stripe(STRIPE_KEY);
+      elements = stripe.elements();
 
-        if (loading) loading.classList.add("hidden");
-        if (empty) empty.classList.remove("hidden");
-        if (content) content.classList.add("hidden");
-        if (error) error.classList.add("hidden");
-      }
-
-      function showContent() {
-        var loading = document.getElementById("checkout-loading");
-        var empty = document.getElementById("empty-cart-redirect");
-        var content = document.getElementById("checkout-content");
-        var error = document.getElementById("checkout-error");
-
-        if (loading) loading.classList.add("hidden");
-        if (empty) empty.classList.add("hidden");
-        if (content) content.classList.remove("hidden");
-        if (error) error.classList.add("hidden");
-      }
-
-      function showError(message) {
-        var loading = document.getElementById("checkout-loading");
-        var empty = document.getElementById("empty-cart-redirect");
-        var content = document.getElementById("checkout-content");
-        var error = document.getElementById("checkout-error");
-        var errorMessage = document.getElementById("error-message");
-
-        if (loading) loading.classList.add("hidden");
-        if (empty) empty.classList.add("hidden");
-        if (content) content.classList.add("hidden");
-        if (error) error.classList.remove("hidden");
-        if (errorMessage)
-          errorMessage.textContent =
-            message ||
-            "We're having trouble loading the checkout. Please try again.";
-      }
-
-      function initStripe() {
-        if (typeof Stripe === "undefined") {
-          console.error("Stripe not loaded");
-          showError("Payment system not available");
-          return false;
-        }
-
-        // Initialize Stripe (you'll need to add your publishable key)
-        stripe = Stripe("pk_test_your_stripe_publishable_key_here"); // Replace with your actual key
-        elements = stripe.elements();
-
-        // Create card element
-        card = elements.create("card", {
-          style: {
-            base: {
-              fontSize: "16px",
-              color: "#424770",
-              "::placeholder": {
-                color: "#aab7c4",
-              },
-            },
-            invalid: {
-              color: "#9e2146",
+      // Create card element
+      card = elements.create("card", {
+        style: {
+          base: {
+            fontSize: "16px",
+            color: "#424770",
+            "::placeholder": {
+              color: "#aab7c4",
             },
           },
-        });
+          invalid: {
+            color: "#9e2146",
+          },
+        },
+      });
 
-        // Mount card element
-        var cardElement = document.getElementById("card-element");
-        if (cardElement) {
-          card.mount("#card-element");
+      // Mount card element
+      var cardElement = document.getElementById("card-element");
+      if (cardElement) {
+        card.mount("#card-element");
 
-          // Handle errors
-          card.on("change", function (event) {
-            var displayError = document.getElementById("card-errors");
-            if (event.error) {
-              displayError.textContent = event.error.message;
-            } else {
-              displayError.textContent = "";
-            }
-          });
-        }
-
-        return true;
-      }
-
-      function updateOrderSummary(cart) {
-        var subtotal = document.getElementById("order-subtotal");
-        var tax = document.getElementById("order-tax");
-        var total = document.getElementById("order-total");
-
-        if (subtotal)
-          subtotal.textContent =
-            "$" + parseFloat(cart.subtotal || 0).toFixed(2);
-        if (tax) tax.textContent = "$" + parseFloat(cart.tax || 0).toFixed(2);
-        if (total)
-          total.textContent =
-            "$" + parseFloat(cart.total || cart.subtotal || 0).toFixed(2);
-      }
-
-      function renderOrderItems(cart) {
-        var itemsContainer = document.getElementById("order-items");
-        if (!itemsContainer || !cart.items) return;
-
-        itemsContainer.innerHTML = cart.items
-          .map(function (item) {
-            var product = item.product || {};
-            var imageUrl =
-              product.main_image ||
-              product.featured_image ||
-              "/images/placeholder.png";
-            var totalPrice = parseFloat(item.total_price || 0);
-
-            return (
-              '<div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">' +
-              '<img src="' +
-              imageUrl +
-              '" alt="' +
-              product.name +
-              '" class="w-12 h-12 object-cover rounded">' +
-              '<div class="flex-1 min-w-0">' +
-              '<h4 class="text-sm font-medium text-gray-900 truncate">' +
-              product.name +
-              "</h4>" +
-              '<p class="text-xs text-gray-500">Qty: ' +
-              item.quantity +
-              "</p>" +
-              "</div>" +
-              '<span class="text-sm font-medium text-gray-900">$' +
-              totalPrice.toFixed(2) +
-              "</span>" +
-              "</div>"
-            );
-          })
-          .join("");
-      }
-
-      function loadCart() {
-        console.log("Loading cart for checkout...");
-        showLoading();
-
-        fetch(API_BASE + "/cart/", { headers: makeHeaders() })
-          .then(function (r) {
-            console.log("Cart API response status:", r.status);
-            if (r.ok) return r.json();
-            throw new Error("Failed to load cart");
-          })
-          .then(function (cart) {
-            console.log("Cart data loaded:", cart);
-
-            if (!cart || cart.total_items === 0) {
-              showEmpty();
-            } else {
-              showContent();
-              updateOrderSummary(cart);
-              renderOrderItems(cart);
-
-              // Initialize Stripe after content is shown
-              if (!initStripe()) {
-                showError("Payment system not available");
-              }
-            }
-          })
-          .catch(function (error) {
-            console.error("Error loading cart:", error);
-            showError("Failed to load cart data");
-          });
-      }
-
-      function setLoadingState(loading) {
-        var submitButton = document.getElementById("submit-payment");
-        var buttonText = document.getElementById("button-text");
-        var buttonSpinner = document.getElementById("button-spinner");
-
-        if (submitButton) {
-          submitButton.disabled = loading;
-        }
-
-        if (buttonText) {
-          buttonText.textContent = loading ? "Processing..." : "Complete Order";
-        }
-
-        if (buttonSpinner) {
-          if (loading) {
-            buttonSpinner.classList.remove("hidden");
+        // Handle errors
+        card.on("change", function (event) {
+          var displayError = document.getElementById("card-errors");
+          if (event.error) {
+            displayError.textContent = event.error.message;
           } else {
-            buttonSpinner.classList.add("hidden");
+            displayError.textContent = "";
           }
-        }
+        });
       }
 
-      function handleFormSubmit(event) {
-        event.preventDefault();
+      return true;
+    }
 
-        if (!stripe || !card) {
-          showMsg("Payment system not ready", false);
-          return;
-        }
+    function loadCart() {
+      console.log("Loading cart for checkout...");
+      showLoading();
 
-        setLoadingState(true);
-
-        // Get form data
-        var form = document.getElementById("checkout-form");
-        var formData = new FormData(form);
-        var customerData = {
-          email: formData.get("email"),
-          first_name: formData.get("first_name"),
-          last_name: formData.get("last_name"),
-          notes: formData.get("notes"),
-        };
-
-        console.log("Processing payment with customer data:", customerData);
-
-        // Create payment intent
-        fetch(API_BASE + "/create-payment-intent/", {
-          method: "POST",
-          headers: makeHeaders(),
-          body: JSON.stringify(customerData),
+      fetch(API_BASE + "/cart/", { headers: makeHeaders() })
+        .then(function (r) {
+          console.log("Cart API response status:", r.status);
+          if (r.ok) return r.json();
+          throw new Error("Failed to load cart");
         })
-          .then(function (r) {
-            if (r.ok) return r.json();
-            throw new Error("Failed to create payment intent");
-          })
-          .then(function (data) {
-            console.log("Payment intent created:", data);
+        .then(function (cart) {
+          console.log("Cart data loaded:", cart);
 
-            // Confirm payment with Stripe
-            return stripe.confirmCardPayment(data.client_secret, {
-              payment_method: {
-                card: card,
-                billing_details: {
-                  name: (
-                    customerData.first_name +
-                    " " +
-                    customerData.last_name
-                  ).trim(),
-                  email: customerData.email,
-                },
+          if (!cart || cart.total_items === 0) {
+            showEmpty();
+          } else {
+            showContent();
+            updateOrderSummary(cart);
+            renderOrderItems(cart);
+
+            // Initialize Stripe after content is shown
+            if (!initStripe()) {
+              showError("Payment system not available");
+            }
+          }
+        })
+        .catch(function (error) {
+          console.error("Error loading cart:", error);
+          showError("Failed to load cart data");
+        });
+    }
+
+    function setLoadingState(loading) {
+      var submitButton = document.getElementById("submit-payment");
+      var buttonText = document.getElementById("button-text");
+      var buttonSpinner = document.getElementById("button-spinner");
+
+      if (submitButton) {
+        submitButton.disabled = loading;
+      }
+
+      if (buttonText) {
+        buttonText.textContent = loading ? "Processing..." : "Complete Order";
+      }
+
+      if (buttonSpinner) {
+        if (loading) {
+          buttonSpinner.classList.remove("hidden");
+        } else {
+          buttonSpinner.classList.add("hidden");
+        }
+      }
+    }
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+
+      if (!stripe || !card) {
+        showMsg("Payment system not ready", false);
+        return;
+      }
+
+      setLoadingState(true);
+
+      // Get form data
+      var form = document.getElementById("checkout-form");
+      var formData = new FormData(form);
+      var customerData = {
+        email: formData.get("email"),
+        first_name: formData.get("first_name"),
+        last_name: formData.get("last_name"),
+        notes: formData.get("notes"),
+      };
+
+      console.log("Processing payment with customer data:", customerData);
+
+      // Create payment intent
+      fetch(API_BASE + "/create-payment-intent/", {
+        method: "POST",
+        headers: makeHeaders(),
+        body: JSON.stringify(customerData),
+      })
+        .then(function (r) {
+          if (r.ok) return r.json();
+          throw new Error("Failed to create payment intent");
+        })
+        .then(function (data) {
+          console.log("Payment intent created:", data);
+
+          // Confirm payment with Stripe
+          return stripe.confirmCardPayment(data.client_secret, {
+            payment_method: {
+              card: card,
+              billing_details: {
+                name: (
+                  customerData.first_name +
+                  " " +
+                  customerData.last_name
+                ).trim(),
+                email: customerData.email,
               },
-            });
-          })
-          .then(function (result) {
-            if (result.error) {
-              console.error("Payment failed:", result.error);
-              showMsg(result.error.message, false);
-              setLoadingState(false);
-            } else {
-              console.log("Payment succeeded:", result.paymentIntent);
-
-              // Create order
-              return fetch(API_BASE + "/create-order/", {
-                method: "POST",
-                headers: makeHeaders(),
-                body: JSON.stringify({
-                  payment_intent_id: result.paymentIntent.id,
-                  customer_data: customerData,
-                }),
-              });
-            }
-          })
-          .then(function (r) {
-            if (r && r.ok) return r.json();
-            if (r) throw new Error("Failed to create order");
-          })
-          .then(function (orderData) {
-            if (orderData) {
-              console.log("Order created:", orderData);
-              showMsg("Order completed successfully!", true);
-
-              // Clear cart token
-              try {
-                localStorage.removeItem("cart_token");
-              } catch (e) {}
-
-              // Redirect to success page
-              setTimeout(function () {
-                window.location.href =
-                  "/order-success?order=" + orderData.order_number;
-              }, 2000);
-            }
-          })
-          .catch(function (error) {
-            console.error("Checkout error:", error);
-            showMsg("Payment failed. Please try again.", false);
-            setLoadingState(false);
+            },
           });
+        })
+        .then(function (result) {
+          if (result.error) {
+            console.error("Payment failed:", result.error);
+            showMsg(result.error.message, false);
+            setLoadingState(false);
+          } else {
+            console.log("Payment succeeded:", result.paymentIntent);
+            showMsg(
+              "Payment successful! Redirecting to your downloads...",
+              true,
+            );
+
+            // Clear cart
+            localStorage.removeItem("cart_token");
+
+            // Redirect to success page after a short delay
+            setTimeout(function () {
+              window.location.href =
+                "/order-success?payment_intent=" + result.paymentIntent.id;
+            }, 2000);
+          }
+        })
+        .catch(function (error) {
+          console.error("Checkout error:", error);
+          showMsg(error.message || "Payment failed. Please try again.", false);
+          setLoadingState(false);
+        });
+    }
+
+    // Initialize on page load
+    document.addEventListener("DOMContentLoaded", function () {
+      loadCart();
+
+      // Attach form submit handler
+      var form = document.getElementById("checkout-form");
+      if (form) {
+        form.addEventListener("submit", handleFormSubmit);
       }
-
-      function init() {
-        console.log("Initializing checkout page");
-
-        // Load cart and setup checkout
-        loadCart();
-
-        // Setup form submission
-        var form = document.getElementById("checkout-form");
-        if (form) {
-          form.addEventListener("submit", handleFormSubmit);
-        }
-
-        // Retry button
-        var retryBtn = document.getElementById("retry-checkout-btn");
-        if (retryBtn) {
-          retryBtn.addEventListener("click", loadCart);
-        }
-      }
-
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", init);
-      } else {
-        init();
-      }
-    })();
+    });
   </script>
 </BaseLayout>
