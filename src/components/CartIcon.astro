@@ -170,281 +170,290 @@ const { className = "" } = Astro.props;
   </div>
 </div>
 
-<script>
-  // FIXED: Use direct import - let Astro handle bundling
-  import { cartManager as importedCartManager } from "../lib/cart.js";
+<!-- Cart Icon Component -->
+<div class={`relative ${className}`}>
+  <!-- Cart Icon Button -->
+  <button
+    id="cart-button"
+    class="relative p-2 text-gray-600 hover:text-blue-600 transition-colors duration-200"
+    aria-label="Shopping cart"
+  >
+    <svg
+      class="w-6 h-6"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"
+      ></path>
+    </svg>
 
-  // Type declaration for cartManager
-  type CartManager = {
-    subscribe: (callback: (data: any) => void) => () => void;
-    loadCartData: () => Promise<void>;
-    removeCartItem: (
-      itemId: string,
-    ) => Promise<{ success: boolean; message?: string }>;
-  };
+    <!-- Cart Count Badge -->
+    <span
+      id="cart-count"
+      class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+      data-cart-count
+    >
+      0
+    </span>
+  </button>
 
-  // Explicitly type cartManager to avoid 'never' type error
-  const cartManager: CartManager =
-    importedCartManager as unknown as CartManager;
+  <!-- Cart Dropdown -->
+  <div
+    id="cart-dropdown"
+    class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 hidden"
+  >
+    <!-- Dropdown Header -->
+    <div class="p-4 border-b border-gray-100">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">Shopping Cart</h3>
+        <button
+          id="close-cart-dropdown"
+          class="text-gray-400 hover:text-gray-600"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
 
-  let cartSubscription: (() => void) | null = null;
+    <!-- Cart Items -->
+    <div id="cart-items-container" class="max-h-64 overflow-y-auto">
+      <!-- Loading State -->
+      <div id="cart-loading" class="p-4 text-center text-gray-500">
+        <div
+          class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"
+        >
+        </div>
+        Loading...
+      </div>
 
-  document.addEventListener("DOMContentLoaded", function () {
-    console.log("Initializing CartIcon component...");
+      <!-- Empty State -->
+      <div id="cart-empty" class="p-4 text-center text-gray-500 hidden">
+        <svg
+          class="w-12 h-12 mx-auto mb-2 text-gray-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+        </svg>
+        <p>Your cart is empty</p>
+      </div>
 
-    // DOM Elements
-    const cartButton = document.getElementById("cart-button");
-    const cartDropdown = document.getElementById("cart-dropdown");
-    const retryButton = document.getElementById("retry-cart-load");
+      <!-- Cart Items List -->
+      <div id="cart-items-list" class="hidden">
+        <!-- Items will be populated by JavaScript -->
+      </div>
+    </div>
 
-    // Check if cartManager is available and has required methods
-    if (!cartManager || typeof cartManager.subscribe !== "function") {
-      console.error("CartManager not available or invalid");
-      showErrorState();
-      return;
+    <!-- Cart Footer -->
+    <div id="cart-footer" class="p-4 border-t border-gray-100 hidden">
+      <div class="flex justify-between items-center mb-3">
+        <span class="font-semibold">Total:</span>
+        <span id="cart-total" class="font-bold text-lg" data-cart-subtotal
+          >$0.00</span
+        >
+      </div>
+
+      <div class="space-y-2">
+        <a
+          href="/cart"
+          class="block w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg text-center transition-colors"
+        >
+          View Cart
+        </a>
+        <a
+          href="/checkout"
+          class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-center transition-colors"
+        >
+          Checkout
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Inline Cart Icon Script -->
+<script is:inline>
+  (function () {
+    var API_BASE = "https://corrison.corrisonapi.com/api/v1";
+
+    function getToken() {
+      try {
+        return localStorage.getItem("cart_token");
+      } catch (e) {
+        return null;
+      }
     }
 
-    // Subscribe to cart updates
-    cartSubscription = (cartManager as CartManager).subscribe(
-      (cartData: any) => {
-        console.log("Cart updated in CartIcon:", cartData);
-        updateCartDisplay(cartData);
-      },
-    );
+    function makeHeaders() {
+      var h = { "Content-Type": "application/json" };
+      var t = getToken();
+      if (t) h.Authorization = "Bearer " + t;
+      return h;
+    }
 
-    // Setup dropdown behavior
-    setupDropdownBehavior();
+    function updateCartIcon(cart) {
+      var countEl = document.getElementById("cart-count");
+      var totalEl = document.getElementById("cart-total");
 
-    // Load initial cart data
-    (cartManager as CartManager).loadCartData();
-
-    console.log("CartIcon component initialized");
-
-    // Listen for cart updates from other components
-    window.addEventListener("cartUpdated", () => {
-      console.log("CartIcon received cart update event");
-      if (cartManager && typeof cartManager.loadCartData === "function") {
-        (cartManager as CartManager).loadCartData();
-      }
-    });
-
-    // Update cart display when data changes
-    function updateCartDisplay(cartData: any): void {
-      if (!cartData) {
-        showEmptyState();
-        return;
-      }
-
-      const countBadge = document.getElementById("cart-count-badge");
-      const loadingEl = document.getElementById("cart-loading");
-      const emptyEl = document.getElementById("cart-empty");
-      const itemsEl = document.getElementById("cart-items");
-      const errorEl = document.getElementById("cart-error");
-
-      // Hide all states first
-      [loadingEl, emptyEl, itemsEl, errorEl].forEach((el) => {
-        el?.classList.add("hidden");
-      });
-
-      // Update count badge
-      if (countBadge) {
-        if (cartData.item_count > 0) {
-          countBadge.textContent = cartData.item_count.toString();
-          countBadge.classList.remove("hidden");
-          countBadge.classList.add("flex");
-        } else {
-          countBadge.classList.add("hidden");
-          countBadge.classList.remove("flex");
+      if (cart && cart.total_items > 0) {
+        if (countEl) {
+          countEl.textContent = cart.total_items;
+          countEl.classList.remove("hidden");
         }
-      }
-
-      // Show appropriate state
-      if (cartData.item_count === 0) {
-        emptyEl?.classList.remove("hidden");
+        if (totalEl && cart.subtotal) {
+          totalEl.textContent = "$" + parseFloat(cart.subtotal).toFixed(2);
+        }
       } else {
-        itemsEl?.classList.remove("hidden");
-        renderCartItems(cartData);
-      }
-    }
-
-    // Render cart items in dropdown
-    function renderCartItems(cartData: any): void {
-      const itemsList = document.getElementById("cart-items-list");
-      const subtotalEl = document.getElementById("cart-subtotal");
-      const cartTypeIndicator = document.getElementById("cart-type-indicator");
-      const cartTypeIcon = document.getElementById("cart-type-icon");
-      const cartTypeText = document.getElementById("cart-type-text");
-
-      if (!cartData || !itemsList) return;
-
-      // Render items
-      if (cartData.items && cartData.items.length > 0) {
-        itemsList.innerHTML = cartData.items
-          .map(
-            (item: any) => `
-          <div class="flex items-center p-3 border-b border-gray-100 last:border-b-0">
-            <img 
-              src="${item.product.main_image || item.product.featured_image || "https://via.placeholder.com/60x60/e5e7eb/6b7280?text=No+Image"}" 
-              alt="${item.product.name}"
-              class="w-12 h-12 object-cover rounded"
-            >
-            <div class="flex-1 ml-3">
-              <h4 class="text-sm font-medium text-gray-900 line-clamp-1">${item.product.name}</h4>
-              <div class="flex items-center justify-between mt-1">
-                <span class="text-xs text-gray-500">Qty: ${item.quantity}</span>
-                <span class="text-sm font-semibold text-gray-900">$${(item.total_price || item.product.price * item.quantity).toFixed(2)}</span>
-              </div>
-            </div>
-            <button 
-              onclick="removeCartItem('${item.id}')" 
-              class="ml-2 text-gray-400 hover:text-red-500 transition-colors"
-              aria-label="Remove item"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
-          </div>
-        `,
-          )
-          .join("");
-      }
-
-      // Update subtotal
-      if (subtotalEl) {
-        subtotalEl.textContent = `$${cartData.subtotal.toFixed(2)}`;
-      }
-
-      // Update cart type indicator
-      if (
-        cartData.cart_type &&
-        cartTypeIndicator &&
-        cartTypeIcon &&
-        cartTypeText
-      ) {
-        const isDigital = cartData.cart_type === "digital";
-
-        cartTypeIcon.textContent = isDigital ? "Digital" : "Physical";
-        cartTypeText.textContent = isDigital
-          ? "Digital items only"
-          : "Physical items only";
-
-        cartTypeIndicator.className = `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-          isDigital
-            ? "bg-purple-100 text-purple-800"
-            : "bg-blue-100 text-blue-800"
-        }`;
-        cartTypeIndicator.classList.remove("hidden");
-      }
-    }
-
-    // Show loading state
-    function showLoadingState(): void {
-      const loadingEl = document.getElementById("cart-loading");
-      const emptyEl = document.getElementById("cart-empty");
-      const itemsEl = document.getElementById("cart-items");
-      const errorEl = document.getElementById("cart-error");
-
-      [emptyEl, itemsEl, errorEl].forEach((el) => el?.classList.add("hidden"));
-      loadingEl?.classList.remove("hidden");
-    }
-
-    // Show empty state
-    function showEmptyState(): void {
-      const loadingEl = document.getElementById("cart-loading");
-      const emptyEl = document.getElementById("cart-empty");
-      const itemsEl = document.getElementById("cart-items");
-      const errorEl = document.getElementById("cart-error");
-      const countBadge = document.getElementById("cart-count-badge");
-
-      [loadingEl, itemsEl, errorEl].forEach((el) =>
-        el?.classList.add("hidden"),
-      );
-      emptyEl?.classList.remove("hidden");
-      countBadge?.classList.add("hidden");
-    }
-
-    // Show error state
-    function showErrorState(): void {
-      const loadingEl = document.getElementById("cart-loading");
-      const emptyEl = document.getElementById("cart-empty");
-      const itemsEl = document.getElementById("cart-items");
-      const errorEl = document.getElementById("cart-error");
-
-      [loadingEl, emptyEl, itemsEl].forEach((el) =>
-        el?.classList.add("hidden"),
-      );
-      errorEl?.classList.remove("hidden");
-    }
-
-    // Setup dropdown behavior
-    function setupDropdownBehavior(): void {
-      // Toggle dropdown
-      cartButton?.addEventListener("click", function (e) {
-        e.stopPropagation();
-        cartDropdown?.classList.toggle("hidden");
-
-        // Load cart data when dropdown is opened
-        if (
-          !cartDropdown?.classList.contains("hidden") &&
-          cartManager &&
-          typeof cartManager.loadCartData === "function"
-        ) {
-          showLoadingState();
-          (cartManager as CartManager).loadCartData();
+        if (countEl) {
+          countEl.classList.add("hidden");
         }
+        if (totalEl) {
+          totalEl.textContent = "$0.00";
+        }
+      }
+    }
+
+    function showCartDropdown(cart) {
+      var dropdown = document.getElementById("cart-dropdown");
+      var loading = document.getElementById("cart-loading");
+      var empty = document.getElementById("cart-empty");
+      var itemsList = document.getElementById("cart-items-list");
+      var footer = document.getElementById("cart-footer");
+
+      if (!dropdown) return;
+
+      // Hide loading
+      if (loading) loading.classList.add("hidden");
+
+      if (!cart || cart.total_items === 0) {
+        // Show empty state
+        if (empty) empty.classList.remove("hidden");
+        if (itemsList) itemsList.classList.add("hidden");
+        if (footer) footer.classList.add("hidden");
+      } else {
+        // Show cart items
+        if (empty) empty.classList.add("hidden");
+        if (itemsList) itemsList.classList.remove("hidden");
+        if (footer) footer.classList.remove("hidden");
+
+        // Render items (simplified)
+        if (itemsList && cart.items) {
+          itemsList.innerHTML = cart.items
+            .map(function (item) {
+              var product = item.product || {};
+              var price = parseFloat(item.total_price || product.price || 0);
+              return (
+                '<div class="p-3 border-b border-gray-100 flex items-center space-x-3">' +
+                '<div class="flex-1">' +
+                '<h4 class="font-medium text-sm">' +
+                (product.name || "Product") +
+                "</h4>" +
+                '<p class="text-xs text-gray-500">Qty: ' +
+                (item.quantity || 1) +
+                "</p>" +
+                "</div>" +
+                '<span class="font-medium text-sm">$' +
+                price.toFixed(2) +
+                "</span>" +
+                "</div>"
+              );
+            })
+            .join("");
+        }
+      }
+
+      // Show dropdown
+      dropdown.classList.remove("hidden");
+    }
+
+    function hideCartDropdown() {
+      var dropdown = document.getElementById("cart-dropdown");
+      if (dropdown) dropdown.classList.add("hidden");
+    }
+
+    function loadCartData() {
+      return fetch(API_BASE + "/cart/", { headers: makeHeaders() })
+        .then(function (r) {
+          return r.ok ? r.json() : null;
+        })
+        .catch(function () {
+          return null;
+        });
+    }
+
+    function initCartIcon() {
+      var cartButton = document.getElementById("cart-button");
+      var closeButton = document.getElementById("close-cart-dropdown");
+
+      // Load and display cart data
+      loadCartData().then(function (cart) {
+        updateCartIcon(cart);
       });
 
-      // Close dropdown when clicking outside
+      // Cart button click
+      if (cartButton) {
+        cartButton.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          loadCartData().then(function (cart) {
+            updateCartIcon(cart);
+            showCartDropdown(cart);
+          });
+        });
+      }
+
+      // Close button
+      if (closeButton) {
+        closeButton.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          hideCartDropdown();
+        });
+      }
+
+      // Click outside to close
       document.addEventListener("click", function (e) {
-        const target = e.target as HTMLElement;
+        var dropdown = document.getElementById("cart-dropdown");
+        var cartButton = document.getElementById("cart-button");
+
         if (
-          cartDropdown &&
-          cartButton &&
-          !cartDropdown.contains(target) &&
-          !cartButton.contains(target)
+          dropdown &&
+          !dropdown.contains(e.target) &&
+          !cartButton.contains(e.target)
         ) {
-          cartDropdown.classList.add("hidden");
-        }
-      });
-
-      // Retry loading cart
-      retryButton?.addEventListener("click", function () {
-        if (cartManager && typeof cartManager.loadCartData === "function") {
-          showLoadingState();
-          (cartManager as CartManager).loadCartData();
-        }
-      });
-
-      // Close dropdown when pressing Escape key
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && !cartDropdown?.classList.contains("hidden")) {
-          cartDropdown?.classList.add("hidden");
+          hideCartDropdown();
         }
       });
     }
 
-    // Global function for removing cart items
-    (window as any).removeCartItem = async function (itemId: string) {
-      if (!cartManager || typeof cartManager.removeCartItem !== "function") {
-        console.error(
-          "CartManager not available or removeCartItem method missing",
-        );
-        return;
-      }
-      showLoadingState();
-      const result = await (cartManager as CartManager).removeCartItem(itemId);
-      if (!result.success) {
-        console.error("Failed to remove item:", result.message);
-        showErrorState();
-      }
-    };
-  });
-
-  // Cleanup subscription when component is removed
-  window.addEventListener("beforeunload", () => {
-    if (cartSubscription) {
-      cartSubscription();
+    // Initialize when DOM is ready
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initCartIcon);
+    } else {
+      initCartIcon();
     }
-  });
+  })();
 </script>
