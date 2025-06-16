@@ -87,7 +87,7 @@ const metaDescription = "Review and manage items in your cart before checkout.";
                     </button>
                   </div>
                 </div>
-                <div id="cart-items-list" class="divide-y divide-gray-200">
+                <div id="main-cart-items-list" class="divide-y divide-gray-200">
                   <!-- Items will be populated by JavaScript -->
                 </div>
               </div>
@@ -181,6 +181,7 @@ const metaDescription = "Review and manage items in your cart before checkout.";
   <script is:inline>
     (function () {
       var API_BASE = "https://corrison.corrisonapi.com/api/v1";
+      var cartData = null; // Store cart data globally
 
       function getToken() {
         try {
@@ -270,7 +271,7 @@ const metaDescription = "Review and manage items in your cart before checkout.";
       }
 
       function renderCartItems(cart) {
-        var itemsList = document.getElementById("cart-items-list");
+        var itemsList = document.getElementById("main-cart-items-list");
         if (!itemsList || !cart.items) return;
 
         itemsList.innerHTML = cart.items
@@ -307,6 +308,8 @@ const metaDescription = "Review and manage items in your cart before checkout.";
               '<div class="flex items-center space-x-2">' +
               '<button data-action="decrease" data-item-id="' +
               item.id +
+              '" data-current-quantity="' +
+              item.quantity +
               '" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50">' +
               "<span>−</span>" +
               "</button>" +
@@ -315,6 +318,8 @@ const metaDescription = "Review and manage items in your cart before checkout.";
               "</span>" +
               '<button data-action="increase" data-item-id="' +
               item.id +
+              '" data-current-quantity="' +
+              item.quantity +
               '" class="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50">' +
               "<span>+</span>" +
               "</button>" +
@@ -355,6 +360,7 @@ const metaDescription = "Review and manage items in your cart before checkout.";
           })
           .then(function (cart) {
             console.log("Cart data loaded:", cart);
+            cartData = cart; // Store cart data
 
             if (!cart || cart.total_items === 0) {
               showEmpty();
@@ -371,17 +377,38 @@ const metaDescription = "Review and manage items in your cart before checkout.";
       }
 
       function updateItemQuantity(itemId, action) {
-        var endpoint = API_BASE + "/items/" + itemId + "/" + action + "/";
+        // Find the current quantity from button's data attribute
+        var btn = document.querySelector(
+          '[data-item-id="' + itemId + '"][data-action="' + action + '"]',
+        );
+        var currentQuantity = parseInt(
+          btn.getAttribute("data-current-quantity") || "1",
+        );
 
-        fetch(endpoint, {
-          method: "POST",
+        // Calculate new quantity
+        var newQuantity =
+          action === "increase" ? currentQuantity + 1 : currentQuantity - 1;
+
+        // Don't allow quantity less than 1
+        if (newQuantity < 1) {
+          if (confirm("Remove this item from your cart?")) {
+            removeItem(itemId);
+          }
+          return;
+        }
+
+        // Use PATCH to update the quantity
+        fetch(API_BASE + "/items/" + itemId + "/", {
+          method: "PATCH",
           headers: makeHeaders(),
+          body: JSON.stringify({ quantity: newQuantity }),
         })
           .then(function (r) {
             if (r.ok) return r.json();
             throw new Error("Failed to update quantity");
           })
           .then(function () {
+            showMsg("Quantity updated", true);
             loadCart();
             window.dispatchEvent(new CustomEvent("cartUpdated"));
           })
