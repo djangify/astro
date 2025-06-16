@@ -6,7 +6,7 @@ import Footer from "../components/Footer.astro";
 interface Props {
   title?: string;
   description?: string;
-  hideHeader?: boolean; // Add prop to conditionally hide header
+  hideHeader?: boolean;
 }
 
 const {
@@ -23,7 +23,7 @@ const authPagePaths = [
   '/auth/dashboard',
   '/auth/profile', 
   '/auth/settings',
-  '/calendar',  // Calendar page should use sidebar only when logged in
+  '/calendar',
   '/courses/my-courses',
   '/calendar/my-appointments',
   '/orders',
@@ -63,62 +63,6 @@ const isDashboardPage = authPagePaths.some(path => currentPath.startsWith(path))
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-
-    <!-- Cart Manager - Load Before Other Scripts -->
-    <script type="module">
-      // Import and initialize cart manager globally
-      try {
-        import { cartManager } from '../lib/cart.js';
-        
-        // Make cart manager available globally
-        window.cartManager = cartManager;
-        console.log('CartManager loaded and attached to window');
-        
-        // Auto-load cart data when DOM is ready
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initializeCart);
-        } else {
-          initializeCart();
-        }
-        
-        async function initializeCart() {
-          try {
-            console.log('Initializing cart data...');
-            await cartManager.loadCartData();
-            console.log('Cart data loaded successfully');
-            
-            // Dispatch cart ready event for other components
-            document.dispatchEvent(new CustomEvent('cartReady', {
-              detail: { cartManager }
-            }));
-          } catch (error) {
-            console.error('Failed to load cart data:', error);
-            // Still dispatch ready event even if loading fails
-            document.dispatchEvent(new CustomEvent('cartReady', {
-              detail: { cartManager }
-            }));
-          }
-        }
-        
-      } catch (error) {
-        console.error('Failed to load cart manager:', error);
-        
-        // Create a fallback empty cart manager to prevent undefined errors
-        window.cartManager = {
-          loadCartData: () => Promise.resolve(null),
-          addToCart: () => Promise.resolve({ success: false, message: 'Cart unavailable' }),
-          updateCartItem: () => Promise.resolve({ success: false, message: 'Cart unavailable' }),
-          removeCartItem: () => Promise.resolve({ success: false, message: 'Cart unavailable' }),
-          clearCart: () => Promise.resolve({ success: false, message: 'Cart unavailable' }),
-          getCartData: () => null,
-          getItemCount: () => 0,
-          getSubtotal: () => 0,
-          subscribe: () => () => {}
-        };
-        
-        console.log('Fallback cart manager created');
-      }
-    </script>
 
     <slot name="head" />
   </head>

@@ -1,5 +1,5 @@
 ---
-// src/components/CartIcon.astro - COMPLETE SOLUTION
+// src/components/CartIcon.astro - FIXED - No Dynamic Imports
 
 export interface Props {
   className?: string;
@@ -171,11 +171,25 @@ const { className = "" } = Astro.props;
 </div>
 
 <script>
-  // COMPLETE CART INTEGRATION - This is the real fix!
-  let cartManager: any = null;
+  // FIXED: Use direct import - let Astro handle bundling
+  import { cartManager as importedCartManager } from "../lib/cart.js";
+
+  // Type declaration for cartManager
+  type CartManager = {
+    subscribe: (callback: (data: any) => void) => () => void;
+    loadCartData: () => Promise<void>;
+    removeCartItem: (
+      itemId: string,
+    ) => Promise<{ success: boolean; message?: string }>;
+  };
+
+  // Explicitly type cartManager to avoid 'never' type error
+  const cartManager: CartManager =
+    importedCartManager as unknown as CartManager;
+
   let cartSubscription: (() => void) | null = null;
 
-  document.addEventListener("DOMContentLoaded", async function () {
+  document.addEventListener("DOMContentLoaded", function () {
     console.log("Initializing CartIcon component...");
 
     // DOM Elements
@@ -183,46 +197,36 @@ const { className = "" } = Astro.props;
     const cartDropdown = document.getElementById("cart-dropdown");
     const retryButton = document.getElementById("retry-cart-load");
 
-    // STEP 1: Initialize CartManager
-    await initializeCartManager();
+    // Check if cartManager is available and has required methods
+    if (!cartManager || typeof cartManager.subscribe !== "function") {
+      console.error("CartManager not available or invalid");
+      showErrorState();
+      return;
+    }
 
-    // STEP 2: Setup dropdown behavior
+    // Subscribe to cart updates
+    cartSubscription = (cartManager as CartManager).subscribe(
+      (cartData: any) => {
+        console.log("Cart updated in CartIcon:", cartData);
+        updateCartDisplay(cartData);
+      },
+    );
+
+    // Setup dropdown behavior
     setupDropdownBehavior();
 
-    // STEP 3: Load initial cart data
-    if (cartManager) {
-      await cartManager.loadCartData();
-    }
+    // Load initial cart data
+    (cartManager as CartManager).loadCartData();
 
     console.log("CartIcon component initialized");
 
-    // Listen for cart updates from other pages
-    window.addEventListener("cartUpdated", (event) => {
+    // Listen for cart updates from other components
+    window.addEventListener("cartUpdated", () => {
       console.log("CartIcon received cart update event");
-      if (cartManager) {
-        cartManager.loadCartData();
+      if (cartManager && typeof cartManager.loadCartData === "function") {
+        (cartManager as CartManager).loadCartData();
       }
     });
-
-    // Initialize CartManager and connect to cart system
-    async function initializeCartManager(): Promise<void> {
-      try {
-        // Import CartManager dynamically
-        const cartModule = await import("../lib/cart.js");
-        cartManager = cartModule.cartManager;
-
-        // Subscribe to cart updates
-        cartSubscription = cartManager.subscribe((cartData: any) => {
-          console.log("Cart updated in CartIcon:", cartData);
-          updateCartDisplay(cartData);
-        });
-
-        console.log("CartManager connected to CartIcon");
-      } catch (error) {
-        console.error("Failed to initialize CartManager in CartIcon:", error);
-        showErrorState();
-      }
-    }
 
     // Update cart display when data changes
     function updateCartDisplay(cartData: any): void {
@@ -381,9 +385,13 @@ const { className = "" } = Astro.props;
         cartDropdown?.classList.toggle("hidden");
 
         // Load cart data when dropdown is opened
-        if (!cartDropdown?.classList.contains("hidden") && cartManager) {
+        if (
+          !cartDropdown?.classList.contains("hidden") &&
+          cartManager &&
+          typeof cartManager.loadCartData === "function"
+        ) {
           showLoadingState();
-          cartManager.loadCartData();
+          (cartManager as CartManager).loadCartData();
         }
       });
 
@@ -402,9 +410,9 @@ const { className = "" } = Astro.props;
 
       // Retry loading cart
       retryButton?.addEventListener("click", function () {
-        if (cartManager) {
+        if (cartManager && typeof cartManager.loadCartData === "function") {
           showLoadingState();
-          cartManager.loadCartData();
+          (cartManager as CartManager).loadCartData();
         }
       });
 
@@ -418,13 +426,17 @@ const { className = "" } = Astro.props;
 
     // Global function for removing cart items
     (window as any).removeCartItem = async function (itemId: string) {
-      if (cartManager) {
-        showLoadingState();
-        const result = await cartManager.removeCartItem(itemId);
-        if (!result.success) {
-          console.error("Failed to remove item:", result.message);
-          showErrorState();
-        }
+      if (!cartManager || typeof cartManager.removeCartItem !== "function") {
+        console.error(
+          "CartManager not available or removeCartItem method missing",
+        );
+        return;
+      }
+      showLoadingState();
+      const result = await (cartManager as CartManager).removeCartItem(itemId);
+      if (!result.success) {
+        console.error("Failed to remove item:", result.message);
+        showErrorState();
       }
     };
   });

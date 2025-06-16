@@ -223,231 +223,183 @@ const metaDescription = "Review and manage items in your cart before checkout.";
   </div>
 
   <Footer slot="footer" />
-</BaseLayout>
 
-<script type="module">
-  // @ts-nocheck
-  const cartManager = window.cartManager;
-  let currentCartData = null;
+  <script is:inline>
+    (function () {
+      var API_BASE = "https://corrison.corrisonapi.com/api/v1";
 
-  const elements = {
-    cartLoading: document.getElementById("cart-loading"),
-    cartContent: document.getElementById("cart-content"),
-    emptyCart: document.getElementById("empty-cart"),
-    cartError: document.getElementById("cart-error"),
-    cartItemsList: document.getElementById("cart-items-list"),
-    cartItemCount: document.getElementById("cart-item-count"),
-    summaryItemCount: document.getElementById("summary-item-count"),
-    cartSubtotal: document.getElementById("cart-subtotal"),
-    cartTax: document.getElementById("cart-tax"),
-    cartTotal: document.getElementById("cart-total"),
-    clearCartBtn: document.getElementById("clear-cart-btn"),
-    checkoutBtn: document.getElementById("checkout-btn"),
-    retryCartBtn: document.getElementById("retry-cart-btn"),
-  };
-
-  async function initializeCartPage() {
-    try {
-      showLoadingState();
-      await loadCartData();
-    } catch (error) {
-      console.error("Error initializing cart page:", error);
-      showErrorState();
-    }
-  }
-
-  async function loadCartData() {
-    try {
-      const cartData = await cartManager.loadCartData();
-      if (!cartData || cartData.total_items === 0) {
-        showEmptyCartState();
-        return;
-      }
-      currentCartData = cartData;
-      renderCartItems();
-      updateCartSummary();
-      showCartContent();
-    } catch (error) {
-      console.error("Error loading cart data:", error);
-      showErrorState();
-    }
-  }
-
-  function renderCartItems() {
-    if (!currentCartData || !elements.cartItemsList) return;
-    const items = currentCartData.items || [];
-
-    elements.cartItemsList.innerHTML = items
-      .map((item) => createCartItemHTML(item))
-      .join("");
-
-    if (elements.cartItemCount)
-      elements.cartItemCount.textContent = items.length.toString();
-    if (elements.summaryItemCount)
-      elements.summaryItemCount.textContent = items.length.toString();
-  }
-
-  function createCartItemHTML(item) {
-    const product = item.product;
-    const imageUrl = product.main_image || "/static/images/placeholder.png";
-    const unitPrice =
-      typeof item.unit_price === "string"
-        ? parseFloat(item.unit_price)
-        : item.unit_price;
-    const totalPrice =
-      typeof item.total_price === "string"
-        ? parseFloat(item.total_price)
-        : item.total_price;
-
-    return `<div class="p-6" data-item-id="${item.id}">
-      <div class="flex items-start space-x-4">
-        <div class="flex-shrink-0">
-          <img src="${imageUrl}" alt="${product.name}" class="w-20 h-20 object-cover rounded-lg" onerror="this.src='/static/images/placeholder.png'"/>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <h3 class="text-lg font-semibold text-gray-900 hover:text-blue-600">
-                <a href="/ecommerce/${product.slug}" class="transition-colors">${product.name}</a>
-              </h3>
-              <div class="mt-1 flex items-center space-x-2">
-                <span class="px-2 py-1 text-xs font-medium rounded-full ${product.product_type === "digital" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"}">
-                  ${product.product_type === "digital" ? "Digital Download" : "Physical Product"}
-                </span>
-              </div>
-              <div class="mt-2 text-sm text-gray-600">
-                <span class="font-medium">$${unitPrice.toFixed(2)}</span> per item
-              </div>
-            </div>
-            <button onclick="removeCartItem('${item.id}')" class="ml-4 text-gray-400 hover:text-red-600 transition-colors" title="Remove item">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-              </svg>
-            </button>
-          </div>
-          <div class="mt-4 flex items-center justify-between">
-            <div class="flex items-center border border-gray-300 rounded-lg">
-              <button onclick="updateQuantity('${item.id}', ${Math.max(1, item.quantity - 1)})" class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
-                </svg>
-              </button>
-              <input type="number" value="${item.quantity}" min="1" max="10" class="w-16 px-3 py-2 text-center border-0 focus:ring-0" onchange="updateQuantity('${item.id}', parseInt(this.value) || 1)"/>
-              <button onclick="updateQuantity('${item.id}', ${item.quantity + 1})" class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-              </button>
-            </div>
-            <div class="text-right">
-              <div class="text-lg font-semibold text-gray-900">$${totalPrice.toFixed(2)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  function updateCartSummary() {
-    if (!currentCartData) return;
-    const subtotal =
-      typeof currentCartData.subtotal === "string"
-        ? parseFloat(currentCartData.subtotal)
-        : currentCartData.subtotal || 0;
-    const tax = 0;
-    const total = subtotal + tax;
-    if (elements.cartSubtotal)
-      elements.cartSubtotal.textContent = `$${subtotal.toFixed(2)}`;
-    if (elements.cartTax) elements.cartTax.textContent = `$${tax.toFixed(2)}`;
-    if (elements.cartTotal)
-      elements.cartTotal.textContent = `$${total.toFixed(2)}`;
-  }
-
-  async function updateQuantity(itemId, newQuantity) {
-    if (newQuantity < 1 || newQuantity > 10) return;
-    try {
-      const result = await cartManager.updateCartItem(itemId, newQuantity);
-      if (result.success) {
-        currentCartData = result.cart_data;
-        renderCartItems();
-        updateCartSummary();
-      }
-    } catch (error) {
-      console.error("Error updating quantity:", error);
-    }
-  }
-
-  async function removeCartItem(itemId) {
-    try {
-      const result = await cartManager.removeCartItem(itemId);
-      if (result.success) {
-        currentCartData = result.cart_data;
-        if (!currentCartData || currentCartData.total_items === 0) {
-          showEmptyCartState();
-        } else {
-          renderCartItems();
-          updateCartSummary();
+      function getToken() {
+        try {
+          return localStorage.getItem("cart_token");
+        } catch (e) {
+          return null;
         }
       }
-    } catch (error) {
-      console.error("Error removing item:", error);
-    }
-  }
 
-  async function clearCart() {
-    if (!confirm("Are you sure you want to clear your cart?")) return;
-    try {
-      const result = await cartManager.clearCart();
-      if (result.success) {
-        showEmptyCartState();
+      function setToken(token) {
+        try {
+          if (token) localStorage.setItem("cart_token", token);
+        } catch (e) {}
       }
-    } catch (error) {
-      console.error("Error clearing cart:", error);
-    }
-  }
 
-  function showLoadingState() {
-    hideAllStates();
-    elements.cartLoading?.classList.remove("hidden");
-  }
+      function makeHeaders() {
+        var h = { "Content-Type": "application/json" };
+        var t = getToken();
+        if (t) h.Authorization = "Bearer " + t;
+        return h;
+      }
 
-  function showCartContent() {
-    hideAllStates();
-    elements.cartContent?.classList.remove("hidden");
-  }
+      function showMsg(text, good) {
+        var d = document.createElement("div");
+        d.style.position = "fixed";
+        d.style.top = "16px";
+        d.style.right = "16px";
+        d.style.padding = "16px";
+        d.style.borderRadius = "8px";
+        d.style.color = "white";
+        d.style.zIndex = "9999";
+        d.style.backgroundColor = good ? "#10b981" : "#ef4444";
+        d.textContent = text;
+        document.body.appendChild(d);
+        setTimeout(function () {
+          if (d.parentNode) d.parentNode.removeChild(d);
+        }, 3000);
+      }
 
-  function showEmptyCartState() {
-    hideAllStates();
-    elements.emptyCart?.classList.remove("hidden");
-  }
+      function addToCart(product, qty) {
+        var q = parseInt(qty) || 1;
+        var pid = parseInt(product.id);
 
-  function showErrorState() {
-    hideAllStates();
-    elements.cartError?.classList.remove("hidden");
-  }
+        if (!pid) {
+          showMsg("Invalid product", false);
+          return;
+        }
 
-  function hideAllStates() {
-    elements.cartLoading?.classList.add("hidden");
-    elements.cartContent?.classList.add("hidden");
-    elements.emptyCart?.classList.add("hidden");
-    elements.cartError?.classList.add("hidden");
-  }
+        fetch(API_BASE + "/items/", {
+          method: "POST",
+          headers: makeHeaders(),
+          body: JSON.stringify({ product: pid, quantity: q }),
+        })
+          .then(function (r) {
+            if (r.ok) {
+              return r.json();
+            }
+            throw new Error("Failed");
+          })
+          .then(function (data) {
+            if (data.cart_token) setToken(data.cart_token);
+            showMsg("Added to cart!", true);
 
-  function setupEventListeners() {
-    elements.clearCartBtn?.addEventListener("click", clearCart);
-    elements.checkoutBtn?.addEventListener(
-      "click",
-      () => (window.location.href = "/checkout"),
-    );
-    elements.retryCartBtn?.addEventListener("click", loadCartData);
-  }
+            var btn = document.getElementById("add-to-cart-btn");
+            if (btn) {
+              btn.textContent = "Added!";
+              btn.style.backgroundColor = "#10b981";
+              setTimeout(function () {
+                btn.textContent = "Add to Cart";
+                btn.disabled = false;
+                btn.style.backgroundColor = "";
+              }, 2000);
+            }
+          })
+          .catch(function () {
+            showMsg("Failed to add", false);
+            var btn = document.getElementById("add-to-cart-btn");
+            if (btn) {
+              btn.textContent = "Add to Cart";
+              btn.disabled = false;
+            }
+          });
+      }
 
-  // Make functions global for onclick handlers
-  window.updateQuantity = updateQuantity;
-  window.removeCartItem = removeCartItem;
+      function loadCart() {
+        fetch(API_BASE + "/cart/", { headers: makeHeaders() })
+          .then(function (r) {
+            if (r.ok) return r.json();
+            return null;
+          })
+          .then(function (cart) {
+            console.log("Cart response:", cart);
 
-  document.addEventListener("DOMContentLoaded", async () => {
-    setupEventListeners();
-    await initializeCartPage();
-  });
-</script>
+            var loading = document.getElementById("cart-loading");
+            var empty = document.getElementById("empty-cart");
+            var content = document.getElementById("cart-content");
+            var checkoutLoading = document.getElementById("checkout-loading");
+            var emptyCheckout = document.getElementById("empty-cart-redirect");
+            var checkoutContent = document.getElementById("checkout-content");
+
+            // Hide loading states
+            if (loading) loading.style.display = "none";
+            if (checkoutLoading) checkoutLoading.style.display = "none";
+
+            // Check if cart is empty - FIXED LOGIC
+            if (!cart || cart.total_items === 0 || cart.total_items === "0") {
+              console.log("Cart is empty, showing empty state");
+              if (empty) empty.style.display = "block";
+              if (content) content.style.display = "none";
+              if (emptyCheckout) emptyCheckout.style.display = "block";
+              if (checkoutContent) checkoutContent.style.display = "none";
+            } else {
+              console.log("Cart has items, showing cart content");
+              if (empty) empty.style.display = "none";
+              if (content) content.style.display = "block";
+              if (emptyCheckout) emptyCheckout.style.display = "none";
+              if (checkoutContent) checkoutContent.style.display = "block";
+
+              var count = document.getElementById("cart-item-count");
+              var subtotal = document.getElementById("cart-subtotal");
+              var total = document.getElementById("cart-total");
+
+              if (count) count.textContent = cart.total_items;
+              if (subtotal && cart.subtotal)
+                subtotal.textContent =
+                  "$" + parseFloat(cart.subtotal).toFixed(2);
+              if (total && cart.subtotal)
+                total.textContent = "$" + parseFloat(cart.subtotal).toFixed(2);
+            }
+          })
+          .catch(function (error) {
+            console.log("Cart load error:", error);
+            var loading = document.getElementById("cart-loading");
+            var checkoutLoading = document.getElementById("checkout-loading");
+            var empty = document.getElementById("empty-cart");
+            var emptyCheckout = document.getElementById("empty-cart-redirect");
+
+            if (loading) loading.style.display = "none";
+            if (checkoutLoading) checkoutLoading.style.display = "none";
+            if (empty) empty.style.display = "block";
+            if (emptyCheckout) emptyCheckout.style.display = "block";
+          });
+      }
+
+      function init() {
+        console.log("Initializing cart script");
+
+        var addBtn = document.getElementById("add-to-cart-btn");
+        if (addBtn && window.preloadedProduct) {
+          addBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            var qtyInput = document.getElementById("quantity-input");
+            var qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+            addBtn.disabled = true;
+            addBtn.textContent = "Adding...";
+            addToCart(window.preloadedProduct, qty);
+          });
+        }
+
+        if (
+          document.getElementById("cart-content") ||
+          document.getElementById("checkout-content")
+        ) {
+          console.log("Loading cart data");
+          loadCart();
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</BaseLayout>

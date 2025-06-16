@@ -354,426 +354,182 @@ const metaDescription =
   </div>
 
   <Footer slot="footer" />
-</BaseLayout>
-<script type="module">
-  import { cartManager } from "../lib/cart.js";
+  <script is:inline>
+    (function () {
+      var API_BASE = "https://corrison.corrisonapi.com/api/v1";
 
-  // Stripe configuration
-  const STRIPE_PUBLISHABLE_KEY = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  const API_BASE_URL = "https://corrison.corrisonapi.com/api/v1";
-
-  // Stripe elements
-  let stripe = null;
-  let elements = null;
-  let cardElement = null;
-
-  // DOM elements
-  const domElements = {
-    checkoutLoading: document.getElementById("checkout-loading"),
-    checkoutContent: document.getElementById("checkout-content"),
-    emptyCartRedirect: document.getElementById("empty-cart-redirect"),
-    checkoutError: document.getElementById("checkout-error"),
-    checkoutForm: document.getElementById("checkout-form"),
-    orderItems: document.getElementById("order-items"),
-    orderSubtotal: document.getElementById("order-subtotal"),
-    orderTax: document.getElementById("order-tax"),
-    orderTotal: document.getElementById("order-total"),
-    submitButton: document.getElementById("submit-payment"),
-    buttonText: document.getElementById("button-text"),
-    buttonSpinner: document.getElementById("button-spinner"),
-    cardErrors: document.getElementById("card-errors"),
-    errorMessage: document.getElementById("error-message"),
-    retryBtn: document.getElementById("retry-checkout-btn"),
-  };
-
-  let currentCartData = null;
-  let clientSecret = "";
-
-  // Initialize checkout page
-  async function initializeCheckout() {
-    try {
-      showLoadingState();
-
-      // Wait for cart manager to be ready
-      await waitForCartManager();
-
-      // Initialize Stripe
-      await initializeStripe();
-
-      // Load cart data
-      await loadCheckoutData();
-    } catch (error) {
-      console.error("Error initializing checkout:", error);
-      showErrorState("Failed to initialize checkout. Please try again.");
-    }
-  }
-
-  // Wait for cart manager to be available
-  async function waitForCartManager() {
-    if (cartManager) {
-      console.log("Cart manager already available");
-      return;
-    }
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("Cart manager initialization timeout"));
-      }, 5000);
-
-      document.addEventListener(
-        "cartReady",
-        () => {
-          clearTimeout(timeout);
-          console.log("Cart manager ready from event");
-          resolve();
-        },
-        { once: true },
-      );
-    });
-  }
-
-  // Initialize Stripe
-  async function initializeStripe() {
-    try {
-      if (!window.Stripe) {
-        throw new Error("Stripe.js not loaded");
-      }
-
-      stripe = window.Stripe(STRIPE_PUBLISHABLE_KEY);
-      elements = stripe.elements();
-
-      // Create card element
-      const style = {
-        base: {
-          fontSize: "16px",
-          color: "#424770",
-          "::placeholder": {
-            color: "#aab7c4",
-          },
-        },
-        invalid: {
-          color: "#9e2146",
-        },
-      };
-
-      cardElement = elements.create("card", { style });
-      cardElement.mount("#card-element");
-
-      // Handle real-time validation errors from the card Element
-      cardElement.on("change", (event) => {
-        if (domElements.cardErrors) {
-          domElements.cardErrors.textContent = event.error
-            ? event.error.message
-            : "";
+      function getToken() {
+        try {
+          return localStorage.getItem("cart_token");
+        } catch (e) {
+          return null;
         }
-      });
-    } catch (error) {
-      console.error("Error initializing Stripe:", error);
-      throw new Error("Failed to initialize payment system");
-    }
-  }
-
-  // Load checkout data
-  async function loadCheckoutData() {
-    try {
-      // Load cart data
-      const cartData = await cartManager.loadCartData();
-
-      if (!cartData || cartData.total_items === 0) {
-        showEmptyCartState();
-        return;
       }
 
-      currentCartData = cartData;
-
-      // Create payment intent
-      await createPaymentIntent();
-
-      // Render checkout
-      renderCheckoutSummary();
-      populateUserData();
-      showCheckoutContent();
-    } catch (error) {
-      console.error("Error loading checkout data:", error);
-      throw error;
-    }
-  }
-
-  // Create Stripe payment intent
-  async function createPaymentIntent() {
-    try {
-      const cartToken = cartManager.getCartToken();
-
-      const response = await fetch(`${API_BASE_URL}/create-payment-intent/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(cartToken && { Authorization: `Bearer ${cartToken}` }),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create payment intent");
+      function setToken(token) {
+        try {
+          if (token) localStorage.setItem("cart_token", token);
+        } catch (e) {}
       }
 
-      const data = await response.json();
-      clientSecret = data.client_secret;
-    } catch (error) {
-      console.error("Error creating payment intent:", error);
-      throw new Error("Failed to initialize payment");
-    }
-  }
-
-  // Render checkout summary
-  function renderCheckoutSummary() {
-    if (!currentCartData || !domElements.orderItems) return;
-
-    const items = currentCartData.items || [];
-
-    // Render items
-    domElements.orderItems.innerHTML = items
-      .map((item) => {
-        const product = item.product;
-        const imageUrl = product.main_image || "/static/images/placeholder.png";
-        const totalPrice =
-          typeof item.total_price === "string"
-            ? parseFloat(item.total_price)
-            : item.total_price;
-
-        return `
-        <div class="flex items-center space-x-3">
-          <img 
-            src="${imageUrl}" 
-            alt="${product.name}"
-            class="w-12 h-12 object-cover rounded"
-            onerror="this.src='/static/images/placeholder.png'"
-          />
-          <div class="flex-1 min-w-0">
-            <h4 class="text-sm font-medium text-gray-900 truncate">${product.name}</h4>
-            <p class="text-sm text-gray-600">Qty: ${item.quantity}</p>
-          </div>
-          <div class="text-sm font-medium text-gray-900">
-            $${totalPrice.toFixed(2)}
-          </div>
-        </div>
-      `;
-      })
-      .join("");
-
-    // Update totals
-    const subtotal =
-      typeof currentCartData.subtotal === "string"
-        ? parseFloat(currentCartData.subtotal)
-        : currentCartData.subtotal;
-
-    const tax = 0; // Digital products typically don't have tax
-    const total = subtotal + tax;
-
-    if (domElements.orderSubtotal)
-      domElements.orderSubtotal.textContent = `$${subtotal.toFixed(2)}`;
-    if (domElements.orderTax)
-      domElements.orderTax.textContent = `$${tax.toFixed(2)}`;
-    if (domElements.orderTotal)
-      domElements.orderTotal.textContent = `$${total.toFixed(2)}`;
-  }
-
-  // Populate user data if authenticated
-  function populateUserData() {
-    try {
-      const userData = localStorage.getItem("user_data");
-      if (userData) {
-        const user = JSON.parse(userData);
-
-        const emailInput = document.getElementById("email");
-        const firstNameInput = document.getElementById("first-name");
-        const lastNameInput = document.getElementById("last-name");
-
-        if (emailInput && user.email) emailInput.value = user.email;
-        if (firstNameInput && user.first_name)
-          firstNameInput.value = user.first_name;
-        if (lastNameInput && user.last_name)
-          lastNameInput.value = user.last_name;
-      }
-    } catch (error) {
-      // Ignore errors - user might not be logged in
-      console.log("No user data available");
-    }
-  }
-
-  // Handle form submission
-  async function handleSubmit(event) {
-    event.preventDefault();
-
-    if (!stripe || !cardElement || !clientSecret) {
-      showNotification("Payment system not ready. Please try again.", "error");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Get form data
-      const formData = new FormData(domElements.checkoutForm);
-      const customerData = {
-        email: formData.get("email"),
-        first_name: formData.get("first_name"),
-        last_name: formData.get("last_name"),
-        notes: formData.get("notes"),
-      };
-
-      // Validate required fields
-      if (!customerData.email) {
-        showNotification("Email address is required", "error");
-        setLoading(false);
-        return;
+      function makeHeaders() {
+        var h = { "Content-Type": "application/json" };
+        var t = getToken();
+        if (t) h.Authorization = "Bearer " + t;
+        return h;
       }
 
-      // Confirm payment with Stripe
-      const { error, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret,
-        {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              email: customerData.email,
-              name: `${customerData.first_name} ${customerData.last_name}`.trim(),
-            },
-          },
-        },
-      );
-
-      if (error) {
-        console.error("Payment failed:", error);
-        showNotification(error.message || "Payment failed", "error");
-        setLoading(false);
-        return;
+      function showMsg(text, good) {
+        var d = document.createElement("div");
+        d.style.position = "fixed";
+        d.style.top = "16px";
+        d.style.right = "16px";
+        d.style.padding = "16px";
+        d.style.borderRadius = "8px";
+        d.style.color = "white";
+        d.style.zIndex = "9999";
+        d.style.backgroundColor = good ? "#10b981" : "#ef4444";
+        d.textContent = text;
+        document.body.appendChild(d);
+        setTimeout(function () {
+          if (d.parentNode) d.parentNode.removeChild(d);
+        }, 3000);
       }
 
-      // Payment succeeded, create order
-      await createOrder(customerData, paymentIntent.id);
-    } catch (error) {
-      console.error("Checkout error:", error);
-      showNotification("An error occurred during checkout", "error");
-      setLoading(false);
-    }
-  }
+      function addToCart(product, qty) {
+        var q = parseInt(qty) || 1;
+        var pid = parseInt(product.id);
 
-  // Create order after successful payment
-  async function createOrder(customerData, paymentIntentId) {
-    try {
-      const cartToken = cartManager.getCartToken();
+        if (!pid) {
+          showMsg("Invalid product", false);
+          return;
+        }
 
-      const response = await fetch(`${API_BASE_URL}/create-order/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(cartToken && { Authorization: `Bearer ${cartToken}` }),
-        },
-        body: JSON.stringify({
-          ...customerData,
-          payment_intent_id: paymentIntentId,
-        }),
-      });
+        fetch(API_BASE + "/items/", {
+          method: "POST",
+          headers: makeHeaders(),
+          body: JSON.stringify({ product: pid, quantity: q }),
+        })
+          .then(function (r) {
+            if (r.ok) {
+              return r.json();
+            }
+            throw new Error("Failed");
+          })
+          .then(function (data) {
+            if (data.cart_token) setToken(data.cart_token);
+            showMsg("Added to cart!", true);
 
-      if (!response.ok) {
-        throw new Error("Failed to create order");
+            var btn = document.getElementById("add-to-cart-btn");
+            if (btn) {
+              btn.textContent = "Added!";
+              btn.style.backgroundColor = "#10b981";
+              setTimeout(function () {
+                btn.textContent = "Add to Cart";
+                btn.disabled = false;
+                btn.style.backgroundColor = "";
+              }, 2000);
+            }
+          })
+          .catch(function () {
+            showMsg("Failed to add", false);
+            var btn = document.getElementById("add-to-cart-btn");
+            if (btn) {
+              btn.textContent = "Add to Cart";
+              btn.disabled = false;
+            }
+          });
       }
 
-      const orderData = await response.json();
+      function loadCart() {
+        fetch(API_BASE + "/cart/", { headers: makeHeaders() })
+          .then(function (r) {
+            if (r.ok) return r.json();
+            return null;
+          })
+          .then(function (cart) {
+            console.log("Cart response:", cart);
 
-      // Clear cart
-      await cartManager.clearCart();
+            var loading = document.getElementById("cart-loading");
+            var empty = document.getElementById("empty-cart");
+            var content = document.getElementById("cart-content");
+            var checkoutLoading = document.getElementById("checkout-loading");
+            var emptyCheckout = document.getElementById("empty-cart-redirect");
+            var checkoutContent = document.getElementById("checkout-content");
 
-      // Redirect to confirmation page
-      window.location.href = `/order-confirmation/${orderData.order.order_number}`;
-    } catch (error) {
-      console.error("Error creating order:", error);
-      showNotification(
-        "Payment successful but order creation failed. Please contact support.",
-        "error",
-      );
-      setLoading(false);
-    }
-  }
+            // Hide loading states
+            if (loading) loading.style.display = "none";
+            if (checkoutLoading) checkoutLoading.style.display = "none";
 
-  // Set loading state
-  function setLoading(loading) {
-    if (domElements.submitButton) {
-      domElements.submitButton.disabled = loading;
-    }
+            // Check if cart is empty - FIXED LOGIC
+            if (!cart || cart.total_items === 0 || cart.total_items === "0") {
+              console.log("Cart is empty, showing empty state");
+              if (empty) empty.style.display = "block";
+              if (content) content.style.display = "none";
+              if (emptyCheckout) emptyCheckout.style.display = "block";
+              if (checkoutContent) checkoutContent.style.display = "none";
+            } else {
+              console.log("Cart has items, showing cart content");
+              if (empty) empty.style.display = "none";
+              if (content) content.style.display = "block";
+              if (emptyCheckout) emptyCheckout.style.display = "none";
+              if (checkoutContent) checkoutContent.style.display = "block";
 
-    if (domElements.buttonText && domElements.buttonSpinner) {
-      if (loading) {
-        domElements.buttonText.classList.add("hidden");
-        domElements.buttonSpinner.classList.remove("hidden");
+              var count = document.getElementById("cart-item-count");
+              var subtotal = document.getElementById("cart-subtotal");
+              var total = document.getElementById("cart-total");
+
+              if (count) count.textContent = cart.total_items;
+              if (subtotal && cart.subtotal)
+                subtotal.textContent =
+                  "$" + parseFloat(cart.subtotal).toFixed(2);
+              if (total && cart.subtotal)
+                total.textContent = "$" + parseFloat(cart.subtotal).toFixed(2);
+            }
+          })
+          .catch(function (error) {
+            console.log("Cart load error:", error);
+            var loading = document.getElementById("cart-loading");
+            var checkoutLoading = document.getElementById("checkout-loading");
+            var empty = document.getElementById("empty-cart");
+            var emptyCheckout = document.getElementById("empty-cart-redirect");
+
+            if (loading) loading.style.display = "none";
+            if (checkoutLoading) checkoutLoading.style.display = "none";
+            if (empty) empty.style.display = "block";
+            if (emptyCheckout) emptyCheckout.style.display = "block";
+          });
+      }
+
+      function init() {
+        console.log("Initializing cart script");
+
+        var addBtn = document.getElementById("add-to-cart-btn");
+        if (addBtn && window.preloadedProduct) {
+          addBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            var qtyInput = document.getElementById("quantity-input");
+            var qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+            addBtn.disabled = true;
+            addBtn.textContent = "Adding...";
+            addToCart(window.preloadedProduct, qty);
+          });
+        }
+
+        if (
+          document.getElementById("cart-content") ||
+          document.getElementById("checkout-content")
+        ) {
+          console.log("Loading cart data");
+          loadCart();
+        }
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
       } else {
-        domElements.buttonText.classList.remove("hidden");
-        domElements.buttonSpinner.classList.add("hidden");
+        init();
       }
-    }
-  }
-
-  // Show notification
-  function showNotification(message, type = "info") {
-    const notification = document.createElement("div");
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 max-w-sm ${
-      type === "success"
-        ? "bg-green-500 text-white"
-        : type === "error"
-          ? "bg-red-500 text-white"
-          : "bg-blue-500 text-white"
-    }`;
-    notification.textContent = message;
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-      notification.remove();
-    }, 5000);
-  }
-
-  // State management functions
-  function showLoadingState() {
-    hideAllStates();
-    domElements.checkoutLoading?.classList.remove("hidden");
-  }
-
-  function showCheckoutContent() {
-    hideAllStates();
-    domElements.checkoutContent?.classList.remove("hidden");
-  }
-
-  function showEmptyCartState() {
-    hideAllStates();
-    domElements.emptyCartRedirect?.classList.remove("hidden");
-  }
-
-  function showErrorState(message) {
-    hideAllStates();
-    if (domElements.errorMessage)
-      domElements.errorMessage.textContent = message;
-    domElements.checkoutError?.classList.remove("hidden");
-  }
-
-  function hideAllStates() {
-    domElements.checkoutLoading?.classList.add("hidden");
-    domElements.checkoutContent?.classList.add("hidden");
-    domElements.emptyCartRedirect?.classList.add("hidden");
-    domElements.checkoutError?.classList.add("hidden");
-  }
-
-  // Event listeners
-  function setupEventListeners() {
-    // Form submission
-    domElements.checkoutForm?.addEventListener("submit", handleSubmit);
-
-    // Retry button
-    domElements.retryBtn?.addEventListener("click", initializeCheckout);
-  }
-
-  // Initialize when DOM is ready
-  document.addEventListener("DOMContentLoaded", () => {
-    setupEventListeners();
-    initializeCheckout();
-  });
-</script>
+    })();
+  </script>
+</BaseLayout>
