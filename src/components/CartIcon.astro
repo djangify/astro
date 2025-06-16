@@ -63,15 +63,6 @@ const { className = "" } = Astro.props;
 
     <!-- Cart Items Container -->
     <div id="cart-items-container" class="max-h-64 overflow-y-auto">
-      <!-- Loading State -->
-      <div id="cart-loading" class="p-4 text-center text-gray-500">
-        <div
-          class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"
-        >
-        </div>
-        Loading...
-      </div>
-
       <!-- Empty State -->
       <div id="cart-empty" class="p-4 text-center text-gray-500 hidden">
         <svg
@@ -127,6 +118,7 @@ const { className = "" } = Astro.props;
 </div>
 
 <!-- Inline Cart Icon Script -->
+<!-- REPLACE THE SCRIPT SECTION IN YOUR CartIcon.astro WITH THIS -->
 <script is:inline>
   (function () {
     var API_BASE = "https://corrison.corrisonapi.com/api/v1";
@@ -152,9 +144,15 @@ const { className = "" } = Astro.props;
 
       console.log("Updating cart icon with data:", cart);
 
-      if (cart && cart.total_items > 0) {
+      // FIX: Check both total_items AND items.length
+      var itemCount = 0;
+      if (cart) {
+        itemCount = cart.total_items || (cart.items ? cart.items.length : 0);
+      }
+
+      if (itemCount > 0) {
         if (countEl) {
-          countEl.textContent = cart.total_items;
+          countEl.textContent = itemCount;
           countEl.classList.remove("hidden");
         }
         if (totalEl && cart.subtotal) {
@@ -184,7 +182,14 @@ const { className = "" } = Astro.props;
       // Hide loading
       if (loading) loading.classList.add("hidden");
 
-      if (!cart || cart.total_items === 0) {
+      // FIX: Check both total_items AND items.length
+      var hasItems = false;
+      if (cart) {
+        hasItems =
+          cart.total_items > 0 || (cart.items && cart.items.length > 0);
+      }
+
+      if (!hasItems) {
         // Show empty state
         if (empty) empty.classList.remove("hidden");
         if (itemsList) itemsList.classList.add("hidden");
@@ -204,7 +209,7 @@ const { className = "" } = Astro.props;
               var imageUrl =
                 product.main_image ||
                 product.featured_image ||
-                "/images/placeholder.png";
+                "/static/images/placeholder.png";
 
               return (
                 '<div class="p-3 border-b border-gray-100 flex items-center space-x-3">' +
@@ -226,6 +231,9 @@ const { className = "" } = Astro.props;
                 '<span class="font-medium text-sm">$' +
                 price.toFixed(2) +
                 "</span>" +
+                '<button onclick="removeCartItem(' +
+                item.id +
+                ')" class="ml-2 text-red-500 hover:text-red-700 text-sm">×</button>' +
                 "</div>"
               );
             })
@@ -258,6 +266,33 @@ const { className = "" } = Astro.props;
           return null;
         });
     }
+
+    // ADD REMOVE ITEM FUNCTION
+    window.removeCartItem = function (itemId) {
+      console.log("Removing cart item:", itemId);
+
+      fetch(API_BASE + "/items/" + itemId + "/", {
+        method: "DELETE",
+        headers: makeHeaders(),
+      })
+        .then(function (r) {
+          if (r.ok) {
+            console.log("Item removed successfully");
+            // Refresh cart data
+            loadCartData().then(function (cart) {
+              updateCartIcon(cart);
+              showCartDropdown(cart); // Refresh dropdown if open
+            });
+            // Notify other components
+            window.dispatchEvent(new CustomEvent("cartUpdated"));
+          } else {
+            console.error("Failed to remove item");
+          }
+        })
+        .catch(function (error) {
+          console.error("Error removing item:", error);
+        });
+    };
 
     function initCartIcon() {
       console.log("Initializing CartIcon script");
