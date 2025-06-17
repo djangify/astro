@@ -8,6 +8,12 @@ import Footer from "../components/Footer.astro";
 const metaTitle = "Checkout – Corrison";
 const metaDescription =
   "Complete your purchase securely with our streamlined checkout process for digital products.";
+
+// Get environment variables
+const apiUrl =
+  import.meta.env.PUBLIC_API_BASE_URL ||
+  "https://corrison.corrisonapi.com/api/v1";
+const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 ---
 
 <BaseLayout>
@@ -299,17 +305,32 @@ const metaDescription =
 
   <Footer slot="footer" />
 
-  <script is:inline>
-    var API_BASE =
-      import.meta.env.PUBLIC_API_BASE_URL ||
-      "https://corrison.corrisonapi.com/api/v1";
-    var STRIPE_KEY = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
-    var stripe, elements, card;
+  <!-- Pass environment variables via data attributes -->
+  <script
+    type="application/json"
+    id="checkout-config"
+    data-api-url={apiUrl}
+    data-stripe-key={stripeKey}></script>
+</BaseLayout>
+
+<script is:inline>
+  (function () {
+    // Get environment variables from the config element
+    var configEl = document.getElementById("checkout-config");
+    var API_BASE = configEl
+      ? configEl.getAttribute("data-api-url")
+      : "https://corrison.corrisonapi.com/api/v1";
+    var STRIPE_KEY = configEl ? configEl.getAttribute("data-stripe-key") : "";
+    var stripe = null;
+    var elements = null;
+    var card = null;
+
+    console.log("API_BASE:", API_BASE);
+    console.log("STRIPE_KEY configured:", !!STRIPE_KEY);
 
     function makeHeaders() {
-      var headers = {
-        "Content-Type": "application/json",
-      };
+      var headers = {};
+      headers["Content-Type"] = "application/json";
       var cartToken = localStorage.getItem("cart_token");
       if (cartToken) {
         headers["Authorization"] = "Bearer " + cartToken;
@@ -357,16 +378,11 @@ const metaDescription =
         ? "bg-green-50 border-green-200 text-green-800"
         : "bg-red-50 border-red-200 text-red-800";
 
-      messagesDiv.innerHTML =
-        '<div class="rounded-lg border p-4 ' +
-        alertClass +
-        '">' +
-        "<p>" +
-        message +
-        "</p>" +
-        "</div>";
+      var html = '<div class="rounded-lg border p-4 ' + alertClass + '">';
+      html += "<p>" + message + "</p>";
+      html += "</div>";
+      messagesDiv.innerHTML = html;
 
-      // Auto-hide success messages after 5 seconds
       if (isSuccess) {
         setTimeout(function () {
           messagesDiv.innerHTML = "";
@@ -386,25 +402,40 @@ const metaDescription =
       var itemsContainer = document.getElementById("order-items");
       if (!itemsContainer) return;
 
-      itemsContainer.innerHTML = cart.items
-        .map(function (item) {
-          return (
-            '<div class="flex justify-between items-start">' +
-            '<div class="flex-1">' +
-            '<h4 class="font-medium text-gray-900">' +
-            (item.product_name || item.course_name || "Item") +
-            "</h4>" +
-            '<p class="text-sm text-gray-500">Qty: ' +
-            item.quantity +
-            "</p>" +
-            "</div>" +
-            '<span class="text-gray-900">$' +
-            item.subtotal.toFixed(2) +
-            "</span>" +
-            "</div>"
-          );
-        })
-        .join("");
+      console.log("Rendering order items for cart:", cart);
+
+      if (!cart.items || !Array.isArray(cart.items)) {
+        console.error("Cart items not found or not an array:", cart);
+        itemsContainer.innerHTML =
+          '<p class="text-gray-500">No items in cart</p>';
+        return;
+      }
+
+      if (cart.items.length === 0) {
+        itemsContainer.innerHTML =
+          '<p class="text-gray-500">No items in cart</p>';
+        return;
+      }
+
+      var html = "";
+      for (var i = 0; i < cart.items.length; i++) {
+        var item = cart.items[i];
+        console.log("Rendering item:", item);
+
+        var price = item.subtotal || item.total_price || 0;
+        var name = item.product_name || item.course_name || item.name || "Item";
+        var quantity = item.quantity || 1;
+
+        html += '<div class="flex justify-between items-start">';
+        html += '<div class="flex-1">';
+        html += '<h4 class="font-medium text-gray-900">' + name + "</h4>";
+        html += '<p class="text-sm text-gray-500">Qty: ' + quantity + "</p>";
+        html += "</div>";
+        html += '<span class="text-gray-900">$' + price.toFixed(2) + "</span>";
+        html += "</div>";
+      }
+
+      itemsContainer.innerHTML = html;
     }
 
     function initStripe() {
@@ -420,32 +451,27 @@ const metaDescription =
         return false;
       }
 
-      // Initialize Stripe
       stripe = Stripe(STRIPE_KEY);
       elements = stripe.elements();
 
-      // Create card element
-      card = elements.create("card", {
-        style: {
-          base: {
-            fontSize: "16px",
-            color: "#424770",
-            "::placeholder": {
-              color: "#aab7c4",
-            },
-          },
-          invalid: {
-            color: "#9e2146",
-          },
-        },
-      });
+      var cardStyle = {};
+      cardStyle.base = {};
+      cardStyle.base.fontSize = "16px";
+      cardStyle.base.color = "#424770";
+      cardStyle.base["::placeholder"] = {};
+      cardStyle.base["::placeholder"].color = "#aab7c4";
+      cardStyle.invalid = {};
+      cardStyle.invalid.color = "#9e2146";
 
-      // Mount card element
+      var cardOptions = {};
+      cardOptions.style = cardStyle;
+
+      card = elements.create("card", cardOptions);
+
       var cardElement = document.getElementById("card-element");
       if (cardElement) {
         card.mount("#card-element");
 
-        // Handle errors
         card.on("change", function (event) {
           var displayError = document.getElementById("card-errors");
           if (event.error) {
@@ -463,7 +489,9 @@ const metaDescription =
       console.log("Loading cart for checkout...");
       showLoading();
 
-      fetch(API_BASE + "/cart/", { headers: makeHeaders() })
+      var headers = makeHeaders();
+
+      fetch(API_BASE + "/cart/", { headers: headers })
         .then(function (r) {
           console.log("Cart API response status:", r.status);
           if (r.ok) return r.json();
@@ -479,7 +507,6 @@ const metaDescription =
             updateOrderSummary(cart);
             renderOrderItems(cart);
 
-            // Initialize Stripe after content is shown
             if (!initStripe()) {
               showError("Payment system not available");
             }
@@ -523,23 +550,23 @@ const metaDescription =
 
       setLoadingState(true);
 
-      // Get form data
       var form = document.getElementById("checkout-form");
       var formData = new FormData(form);
-      var customerData = {
-        email: formData.get("email"),
-        first_name: formData.get("first_name"),
-        last_name: formData.get("last_name"),
-        notes: formData.get("notes"),
-      };
+      var customerData = {};
+      customerData.email = formData.get("email");
+      customerData.first_name = formData.get("first_name");
+      customerData.last_name = formData.get("last_name");
+      customerData.notes = formData.get("notes");
 
       console.log("Processing payment with customer data:", customerData);
 
-      // Create payment intent
+      var headers = makeHeaders();
+      var body = JSON.stringify(customerData);
+
       fetch(API_BASE + "/create-payment-intent/", {
         method: "POST",
-        headers: makeHeaders(),
-        body: JSON.stringify(customerData),
+        headers: headers,
+        body: body,
       })
         .then(function (r) {
           if (r.ok) return r.json();
@@ -548,20 +575,22 @@ const metaDescription =
         .then(function (data) {
           console.log("Payment intent created:", data);
 
-          // Confirm payment with Stripe
-          return stripe.confirmCardPayment(data.client_secret, {
-            payment_method: {
-              card: card,
-              billing_details: {
-                name: (
-                  customerData.first_name +
-                  " " +
-                  customerData.last_name
-                ).trim(),
-                email: customerData.email,
-              },
-            },
-          });
+          var billingDetails = {};
+          billingDetails.name = (
+            customerData.first_name +
+            " " +
+            customerData.last_name
+          ).trim();
+          billingDetails.email = customerData.email;
+
+          var paymentMethodData = {};
+          paymentMethodData.card = card;
+          paymentMethodData.billing_details = billingDetails;
+
+          var confirmOptions = {};
+          confirmOptions.payment_method = paymentMethodData;
+
+          return stripe.confirmCardPayment(data.client_secret, confirmOptions);
         })
         .then(function (result) {
           if (result.error) {
@@ -575,10 +604,10 @@ const metaDescription =
               true,
             );
 
-            // Clear cart
             localStorage.removeItem("cart_token");
 
-            // Redirect to success page after a short delay
+            window.dispatchEvent(new CustomEvent("cartUpdated"));
+
             setTimeout(function () {
               window.location.href =
                 "/order-success?payment_intent=" + result.paymentIntent.id;
@@ -592,15 +621,17 @@ const metaDescription =
         });
     }
 
-    // Initialize on page load
     document.addEventListener("DOMContentLoaded", function () {
       loadCart();
 
-      // Attach form submit handler
       var form = document.getElementById("checkout-form");
       if (form) {
         form.addEventListener("submit", handleFormSubmit);
       }
     });
-  </script>
-</BaseLayout>
+
+    window.addEventListener("cartUpdated", function () {
+      console.log("Cart updated event received in checkout");
+    });
+  })();
+</script>
