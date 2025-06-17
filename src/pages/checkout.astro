@@ -77,7 +77,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
             Add some items to your cart before checking out.
           </p>
           <a
-            href="/products"
+            href="ecommerce/products"
             class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             Browse Products
@@ -125,40 +125,34 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
             <!-- Left Column: Form -->
             <div>
               <form id="checkout-form">
-                <!-- Customer Information (Simplified for Digital Products) -->
+                <!-- Customer Information with Account Creation -->
                 <div
                   class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6"
                 >
                   <h2 class="text-lg font-semibold text-gray-900 mb-4">
                     Customer Information
                   </h2>
+
+                  <!-- Account Notice -->
+                  <div
+                    class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4"
+                  >
+                    <p class="text-sm text-blue-800">
+                      <strong>Note:</strong> An account will be created for you to
+                      access your digital downloads. You must verify your email after
+                      purchase. Check your spam folder if you don't receive an email
+                      within minutes.
+                    </p>
+                  </div>
+
                   <div class="space-y-4">
-                    <div>
-                      <label
-                        for="email"
-                        class="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        required
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="your@email.com"
-                      />
-                      <p class="mt-1 text-sm text-gray-500">
-                        We'll send your digital products to this email
-                      </p>
-                    </div>
                     <div class="grid grid-cols-2 gap-4">
                       <div>
                         <label
                           for="first-name"
                           class="block text-sm font-medium text-gray-700 mb-1"
                         >
-                          First Name
+                          First Name <span class="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -179,10 +173,66 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
                           type="text"
                           id="last-name"
                           name="last_name"
-                          required
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
+                    </div>
+
+                    <div>
+                      <label
+                        for="email"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Email Address <span class="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="your@email.com"
+                      />
+                      <p class="mt-1 text-sm text-gray-500">
+                        We'll send your digital products and verification email
+                        here
+                      </p>
+                    </div>
+
+                    <!-- Password field - shown for new users -->
+                    <div id="password-section" class="hidden">
+                      <label
+                        for="password"
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                      >
+                        Create Password <span class="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        minlength="8"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <p class="mt-1 text-sm text-gray-500">
+                        Minimum 8 characters
+                      </p>
+                    </div>
+
+                    <!-- Login prompt - shown for existing users -->
+                    <div
+                      id="login-prompt"
+                      class="hidden bg-yellow-50 border border-yellow-200 rounded-lg p-4"
+                    >
+                      <p class="text-sm text-yellow-800">
+                        An account already exists with this email.
+                        <a
+                          href="/login?redirect=/checkout"
+                          class="font-medium underline hover:text-yellow-900"
+                        >
+                          Please log in to complete your purchase
+                        </a>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -291,8 +341,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
                 <!-- Digital Product Notice -->
                 <div class="mt-4 text-sm text-gray-600 text-center">
                   <p>
-                    Digital products will be available immediately after
-                    purchase
+                    Digital products will be available after email verification
                   </p>
                 </div>
               </div>
@@ -324,6 +373,8 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     var stripe = null;
     var elements = null;
     var card = null;
+    var emailChecked = false;
+    var userExists = false;
 
     console.log("API_BASE:", API_BASE);
     console.log("STRIPE_KEY configured:", !!STRIPE_KEY);
@@ -485,6 +536,44 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
       return true;
     }
 
+    function checkEmail(email) {
+      var headers = makeHeaders();
+
+      fetch(API_BASE + "/check-email/", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ email: email }),
+      })
+        .then(function (r) {
+          if (r.ok) return r.json();
+          throw new Error("Failed to check email");
+        })
+        .then(function (data) {
+          emailChecked = true;
+          userExists = data.exists;
+
+          var passwordSection = document.getElementById("password-section");
+          var loginPrompt = document.getElementById("login-prompt");
+          var passwordInput = document.getElementById("password");
+
+          if (userExists) {
+            // Show login prompt
+            passwordSection.classList.add("hidden");
+            loginPrompt.classList.remove("hidden");
+            passwordInput.removeAttribute("required");
+          } else {
+            // Show password field for new user
+            passwordSection.classList.remove("hidden");
+            loginPrompt.classList.add("hidden");
+            passwordInput.setAttribute("required", "required");
+          }
+        })
+        .catch(function (error) {
+          console.error("Error checking email:", error);
+          // Continue without email check
+        });
+    }
+
     function loadCart() {
       console.log("Loading cart for checkout...");
       showLoading();
@@ -548,29 +637,67 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
         return;
       }
 
+      // Check if user exists and needs to log in
+      if (userExists) {
+        showMsg("Please log in to complete your purchase", false);
+        return;
+      }
+
       setLoadingState(true);
 
       var form = document.getElementById("checkout-form");
       var formData = new FormData(form);
       var customerData = {};
-      customerData.email = formData.get("email");
-      customerData.first_name = formData.get("first_name");
-      customerData.last_name = formData.get("last_name");
+      customerData.email = formData.get("email").trim().toLowerCase();
+      customerData.first_name = formData.get("first_name").trim();
+      customerData.last_name = formData.get("last_name").trim();
+      customerData.password = formData.get("password");
       customerData.notes = formData.get("notes");
 
-      console.log("Processing payment with customer data:", customerData);
+      // Add cart token to the request body
+      var cartToken = localStorage.getItem("cart_token");
+      if (cartToken) {
+        customerData.cart_token = cartToken;
+      }
+
+      // Validate required fields
+      if (!customerData.email || !customerData.first_name) {
+        showMsg("Please fill in all required fields", false);
+        setLoadingState(false);
+        return;
+      }
+
+      // Validate password for new users
+      if (
+        !userExists &&
+        (!customerData.password || customerData.password.length < 8)
+      ) {
+        showMsg("Password must be at least 8 characters", false);
+        setLoadingState(false);
+        return;
+      }
+
+      console.log("Processing payment with customer data:", {
+        email: customerData.email,
+        first_name: customerData.first_name,
+        has_password: !!customerData.password,
+      });
 
       var headers = makeHeaders();
       var body = JSON.stringify(customerData);
 
       fetch(API_BASE + "/create-payment-intent/", {
         method: "POST",
-        headers: headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: body,
       })
         .then(function (r) {
           if (r.ok) return r.json();
-          throw new Error("Failed to create payment intent");
+          return r.json().then(function (data) {
+            throw new Error(data.error || "Failed to create payment intent");
+          });
         })
         .then(function (data) {
           console.log("Payment intent created:", data);
@@ -599,19 +726,43 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
             setLoadingState(false);
           } else {
             console.log("Payment succeeded:", result.paymentIntent);
-            showMsg(
-              "Payment successful! Redirecting to your downloads...",
-              true,
-            );
 
-            localStorage.removeItem("cart_token");
+            // Create the order
+            var orderData = {
+              payment_intent_id: result.paymentIntent.id,
+              notes: customerData.notes,
+            };
 
-            window.dispatchEvent(new CustomEvent("cartUpdated"));
+            return fetch(API_BASE + "/create-order/", {
+              method: "POST",
+              headers: headers,
+              body: JSON.stringify(orderData),
+            })
+              .then(function (r) {
+                if (r.ok) return r.json();
+                return r.json().then(function (data) {
+                  throw new Error(data.error || "Failed to create order");
+                });
+              })
+              .then(function (orderResponse) {
+                console.log("Order created:", orderResponse);
 
-            setTimeout(function () {
-              window.location.href =
-                "/order-success?payment_intent=" + result.paymentIntent.id;
-            }, 2000);
+                showMsg("Payment successful! Redirecting...", true);
+
+                // Clear cart
+                localStorage.removeItem("cart_token");
+                window.dispatchEvent(new CustomEvent("cartUpdated"));
+
+                // Redirect to success page
+                setTimeout(function () {
+                  var redirectUrl =
+                    "/order-success?payment_intent=" + result.paymentIntent.id;
+                  if (orderResponse.verification_required) {
+                    redirectUrl += "&verify=1";
+                  }
+                  window.location.href = redirectUrl;
+                }, 1500);
+              });
           }
         })
         .catch(function (error) {
@@ -627,6 +778,35 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
       var form = document.getElementById("checkout-form");
       if (form) {
         form.addEventListener("submit", handleFormSubmit);
+      }
+
+      // Add email blur event to check if user exists
+      var emailInput = document.getElementById("email");
+      if (emailInput) {
+        emailInput.addEventListener("blur", function () {
+          var email = emailInput.value.trim().toLowerCase();
+          if (email && email.includes("@") && !emailChecked) {
+            checkEmail(email);
+          }
+        });
+
+        // Reset email check if email changes
+        emailInput.addEventListener("input", function () {
+          var email = emailInput.value.trim().toLowerCase();
+          var currentCheckedEmail = emailChecked
+            ? emailInput.dataset.checkedEmail
+            : null;
+          if (email !== currentCheckedEmail) {
+            emailChecked = false;
+            userExists = false;
+            emailInput.dataset.checkedEmail = email;
+
+            // Hide both password and login prompt until checked again
+            document.getElementById("password-section").classList.add("hidden");
+            document.getElementById("login-prompt").classList.add("hidden");
+            document.getElementById("password").removeAttribute("required");
+          }
+        });
       }
     });
 

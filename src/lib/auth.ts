@@ -9,7 +9,7 @@ import type {
   ApiError
 } from "../types";
 
-const API_BASE = import.meta.env.PUBLIC_API_BASE_URL || "https://corrison.corrisonapi.com";
+const API_BASE = import.meta.env.PUBLIC_API_BASE_URL || "https://corrison.corrisonapi.com/api/v1";
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {

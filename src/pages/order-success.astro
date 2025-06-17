@@ -7,7 +7,12 @@ import Footer from "../components/Footer.astro";
 // SEO meta information
 const metaTitle = "Order Complete – Corrison";
 const metaDescription =
-  "Thank you for your purchase! Your digital products are ready for download.";
+  "Thank you for your purchase! Your digital products are ready for download after email verification.";
+
+// Get environment variables
+const apiUrl =
+  import.meta.env.PUBLIC_API_BASE_URL ||
+  "https://corrison.corrisonapi.com/api/v1";
 ---
 
 <BaseLayout>
@@ -53,11 +58,53 @@ const metaDescription =
             </div>
 
             <h1 class="text-3xl font-bold text-gray-900 mb-4">
-              Order Complete!
+              Payment Successful!
             </h1>
-            <p class="text-lg text-gray-600 mb-8">
-              Thank you for your purchase. Your digital products are ready.
-            </p>
+
+            <!-- Main Message -->
+            <div id="main-message" class="mb-8">
+              <p class="text-lg text-gray-600 mb-4">
+                Your payment was successful! To access your downloads, please
+                log in to your account.
+              </p>
+
+              <!-- Verification Required Notice -->
+              <div
+                id="verification-notice"
+                class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left"
+              >
+                <div class="flex">
+                  <div class="flex-shrink-0">
+                    <svg
+                      class="h-5 w-5 text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">
+                      Email Verification Required
+                    </h3>
+                    <div class="mt-2 text-sm text-blue-700">
+                      <p>
+                        If you just created an account, check your email to
+                        verify it first. The verification email should arrive
+                        within minutes - please check your spam folder if you
+                        don't see it.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div id="order-details" class="hidden">
               <div class="bg-gray-50 rounded-lg p-6 mb-6 text-left">
@@ -68,21 +115,58 @@ const metaDescription =
                 <p class="text-sm text-gray-600">
                   Total: $<span id="order-total"></span>
                 </p>
+                <p id="email-info" class="text-sm text-gray-600 mt-2 hidden">
+                  Confirmation sent to: <span
+                    id="order-email"
+                    class="font-medium"></span>
+                </p>
               </div>
             </div>
 
             <div class="space-y-4">
               <a
-                href="/products"
+                href="/login"
                 class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Continue Shopping
+                Log In to Access Downloads
               </a>
 
-              <p class="text-sm text-gray-600">
-                Check your email for download links and receipt
-              </p>
+              <div class="flex items-center justify-center space-x-4 text-sm">
+                <a
+                  href="ecommerce/products"
+                  class="text-gray-600 hover:text-gray-900 underline"
+                >
+                  Continue Shopping
+                </a>
+                <span class="text-gray-400">•</span>
+                <a
+                  href="/contact"
+                  class="text-gray-600 hover:text-gray-900 underline"
+                >
+                  Need Help?
+                </a>
+              </div>
             </div>
+          </div>
+
+          <!-- Email Reminder -->
+          <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+              <svg
+                class="inline w-4 h-4 mr-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                ></path>
+              </svg>
+              Check your email for order confirmation and download links
+            </p>
           </div>
         </div>
 
@@ -136,71 +220,97 @@ const metaDescription =
 
   <Footer slot="footer" />
 
+  <!-- Pass API URL via data attribute -->
+  <script type="application/json" id="order-config" data-api-url={apiUrl}
+  ></script>
+
   <script is:inline>
-    var API_BASE =
-      import.meta.env.PUBLIC_API_BASE_URL ||
-      "https://corrison.corrisonapi.com/api/v1";
+    (function () {
+      // Get API URL from config
+      var configEl = document.getElementById("order-config");
+      var API_BASE = configEl
+        ? configEl.getAttribute("data-api-url")
+        : "https://corrison.corrisonapi.com/api/v1";
 
-    function showLoading() {
-      document.getElementById("loading-state").classList.remove("hidden");
-      document.getElementById("success-state").classList.add("hidden");
-      document.getElementById("error-state").classList.add("hidden");
-    }
-
-    function showSuccess() {
-      document.getElementById("loading-state").classList.add("hidden");
-      document.getElementById("success-state").classList.remove("hidden");
-      document.getElementById("error-state").classList.add("hidden");
-    }
-
-    function showError() {
-      document.getElementById("loading-state").classList.add("hidden");
-      document.getElementById("success-state").classList.add("hidden");
-      document.getElementById("error-state").classList.remove("hidden");
-    }
-
-    function checkPaymentStatus() {
-      // Get payment intent from URL
-      var urlParams = new URLSearchParams(window.location.search);
-      var paymentIntent = urlParams.get("payment_intent");
-
-      if (!paymentIntent) {
-        showError();
-        return;
+      function showLoading() {
+        document.getElementById("loading-state").classList.remove("hidden");
+        document.getElementById("success-state").classList.add("hidden");
+        document.getElementById("error-state").classList.add("hidden");
       }
 
-      // Check payment status
-      fetch(API_BASE + "/check-payment-status/?payment_intent=" + paymentIntent)
-        .then(function (r) {
-          if (r.ok) return r.json();
-          throw new Error("Failed to check payment status");
-        })
-        .then(function (data) {
-          if (data.success) {
-            showSuccess();
+      function showSuccess() {
+        document.getElementById("loading-state").classList.add("hidden");
+        document.getElementById("success-state").classList.remove("hidden");
+        document.getElementById("error-state").classList.add("hidden");
+      }
 
-            // Show order details if available
-            if (data.order) {
-              document
-                .getElementById("order-details")
-                .classList.remove("hidden");
-              document.getElementById("order-id").textContent = data.order.id;
-              document.getElementById("order-total").textContent =
-                data.order.total.toFixed(2);
-            }
-          } else {
-            showError();
-          }
-        })
-        .catch(function (error) {
-          console.error("Error checking payment status:", error);
+      function showError() {
+        document.getElementById("loading-state").classList.add("hidden");
+        document.getElementById("success-state").classList.add("hidden");
+        document.getElementById("error-state").classList.remove("hidden");
+      }
+
+      function checkPaymentStatus() {
+        // Get payment intent from URL
+        var urlParams = new URLSearchParams(window.location.search);
+        var paymentIntent = urlParams.get("payment_intent");
+        var shouldVerify = urlParams.get("verify") === "1";
+
+        if (!paymentIntent) {
           showError();
-        });
-    }
+          return;
+        }
 
-    // Check payment status on page load
-    document.addEventListener("DOMContentLoaded", function () {
-      checkPaymentStatus();
-    });
+        // Check payment status
+        fetch(
+          API_BASE + "/check-payment-status/?payment_intent=" + paymentIntent,
+        )
+          .then(function (r) {
+            if (r.ok) return r.json();
+            throw new Error("Failed to check payment status");
+          })
+          .then(function (data) {
+            if (data.success) {
+              showSuccess();
+
+              // Show verification notice if needed
+              if (data.verification_required || shouldVerify) {
+                document
+                  .getElementById("verification-notice")
+                  .classList.remove("hidden");
+              }
+
+              // Show order details if available
+              if (data.order) {
+                document
+                  .getElementById("order-details")
+                  .classList.remove("hidden");
+                document.getElementById("order-id").textContent = data.order.id;
+                document.getElementById("order-total").textContent =
+                  data.order.total.toFixed(2);
+              }
+
+              // Show email if available
+              if (data.email) {
+                document
+                  .getElementById("email-info")
+                  .classList.remove("hidden");
+                document.getElementById("order-email").textContent = data.email;
+              }
+            } else {
+              showError();
+            }
+          })
+          .catch(function (error) {
+            console.error("Error checking payment status:", error);
+            showError();
+          });
+      }
+
+      // Check payment status on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        checkPaymentStatus();
+      });
+    })();
   </script>
 </BaseLayout>
