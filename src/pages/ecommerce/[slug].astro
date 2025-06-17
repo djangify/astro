@@ -1449,15 +1449,29 @@ const metaDescription = product.description
         init();
       }
     })();
-    // This script goes inside src/pages/ecommerce/[slug].astro
-    // Place it within a <script is:inline> tag at the bottom of the file
 
     // Wishlist functionality for product detail page
+    // Fixed wishlist functionality for product detail page
+    // This replaces the existing setupWishlist() function in [slug].astro
+
     function setupWishlist() {
-      // Check if user is authenticated
+      // Check if user is authenticated - use consistent token key
       function checkAuthentication() {
-        var token = localStorage.getItem("access"); // Changed from 'access_token' to 'access'
+        // Check multiple possible token locations for compatibility
+        var token =
+          localStorage.getItem("access_token") ||
+          localStorage.getItem("access") ||
+          (window.authStore && window.authStore.getState().access);
         return !!token;
+      }
+
+      // Get the authentication token
+      function getAuthToken() {
+        return (
+          localStorage.getItem("access_token") ||
+          localStorage.getItem("access") ||
+          (window.authStore && window.authStore.getState().access)
+        );
       }
 
       // Check if product is in wishlist
@@ -1467,7 +1481,7 @@ const metaDescription = product.description
           return;
         }
 
-        var token = localStorage.getItem("access");
+        var token = getAuthToken();
 
         fetch("https://corrison.corrisonapi.com/api/v1/wishlist/", {
           headers: {
@@ -1482,7 +1496,7 @@ const metaDescription = product.description
             throw new Error("Failed to fetch wishlist");
           })
           .then(function (data) {
-            var wishlistItems = data || [];
+            var wishlistItems = data.results || data || [];
             var isInWishlist = false;
 
             // Check if current product is in wishlist
@@ -1493,6 +1507,8 @@ const metaDescription = product.description
                 item.product.id === window.preloadedProduct.id
               ) {
                 isInWishlist = true;
+                // Store the wishlist item ID for later use
+                window.currentWishlistItemId = item.id;
                 break;
               }
             }
@@ -1515,7 +1531,7 @@ const metaDescription = product.description
             '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
             '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>' +
             "</svg>" +
-            "Login to Wishlist";
+            "Add to Wishlist";
           btn.classList.remove("bg-red-50", "border-red-300", "text-red-700");
           btn.classList.add("border-gray-300", "text-gray-700");
           return;
@@ -1543,16 +1559,15 @@ const metaDescription = product.description
       // Toggle wishlist (add/remove)
       function toggleWishlist(product) {
         if (!checkAuthentication()) {
-          // Redirect to login
-          window.location.href =
-            "/login?next=" + encodeURIComponent(window.location.pathname);
+          showNotification("Please login to add items to wishlist", "error");
+          // Don't redirect - user is already logged in if they can see the page
           return;
         }
 
         var btn = document.getElementById("wishlist-btn");
         if (btn) btn.disabled = true;
 
-        var token = localStorage.getItem("access");
+        var token = getAuthToken();
 
         // First check if item is already in wishlist
         fetch("https://corrison.corrisonapi.com/api/v1/wishlist/", {
@@ -1568,7 +1583,7 @@ const metaDescription = product.description
             throw new Error("Failed to fetch wishlist");
           })
           .then(function (data) {
-            var wishlistItems = data || [];
+            var wishlistItems = data.results || data || [];
             var existingItem = null;
 
             // Find if product is already in wishlist
@@ -1596,6 +1611,14 @@ const metaDescription = product.description
                 if (response.ok || response.status === 204) {
                   showNotification("Removed from wishlist", "success");
                   updateWishlistButton(false);
+                  window.currentWishlistItemId = null;
+
+                  // Dispatch event to update other components
+                  window.dispatchEvent(
+                    new CustomEvent("wishlistUpdated", {
+                      detail: { action: "removed", productId: product.id },
+                    }),
+                  );
                 } else {
                   throw new Error("Failed to remove from wishlist");
                 }
@@ -1624,6 +1647,14 @@ const metaDescription = product.description
                 .then(function (data) {
                   showNotification("Added to wishlist", "success");
                   updateWishlistButton(true);
+                  window.currentWishlistItemId = data.id;
+
+                  // Dispatch event to update other components
+                  window.dispatchEvent(
+                    new CustomEvent("wishlistUpdated", {
+                      detail: { action: "added", productId: product.id },
+                    }),
+                  );
                 });
             }
           })
@@ -1646,16 +1677,31 @@ const metaDescription = product.description
 
         var notification = document.createElement("div");
         notification.className =
-          "notification-toast fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white z-50";
-        notification.style.backgroundColor =
-          type === "success" ? "#10b981" : "#ef4444";
+          "notification-toast fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white z-50 shadow-lg transition-all duration-300";
+
+        // Set color based on type
+        if (type === "success") {
+          notification.style.backgroundColor = "#10b981";
+        } else if (type === "error") {
+          notification.style.backgroundColor = "#ef4444";
+        } else {
+          notification.style.backgroundColor = "#3b82f6";
+        }
+
         notification.textContent = message;
 
         document.body.appendChild(notification);
 
+        // Animate in
+        setTimeout(function () {
+          notification.style.opacity = "1";
+          notification.style.transform = "translateY(0)";
+        }, 10);
+
         // Remove after 3 seconds
         setTimeout(function () {
           notification.style.opacity = "0";
+          notification.style.transform = "translateY(100%)";
           setTimeout(function () {
             notification.remove();
           }, 300);
@@ -1676,11 +1722,29 @@ const metaDescription = product.description
 
           // Check initial wishlist status
           checkWishlistStatus();
+
+          // Listen for wishlist updates from other components
+          window.addEventListener("wishlistUpdated", function (e) {
+            if (e.detail.productId === window.preloadedProduct.id) {
+              updateWishlistButton(e.detail.action === "added");
+            }
+          });
         }
       });
     }
 
     // Initialize wishlist functionality
     setupWishlist();
+
+    // Also add CSS for notification animation
+    var style = document.createElement("style");
+    style.textContent = `
+  .notification-toast {
+    opacity: 0;
+    transform: translateY(100%);
+    transition: all 0.3s ease-out;
+  }
+`;
+    document.head.appendChild(style);
   </script>
 </BaseLayout>
