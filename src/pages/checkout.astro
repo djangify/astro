@@ -10,9 +10,7 @@ const metaDescription =
   "Complete your purchase securely with our streamlined checkout process for digital products.";
 
 // Get environment variables
-const apiUrl =
-  import.meta.env.PUBLIC_API_BASE_URL ||
-  "https://corrison.corrisonapi.com/api/v1";
+const apiUrl = import.meta.env.PUBLIC_API_BASE_URL || "";
 const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 ---
 
@@ -227,7 +225,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
                       <p class="text-sm text-yellow-800">
                         An account already exists with this email.
                         <a
-                          href="/login?redirect=/checkout"
+                          href="/auth/login/?redirect=/checkout"
                           class="font-medium underline hover:text-yellow-900"
                         >
                           Please log in to complete your purchase
@@ -359,17 +357,23 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     type="application/json"
     id="checkout-config"
     data-api-url={apiUrl}
-    data-stripe-key={stripeKey}></script>
-</BaseLayout>
-
-<script is:inline>
+    data-stripe-key={stripeKey}>
+  </script>
+  <script is:inline>
   (function () {
     // Get environment variables from the config element
     var configEl = document.getElementById("checkout-config");
     var API_BASE = configEl
       ? configEl.getAttribute("data-api-url")
-      : "https://corrison.corrisonapi.com/api/v1";
+      : "";
     var STRIPE_KEY = configEl ? configEl.getAttribute("data-stripe-key") : "";
+    
+    // Check if API_BASE is configured
+    if (!API_BASE) {
+      showError("System configuration error. Please contact support.");
+      return;
+    }
+    
     var stripe = null;
     var elements = null;
     var card = null;
@@ -536,10 +540,71 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
       return true;
     }
 
-    function checkEmail(email) {
+    function checkUserAuthentication() {
+      // Check if user is logged in by calling the profile endpoint
       var headers = makeHeaders();
+      
+      fetch(API_BASE + "/api/v1/auth/profile/", {
+        method: "GET",
+        headers: headers
+      })
+        .then(function(r) {
+          if (r.ok) return r.json();
+          throw new Error("Not authenticated");
+        })
+        .then(function(userData) {
+          // User is logged in - pre-populate form
+          console.log("User is authenticated:", userData);
+          
+          // Pre-populate form fields
+          var firstNameInput = document.getElementById("first-name");
+          var lastNameInput = document.getElementById("last-name");
+          var emailInput = document.getElementById("email");
+          
+          if (firstNameInput && userData.first_name) {
+            firstNameInput.value = userData.first_name;
+          }
+          if (lastNameInput && userData.last_name) {
+            lastNameInput.value = userData.last_name;
+          }
+          if (emailInput && userData.email) {
+            emailInput.value = userData.email;
+            emailInput.readOnly = true; // Make email read-only for logged-in users
+            
+            // Mark email as already checked
+            emailChecked = true;
+            userExists = true;
+            
+            // Hide both password section and login prompt
+            document.getElementById("password-section").classList.add("hidden");
+            document.getElementById("login-prompt").classList.add("hidden");
+            document.getElementById("password").removeAttribute("required");
+            
+            // Update the account notice
+            var accountNotice = document.querySelector('.bg-blue-50.border-blue-200');
+            if (accountNotice) {
+              accountNotice.innerHTML = '<p class="text-sm text-blue-800"><strong>Note:</strong> You are logged in as ' + userData.email + '. Your digital downloads will be available in your account after purchase.</p>';
+            }
+          }
+        })
+        .catch(function(error) {
+          // User not logged in - continue with normal flow
+          console.log("User not authenticated, continuing with guest checkout flow");
+        });
+    }
 
-      fetch(API_BASE + "/check-email/", {
+    function checkEmail(email) {
+      // Skip email check if we already know the user is logged in
+      if (emailChecked && userExists) {
+        return;
+      }
+      
+      // Don't include Authorization header for check-email endpoint
+      var headers = {
+        "Content-Type": "application/json"
+      };
+
+      fetch(API_BASE + "/api/v1/check-email/", {
         method: "POST",
         headers: headers,
         body: JSON.stringify({ email: email }),
@@ -580,7 +645,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
       var headers = makeHeaders();
 
-      fetch(API_BASE + "/cart/", { headers: headers })
+      fetch(API_BASE + "/api/v1/cart/", { headers: headers })
         .then(function (r) {
           console.log("Cart API response status:", r.status);
           if (r.ok) return r.json();
@@ -638,7 +703,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
       }
 
       // Check if user exists and needs to log in
-      if (userExists) {
+      if (userExists && !emailChecked) {
         showMsg("Please log in to complete your purchase", false);
         return;
       }
@@ -667,7 +732,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
         return;
       }
 
-      // Validate password for new users
+      // Validate password for new users (only if not logged in)
       if (
         !userExists &&
         (!customerData.password || customerData.password.length < 8)
@@ -686,7 +751,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
       var headers = makeHeaders();
       var body = JSON.stringify(customerData);
 
-      fetch(API_BASE + "/create-payment-intent/", {
+      fetch(API_BASE + "/api/v1/create-payment-intent/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -733,7 +798,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
               notes: customerData.notes,
             };
 
-            return fetch(API_BASE + "/create-order/", {
+            return fetch(API_BASE + "/api/v1/create-order/", {
               method: "POST",
               headers: headers,
               body: JSON.stringify(orderData),
@@ -774,6 +839,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
     document.addEventListener("DOMContentLoaded", function () {
       loadCart();
+      checkUserAuthentication(); // Check if user is logged in
 
       var form = document.getElementById("checkout-form");
       if (form) {
@@ -815,3 +881,4 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     });
   })();
 </script>
+</BaseLayout>
