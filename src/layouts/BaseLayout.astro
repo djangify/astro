@@ -105,3 +105,81 @@ const isDashboardPage = authPagePaths.some(path => currentPath.startsWith(path))
     )}
   </body>
 </html>
+<script is:inline>
+(function() {
+  // Global notification manager to prevent duplicates
+  window.NotificationManager = {
+    activeNotifications: new Set(),
+    
+    show: function(message, isSuccess = true) {
+      // Generate unique ID for this notification
+      var notificationId = message + '_' + Date.now();
+      
+      // Check if a similar notification is already showing
+      var isDuplicate = false;
+      this.activeNotifications.forEach(function(id) {
+        if (id.startsWith(message + '_')) {
+          isDuplicate = true;
+        }
+      });
+      
+      if (isDuplicate) {
+        console.log('Duplicate notification prevented:', message);
+        return;
+      }
+      
+      // Add to active notifications
+      this.activeNotifications.add(notificationId);
+      
+      // Create notification element
+      var notification = document.createElement('div');
+      notification.className = 'notification-toast';
+      notification.style.cssText = 'position: fixed; top: 1rem; right: 1rem; z-index: 9999; padding: 1rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 0.5rem; max-width: 24rem; animation: slideIn 0.3s ease-out;';
+      
+      if (isSuccess) {
+        notification.style.backgroundColor = '#d1fae5';
+        notification.style.color = '#065f46';
+        notification.style.border = '1px solid #6ee7b7';
+      } else {
+        notification.style.backgroundColor = '#fee2e2';
+        notification.style.color = '#991b1b';
+        notification.style.border = '1px solid #fca5a5';
+      }
+      
+      notification.innerHTML = '<span style="flex: 1;">' + message + '</span>' +
+        '<button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; opacity: 0.7; padding: 0;">' +
+        '<svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>' +
+        '</svg></button>';
+      
+      // Add animation styles if not already present
+      if (!document.querySelector('style[data-notification-styles]')) {
+        var style = document.createElement('style');
+        style.setAttribute('data-notification-styles', 'true');
+        style.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
+        document.head.appendChild(style);
+      }
+      
+      // Add to DOM
+      document.body.appendChild(notification);
+      
+      // Auto remove after 3 seconds
+      var self = this;
+      setTimeout(function() {
+        if (notification.parentElement) {
+          notification.style.animation = 'slideIn 0.3s ease-out reverse';
+          setTimeout(function() {
+            notification.remove();
+            self.activeNotifications.delete(notificationId);
+          }, 300);
+        }
+      }, 3000);
+    }
+  };
+  
+  // Override any existing showNotification functions to use the manager
+  window.showNotification = function(message, isSuccess) {
+    window.NotificationManager.show(message, isSuccess);
+  };
+})();
+</script>
