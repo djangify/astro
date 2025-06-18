@@ -124,8 +124,6 @@ export interface LinkHub {
   links: Link[];
 }
 
-// NEW: Authentication Types
-
 /** User model */
 export interface User {
   id: number;
@@ -134,14 +132,17 @@ export interface User {
   first_name: string;
   last_name: string;
   is_active: boolean;
+  is_staff: boolean;
+  is_superuser: boolean;
   date_joined: string;
-  profile: UserProfile;
+  email_verified?: boolean; // Can be directly on user object
+  profile?: UserProfile; // Optional since it might not always be included
 }
 
 /** User Profile model */
 export interface UserProfile {
-  phone: string;
-  birth_date: string;
+  phone?: string;
+  birth_date?: string;
   email_verified: boolean;
   email_marketing: boolean;
   receive_order_updates: boolean;
@@ -154,6 +155,7 @@ export interface AuthResponse {
   access: string;
   refresh: string;
   user: User;
+  success?: boolean;
 }
 
 /** Registration data */
@@ -196,8 +198,6 @@ export interface ApiError {
   errors?: Record<string, string[]>;
   non_field_errors?: string[];
 }
-
-// NEW: Course Types
 
 /** Course model */
 export interface Course {

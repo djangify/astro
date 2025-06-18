@@ -201,7 +201,29 @@ class AuthStore {
 
   // Check if user email is verified
   isEmailVerified(): boolean {
-    return this.state.user?.profile?.email_verified || false;
+    // Check both possible locations for email_verified
+    // 1. Directly on user object (from API response)
+    // 2. Nested under profile (for backward compatibility)
+    const user = this.state.user;
+
+    if (!user) return false;
+
+    // Check direct property first
+    if ('email_verified' in user) {
+      return (user as any).email_verified === true;
+    }
+
+    // Check nested profile property
+    if (user.profile && 'email_verified' in user.profile) {
+      return user.profile.email_verified === true;
+    }
+
+    // For superusers, assume email is verified
+    if (user.is_superuser) {
+      return true;
+    }
+
+    return false;
   }
 
   // Get user's full name
@@ -214,6 +236,16 @@ class AuthStore {
   getUserFirstName(): string {
     if (!this.state.user) return '';
     return this.state.user.first_name?.trim() || '';
+  }
+
+  // Check if user is superuser
+  isSuperuser(): boolean {
+    return this.state.user?.is_superuser === true;
+  }
+
+  // Check if user is staff
+  isStaff(): boolean {
+    return this.state.user?.is_staff === true;
   }
 }
 
