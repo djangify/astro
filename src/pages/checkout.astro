@@ -530,7 +530,10 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     var cardOptions = {};
     cardOptions.style = cardStyle;
 
-    card = elements.create("card", cardOptions);
+    card = elements.create("card", {
+      style: cardStyle,
+      hidePostalCode: false  // This enables postal code field with international support
+    });
 
     var cardElement = document.getElementById("card-element");
     if (cardElement) {
@@ -752,7 +755,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     var isAuthenticated = !!jwtToken;
 
     // Check if user exists and needs to log in (only for non-authenticated users)
-    if (!isAuthenticated && userExists && !emailChecked) {
+    if (!isAuthenticated && userExists && emailChecked) {
       showMsg("Please log in to complete your purchase", false);
       return;
     }

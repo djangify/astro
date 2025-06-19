@@ -227,10 +227,10 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
 
           hideLoadingState();
 
-          if (data.length === 0) {
+          if (!data.downloads || data.downloads.length === 0) {
             showEmptyState();
           } else {
-            displayDownloads(data);
+            displayDownloads(data.downloads);
           }
         })
         .catch(function (error) {
