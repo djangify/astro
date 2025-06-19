@@ -863,27 +863,52 @@ const metaDescription = product.description
               );
 
               if (removeResponse.ok) {
-                showNotification("Removed from wishlist");
+                showNotification("Removed from wishlist", true);
                 updateWishlistButton(false);
+                // Dispatch event for other components
+                window.dispatchEvent(
+                  new CustomEvent("wishlistUpdated", {
+                    detail: { action: "removed", productId: product.id },
+                  }),
+                );
               } else {
                 throw new Error("Failed to remove from wishlist");
               }
             } else {
-              // Add to wishlist - try different payload formats
-              let addResponse = await fetch(endpoint, {
+              // Add to wishlist
+              const addResponse = await fetch(endpoint, {
                 method: "POST",
                 headers: makeHeaders(true),
                 body: JSON.stringify({ product: product.id }),
               });
 
-              if (addResponse.ok) {
-                showNotification("Added to wishlist!");
+              // FIXED: Handle both 200 and 201 as success
+              if (addResponse.status === 200 || addResponse.status === 201) {
+                const responseData = await addResponse.json();
+
+                // Show appropriate message based on status code
+                if (addResponse.status === 201) {
+                  showNotification("Added to wishlist!", true);
+                } else {
+                  // Status 200 means item already exists - this is still a success
+                  showNotification("Item is already in your wishlist", true);
+                }
+
                 updateWishlistButton(true);
+
+                // Dispatch event for other components
+                window.dispatchEvent(
+                  new CustomEvent("wishlistUpdated", {
+                    detail: { action: "added", productId: product.id },
+                  }),
+                );
               } else {
                 const errorData = await addResponse.json();
                 console.error("Wishlist add error:", errorData);
                 throw new Error(
-                  errorData.detail || "Failed to add to wishlist",
+                  errorData.detail ||
+                    errorData.error ||
+                    "Failed to add to wishlist",
                 );
               }
             }
@@ -904,7 +929,8 @@ const metaDescription = product.description
         } finally {
           if (wishlistBtn) {
             wishlistBtn.disabled = false;
-            updateWishlistButton();
+            // Re-check status to ensure button is in correct state
+            checkWishlistStatus();
           }
         }
       }
@@ -971,6 +997,12 @@ const metaDescription = product.description
         }
       }
 
+      // Also add a simple window.addToWishlist function for compatibility
+      window.addToWishlist = function (productId) {
+        // Find the product object or create a minimal one
+        const product = window.preloadedProduct || { id: productId };
+        toggleWishlist(product);
+      };
       // Share Functions
       async function shareProduct(product) {
         const shareData = {

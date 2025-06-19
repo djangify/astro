@@ -317,10 +317,6 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       window.removeFromWishlist = function (itemId) {
         var token = getAuthToken();
 
-        if (!confirm("Remove this item from your wishlist?")) {
-          return;
-        }
-
         fetch(API_BASE + "/api/v1/wishlist/" + itemId + "/", {
           method: "DELETE",
           headers: {
