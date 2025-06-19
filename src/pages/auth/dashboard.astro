@@ -489,7 +489,7 @@ interface AuthState {
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-medium text-gray-900">My Products</h3>
                   <a
-                    href="/auth/orders"
+                    href="/orders"
                     class="text-teal-700 hover:text-teal-800 font-medium text-sm"
                   >
                     View All →
@@ -519,6 +519,41 @@ interface AuthState {
                   </div>
                 </div>
 
+                <!-- Downloads link card -->
+                <div
+                  class="mt-4 bg-teal-50 border border-teal-200 rounded-lg p-4 text-center"
+                >
+                  <div
+                    class="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-3"
+                  >
+                    <svg
+                      class="w-5 h-5 text-teal-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                      ></path>
+                    </svg>
+                  </div>
+                  <h4 class="font-medium text-gray-900 mb-1">
+                    Digital Downloads
+                  </h4>
+                  <p class="text-xs text-gray-600 mb-3">
+                    Access all your downloads
+                  </p>
+                  <a
+                    href="/downloads"
+                    class="inline-block bg-teal-600 text-white px-4 py-1.5 rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium"
+                  >
+                    View Downloads
+                  </a>
+                </div>
+
                 <!-- Empty state for products -->
                 <div id="no-products" class="hidden text-center py-8">
                   <svg
@@ -531,17 +566,20 @@ interface AuthState {
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    ></path>
                   </svg>
                   <h4 class="text-lg font-medium text-gray-900 mb-2">
                     No Products Yet
                   </h4>
-                  <p class="text-gray-500 mb-4">Explore our products</p>
+                  <p class="text-gray-500 mb-4">
+                    Explore our products to get started
+                  </p>
                   <a
                     href="/ecommerce/products"
                     class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-4 py-2 rounded-lg transition-colors"
                   >
-                    Browse Shop
+                    Browse Products
                   </a>
                 </div>
               </div>
@@ -772,7 +810,9 @@ interface AuthState {
               headers: {
                 "Content-Type": "application/json",
 
-                ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+                ...(accessToken && {
+                  Authorization: `Bearer ${accessToken}`,
+                }),
               },
 
               // Empty body - the backend will use the authenticated user's email

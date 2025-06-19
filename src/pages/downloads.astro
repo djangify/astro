@@ -1,0 +1,394 @@
+---
+// src/pages/downloads.astro
+import BaseLayout from "../layouts/BaseLayout.astro";
+import DashboardNav from "../components/dashboard/DashboardNav.astro";
+---
+
+<BaseLayout>
+  <title slot="title">My Downloads – Corrison</title>
+  <meta
+    slot="head"
+    name="description"
+    content="Access and download your digital purchases"
+  />
+
+  <!-- Dashboard Navigation -->
+  <DashboardNav currentPage="downloads" />
+
+  <!-- Main Content with Sidebar Layout -->
+  <div class="lg:ml-64">
+    <main class="min-h-screen bg-gray-50 py-12">
+      <div class="container mx-auto px-4 max-w-6xl">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">My Downloads</h1>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-12">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
+          >
+          </div>
+          <p class="text-gray-600">Loading your downloads...</p>
+        </div>
+
+        <!-- Not Authenticated State -->
+        <div id="not-authenticated" class="text-center py-12 hidden">
+          <svg
+            class="h-16 w-16 mx-auto text-gray-300 mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            ></path>
+          </svg>
+          <h2 class="text-2xl font-bold text-gray-900 mb-4">Please Sign In</h2>
+          <p class="text-gray-600 mb-6">
+            You need to be signed in to view your downloads.
+          </p>
+          <a
+            href="/auth/login"
+            class="bg-teal-700 hover:bg-teal-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+          >
+            Sign In
+          </a>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-12">
+          <svg
+            class="mx-auto h-24 w-24 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+            ></path>
+          </svg>
+          <h3 class="mt-4 text-lg font-medium text-gray-900">
+            No downloads yet
+          </h3>
+          <p class="mt-2 text-gray-600">
+            Purchase digital products to see them here!
+          </p>
+          <a
+            href="/ecommerce/products"
+            class="mt-6 inline-block bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition-colors"
+          >
+            Browse Products
+          </a>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="hidden text-center py-12">
+          <svg
+            class="mx-auto h-24 w-24 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <h3 class="mt-4 text-lg font-medium text-gray-900">
+            Unable to load downloads
+          </h3>
+          <p class="mt-2 text-gray-600" id="error-message">
+            Please try again or contact support if the problem persists.
+          </p>
+          <button
+            onclick="window.location.reload()"
+            class="mt-6 inline-block bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+
+        <!-- Downloads List -->
+        <div id="downloads-list" class="hidden">
+          <!-- Download Statistics -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+              <div class="text-3xl font-bold text-blue-600" id="total-products">
+                0
+              </div>
+              <div class="text-sm text-gray-600">Digital Products</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+              <div
+                class="text-3xl font-bold text-green-600"
+                id="available-downloads"
+              >
+                0
+              </div>
+              <div class="text-sm text-gray-600">Available Downloads</div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-6 text-center">
+              <div
+                class="text-3xl font-bold text-purple-600"
+                id="total-downloaded"
+              >
+                0
+              </div>
+              <div class="text-sm text-gray-600">Times Downloaded</div>
+            </div>
+          </div>
+
+          <!-- Info Banner -->
+          <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start">
+              <svg
+                class="w-5 h-5 text-blue-600 mr-2 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <div class="text-sm text-blue-800">
+                <p class="font-medium mb-1">Download Information</p>
+                <ul class="list-disc list-inside space-y-1">
+                  <li>Downloads are available for 30 days after purchase</li>
+                  <li>Each product can be downloaded up to 5 times</li>
+                  <li>
+                    Links expire after the time limit or download count is
+                    reached
+                  </li>
+                  <li>
+                    Contact support if you need assistance with expired
+                    downloads
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products Container -->
+          <div id="products-container" class="space-y-6">
+            <!-- Products will be populated by JavaScript -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  document.addEventListener("DOMContentLoaded", function () {
+    var API_BASE = window.location.origin.includes("localhost")
+      ? "http://localhost:8000/api/v1"
+      : "https://corrison.corrisonapi.com/api/v1";
+
+    // Check authentication
+    var token = localStorage.getItem("access_token");
+    if (!token) {
+      showNotAuthenticated();
+      return;
+    }
+
+    // Load downloads
+    loadDownloads();
+
+    function loadDownloads() {
+      fetch(API_BASE + "/my-downloads/", {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+              showNotAuthenticated();
+              return;
+            }
+            throw new Error("Failed to fetch downloads");
+          }
+          return response.json();
+        })
+        .then(function (data) {
+          if (!data) return;
+
+          hideLoadingState();
+
+          if (data.length === 0) {
+            showEmptyState();
+          } else {
+            displayDownloads(data);
+          }
+        })
+        .catch(function (error) {
+          console.error("Error loading downloads:", error);
+          hideLoadingState();
+
+          // If it's a 404, show empty state instead of error
+          if (error.message && error.message.includes("404")) {
+            showEmptyState();
+          } else {
+            showErrorState(error.message);
+          }
+        });
+    }
+
+    function displayDownloads(downloads) {
+      var container = document.getElementById("products-container");
+      var totalProducts = downloads.length;
+      var availableDownloads = 0;
+      var totalDownloaded = 0;
+
+      // Group downloads by product
+      var productGroups = {};
+      downloads.forEach(function (item) {
+        var productId = item.product_id || item.product;
+        if (!productGroups[productId]) {
+          productGroups[productId] = {
+            product_name: item.product_name,
+            items: [],
+          };
+        }
+        productGroups[productId].items.push(item);
+
+        if (item.can_download) availableDownloads++;
+        totalDownloaded += item.download_count || 0;
+      });
+
+      // Update statistics
+      document.getElementById("total-products").textContent = totalProducts;
+      document.getElementById("available-downloads").textContent =
+        availableDownloads;
+      document.getElementById("total-downloaded").textContent = totalDownloaded;
+
+      // Render products
+      container.innerHTML = "";
+      Object.keys(productGroups).forEach(function (productId) {
+        var group = productGroups[productId];
+        var productCard = createProductCard(group.product_name, group.items);
+        container.innerHTML += productCard;
+      });
+
+      // Show downloads list
+      document.getElementById("downloads-list").classList.remove("hidden");
+    }
+
+    function createProductCard(productName, items) {
+      var html =
+        '<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">';
+      html += '<div class="p-6">';
+      html +=
+        '<h3 class="text-lg font-medium text-gray-900 mb-4">' +
+        productName +
+        "</h3>";
+
+      html += '<div class="space-y-3">';
+      items.forEach(function (item) {
+        html += createDownloadItem(item);
+      });
+      html += "</div>";
+
+      html += "</div>";
+      html += "</div>";
+
+      return html;
+    }
+
+    function createDownloadItem(item) {
+      var canDownload = item.can_download;
+      var remainingDownloads = item.max_downloads
+        ? item.max_downloads - item.download_count
+        : "Unlimited";
+      var expiresAt = item.download_expires_at
+        ? new Date(item.download_expires_at).toLocaleDateString()
+        : "Never";
+
+      var html =
+        '<div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">';
+
+      // Left side - file info
+      html += '<div class="flex-1">';
+      html +=
+        '<p class="font-medium text-gray-900">' +
+        (item.variant_name || "Digital Download") +
+        "</p>";
+      html +=
+        '<div class="flex items-center space-x-4 mt-1 text-sm text-gray-500">';
+      html +=
+        "<span>Downloads: " +
+        (item.download_count || 0) +
+        "/" +
+        (item.max_downloads || "∞") +
+        "</span>";
+      html += "<span>•</span>";
+      html += "<span>Expires: " + expiresAt + "</span>";
+      html += "</div>";
+      html += "</div>";
+
+      // Right side - download button
+      html += "<div>";
+      if (canDownload && item.download_url) {
+        html += '<a href="' + item.download_url + '" ';
+        html +=
+          'class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">';
+        html +=
+          '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+        html +=
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>';
+        html += "</svg>";
+        html += "Download";
+        html += "</a>";
+      } else {
+        html +=
+          '<span class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-500 font-medium rounded-lg text-sm cursor-not-allowed">';
+        if (item.download_count >= item.max_downloads) {
+          html += "Limit Reached";
+        } else {
+          html += "Expired";
+        }
+        html += "</span>";
+      }
+      html += "</div>";
+
+      html += "</div>";
+
+      return html;
+    }
+
+    function hideLoadingState() {
+      document.getElementById("loading-state").classList.add("hidden");
+    }
+
+    function showNotAuthenticated() {
+      hideLoadingState();
+      document.getElementById("not-authenticated").classList.remove("hidden");
+    }
+
+    function showEmptyState() {
+      hideLoadingState();
+      document.getElementById("empty-state").classList.remove("hidden");
+    }
+
+    function showErrorState(message) {
+      hideLoadingState();
+      document.getElementById("error-state").classList.remove("hidden");
+      var errorEl = document.getElementById("error-message");
+      if (errorEl && message) {
+        errorEl.textContent = message;
+      }
+    }
+  });
+</script>

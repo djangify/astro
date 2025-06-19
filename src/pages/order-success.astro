@@ -7,7 +7,7 @@ import Footer from "../components/Footer.astro";
 // SEO meta information
 const metaTitle = "Order Complete – Corrison";
 const metaDescription =
-  "Thank you for your purchase! Your digital products are ready for download after email verification.";
+  "Thank you for your purchase! Your digital products are ready for download.";
 
 // Get environment variables
 const apiUrl =
@@ -25,7 +25,7 @@ const apiUrl =
 
   <div class="min-h-screen bg-gray-50">
     <div class="container mx-auto px-4 py-16">
-      <div class="max-w-2xl mx-auto">
+      <div class="max-w-3xl mx-auto">
         <!-- Loading State -->
         <div id="loading-state" class="text-center">
           <div
@@ -37,99 +37,123 @@ const apiUrl =
 
         <!-- Success State -->
         <div id="success-state" class="hidden">
-          <div
-            class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center"
-          >
-            <div
-              class="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6"
-            >
-              <svg
-                class="w-10 h-10 text-green-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <!-- Success Header -->
+            <div class="text-center mb-8">
+              <div
+                class="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-6"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"></path>
-              </svg>
+                <svg
+                  class="w-10 h-10 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+
+              <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                Payment Successful!
+              </h1>
+
+              <p class="text-lg text-gray-600">
+                Thank you for your purchase. Your order has been confirmed.
+              </p>
             </div>
 
-            <h1 class="text-3xl font-bold text-gray-900 mb-4">
-              Payment Successful!
-            </h1>
-
-            <!-- Main Message -->
-            <div id="main-message" class="mb-8">
-              <p class="text-lg text-gray-600 mb-4">
-                Your payment was successful! To access your downloads, please
-                log in to your account.
-              </p>
-
-              <!-- Verification Required Notice -->
-              <div
-                id="verification-notice"
-                class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left"
-              >
-                <div class="flex">
-                  <div class="flex-shrink-0">
-                    <svg
-                      class="h-5 w-5 text-blue-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      ></path>
-                    </svg>
-                  </div>
-                  <div class="ml-3">
-                    <h3 class="text-sm font-medium text-blue-800">
-                      Email Verification Required
-                    </h3>
-                    <div class="mt-2 text-sm text-blue-700">
-                      <p>
-                        If you just created an account, check your email to
-                        verify it first. The verification email should arrive
-                        within minutes - please check your spam folder if you
-                        don't see it.
-                      </p>
-                    </div>
+            <!-- Email Verification Notice -->
+            <div
+              id="verification-notice"
+              class="hidden mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4"
+            >
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg
+                    class="h-5 w-5 text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <h3 class="text-sm font-medium text-blue-800">
+                    Email Verification Required
+                  </h3>
+                  <div class="mt-2 text-sm text-blue-700">
+                    <p>
+                      Please check your email to verify your account and access
+                      your downloads. The verification email should arrive
+                      within minutes.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div id="order-details" class="hidden">
-              <div class="bg-gray-50 rounded-lg p-6 mb-6 text-left">
-                <h2 class="font-semibold text-gray-900 mb-3">Order Details</h2>
-                <p class="text-sm text-gray-600">
-                  Order ID: <span id="order-id" class="font-mono"></span>
-                </p>
-                <p class="text-sm text-gray-600">
-                  Total: $<span id="order-total"></span>
-                </p>
-                <p id="email-info" class="text-sm text-gray-600 mt-2 hidden">
-                  Confirmation sent to: <span
-                    id="order-email"
-                    class="font-medium"></span>
-                </p>
+            <!-- Order Details -->
+            <div id="order-details" class="mb-8">
+              <div class="bg-gray-50 rounded-lg p-6">
+                <h2 class="font-semibold text-gray-900 mb-4">Order Details</h2>
+                <div class="space-y-2">
+                  <p class="text-sm text-gray-600">
+                    Order Number: <span
+                      id="order-number"
+                      class="font-mono text-gray-900"></span>
+                  </p>
+                  <p class="text-sm text-gray-600">
+                    Total: <span
+                      id="order-total"
+                      class="font-semibold text-gray-900"></span>
+                  </p>
+                  <p class="text-sm text-gray-600">
+                    Email: <span id="order-email" class="text-gray-900"></span>
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div class="space-y-4">
-              <a
-                href="/login"
-                class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Log In to Access Downloads
-              </a>
+            <!-- Digital Downloads Section -->
+            <div id="downloads-section" class="hidden mb-8">
+              <div class="bg-purple-50 rounded-lg p-6">
+                <h2 class="font-semibold text-gray-900 mb-4 flex items-center">
+                  <svg
+                    class="w-5 h-5 mr-2 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                    ></path>
+                  </svg>
+                  Your Downloads
+                </h2>
+                <div id="download-items" class="space-y-3">
+                  <!-- Download items will be populated here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-4 text-center">
+              <div id="auth-actions" class="space-y-3">
+                <!-- Auth-specific actions will be inserted here -->
+              </div>
 
               <div class="flex items-center justify-center space-x-4 text-sm">
                 <a
@@ -149,11 +173,11 @@ const apiUrl =
             </div>
           </div>
 
-          <!-- Email Reminder -->
-          <div class="mt-6 text-center">
-            <p class="text-sm text-gray-600">
+          <!-- Email Confirmation Notice -->
+          <div class="mt-6 bg-green-50 border border-green-200 rounded-lg p-6">
+            <div class="flex items-start">
               <svg
-                class="inline w-4 h-4 mr-1"
+                class="w-6 h-6 text-green-600 mt-1 mr-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -162,11 +186,20 @@ const apiUrl =
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 ></path>
               </svg>
-              Check your email for order confirmation and download links
-            </p>
+              <div>
+                <h3 class="text-lg font-semibold text-green-900 mb-2">
+                  Order Confirmation Sent
+                </h3>
+                <p class="text-green-700">
+                  We've sent a confirmation email with your order details and
+                  download links. Please check your spam folder if you don't see
+                  it within a few minutes.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -232,6 +265,9 @@ const apiUrl =
         ? configEl.getAttribute("data-api-url")
         : "https://corrison.corrisonapi.com/api/v1";
 
+      var authToken = localStorage.getItem("access_token");
+      var orderData = null;
+
       function showLoading() {
         document.getElementById("loading-state").classList.remove("hidden");
         document.getElementById("success-state").classList.add("hidden");
@@ -254,7 +290,6 @@ const apiUrl =
         // Get payment intent from URL
         var urlParams = new URLSearchParams(window.location.search);
         var paymentIntent = urlParams.get("payment_intent");
-        var shouldVerify = urlParams.get("verify") === "1";
 
         if (!paymentIntent) {
           showError();
@@ -264,6 +299,13 @@ const apiUrl =
         // Check payment status
         fetch(
           API_BASE + "/check-payment-status/?payment_intent=" + paymentIntent,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include", // Important for session-based cart
+          },
         )
           .then(function (r) {
             if (r.ok) return r.json();
@@ -271,31 +313,13 @@ const apiUrl =
           })
           .then(function (data) {
             if (data.success) {
+              orderData = data;
+              displayOrderDetails(data);
               showSuccess();
 
-              // Show verification notice if needed
-              if (data.verification_required || shouldVerify) {
-                document
-                  .getElementById("verification-notice")
-                  .classList.remove("hidden");
-              }
-
-              // Show order details if available
-              if (data.order) {
-                document
-                  .getElementById("order-details")
-                  .classList.remove("hidden");
-                document.getElementById("order-id").textContent = data.order.id;
-                document.getElementById("order-total").textContent =
-                  data.order.total.toFixed(2);
-              }
-
-              // Show email if available
-              if (data.email) {
-                document
-                  .getElementById("email-info")
-                  .classList.remove("hidden");
-                document.getElementById("order-email").textContent = data.email;
+              // Clear cart after successful payment
+              if (typeof window.clearCart === "function") {
+                window.clearCart();
               }
             } else {
               showError();
@@ -305,6 +329,103 @@ const apiUrl =
             console.error("Error checking payment status:", error);
             showError();
           });
+      }
+
+      function displayOrderDetails(data) {
+        // Show verification notice if needed
+        if (data.verification_required || data.new_account_created) {
+          document
+            .getElementById("verification-notice")
+            .classList.remove("hidden");
+        }
+
+        // Display order details
+        if (data.order) {
+          document.getElementById("order-number").textContent =
+            data.order.order_number || data.order.id;
+          document.getElementById("order-total").textContent =
+            "$" + parseFloat(data.order.total).toFixed(2);
+          document.getElementById("order-email").textContent =
+            data.order.guest_email || data.email || "N/A";
+
+          // Show downloads if there are digital items
+          if (data.order.has_digital_items && data.order.items) {
+            displayDownloads(data.order.items);
+          }
+        }
+
+        // Display auth actions
+        displayAuthActions(data);
+      }
+
+      function displayDownloads(items) {
+        var digitalItems = items.filter(function (item) {
+          return item.is_digital;
+        });
+
+        if (digitalItems.length === 0) return;
+
+        document.getElementById("downloads-section").classList.remove("hidden");
+        var downloadItemsContainer = document.getElementById("download-items");
+
+        downloadItemsContainer.innerHTML = digitalItems
+          .map(function (item) {
+            return (
+              '<div class="flex items-center justify-between p-3 bg-white rounded-lg">' +
+              '<div class="flex-1">' +
+              '<p class="font-medium text-gray-900">' +
+              item.product_name +
+              "</p>" +
+              '<p class="text-sm text-gray-500">Digital Download</p>' +
+              "</div>" +
+              "<div>" +
+              (authToken && item.download_url
+                ? '<a href="' +
+                  item.download_url +
+                  '" ' +
+                  'class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors">' +
+                  '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>' +
+                  "</svg>" +
+                  "Download" +
+                  "</a>"
+                : '<span class="text-sm text-gray-500">Login to download</span>') +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+
+      function displayAuthActions(data) {
+        var authActionsContainer = document.getElementById("auth-actions");
+
+        if (authToken) {
+          // User is logged in
+          authActionsContainer.innerHTML =
+            '<a href="/orders" ' +
+            'class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">' +
+            "View Order History" +
+            "</a>";
+        } else if (data.new_account_created) {
+          // New account was created
+          authActionsContainer.innerHTML =
+            '<p class="text-gray-600 mb-4">An account has been created for you. Please verify your email, then log in to access your downloads.</p>' +
+            '<a href="/login" ' +
+            'class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">' +
+            "Log In to Access Downloads" +
+            "</a>";
+        } else {
+          // Guest checkout
+          authActionsContainer.innerHTML =
+            '<p class="text-gray-600 mb-4">Create an account to track your orders and access downloads anytime.</p>' +
+            '<a href="/register?email=' +
+            encodeURIComponent(data.email || "") +
+            '" ' +
+            'class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">' +
+            "Create Account" +
+            "</a>";
+        }
       }
 
       // Check payment status on page load
