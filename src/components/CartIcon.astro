@@ -120,21 +120,14 @@ const { className = "" } = Astro.props;
 <!-- Inline Cart Icon Script -->
 <script is:inline>
   (function () {
-    var API_BASE = "https://corrison.corrisonapi.com/api/v1";
-
-    function getToken() {
-      try {
-        return localStorage.getItem("cart_token");
-      } catch (e) {
-        return null;
-      }
-    }
+    var API_BASE = "https://corrison.corrisonapi.com";
 
     function makeHeaders() {
-      var h = { "Content-Type": "application/json" };
-      var t = getToken();
-      if (t) h.Authorization = "Bearer " + t;
-      return h;
+      // Only send Content-Type header
+      // Cart identification happens via session cookies
+      return {
+        "Content-Type": "application/json",
+      };
     }
 
     function updateCartIcon(cart) {
@@ -143,7 +136,7 @@ const { className = "" } = Astro.props;
 
       console.log("Updating cart icon with data:", cart);
 
-      // FIX: Check both total_items AND items.length
+      // Check both total_items AND items.length
       var itemCount = 0;
       if (cart) {
         itemCount = cart.total_items || (cart.items ? cart.items.length : 0);
@@ -154,8 +147,9 @@ const { className = "" } = Astro.props;
           countEl.textContent = itemCount;
           countEl.classList.remove("hidden");
         }
-        if (totalEl && cart.subtotal) {
-          totalEl.textContent = "$" + parseFloat(cart.subtotal).toFixed(2);
+        if (totalEl && (cart.total || cart.subtotal)) {
+          totalEl.textContent =
+            "$" + parseFloat(cart.total || cart.subtotal).toFixed(2);
         }
       } else {
         if (countEl) {
@@ -181,7 +175,7 @@ const { className = "" } = Astro.props;
       // Hide loading
       if (loading) loading.classList.add("hidden");
 
-      // FIX: Check both total_items AND items.length
+      // Check both total_items AND items.length
       var hasItems = false;
       if (cart) {
         hasItems =
@@ -250,8 +244,12 @@ const { className = "" } = Astro.props;
     }
 
     function loadCartData() {
-      console.log("Loading cart data...");
-      return fetch(API_BASE + "/cart/", { headers: makeHeaders() })
+      console.log("Loading cart data (session-based)...");
+      return fetch(API_BASE + "/api/v1/cart/", {
+        method: "GET",
+        headers: makeHeaders(),
+        credentials: "include", // This ensures session cookies are sent
+      })
         .then(function (r) {
           console.log("Cart API response status:", r.status);
           return r.ok ? r.json() : null;
@@ -266,13 +264,14 @@ const { className = "" } = Astro.props;
         });
     }
 
-    // ADD REMOVE ITEM FUNCTION
+    // Remove cart item function
     window.removeCartItem = function (itemId) {
       console.log("Removing cart item:", itemId);
 
-      fetch(API_BASE + "/items/" + itemId + "/", {
+      fetch(API_BASE + "/api/v1/items/" + itemId + "/", {
         method: "DELETE",
         headers: makeHeaders(),
+        credentials: "include", // Ensure session cookies are sent
       })
         .then(function (r) {
           if (r.ok) {
@@ -294,7 +293,13 @@ const { className = "" } = Astro.props;
     };
 
     function initCartIcon() {
-      console.log("Initializing CartIcon script");
+      console.log("Initializing CartIcon with session-based cart");
+
+      // Clean up any old cart tokens
+      if (localStorage.getItem("cart_token")) {
+        console.log("Removing old cart_token from localStorage");
+        localStorage.removeItem("cart_token");
+      }
 
       var cartButton = document.getElementById("cart-button");
       var closeButton = document.getElementById("close-cart-dropdown");
@@ -340,7 +345,7 @@ const { className = "" } = Astro.props;
         }
       });
 
-      // LISTEN FOR CART UPDATES FROM OTHER COMPONENTS
+      // Listen for cart updates from other components
       window.addEventListener("cartUpdated", function () {
         console.log("Cart updated event received, refreshing cart icon");
         loadCartData().then(function (cart) {

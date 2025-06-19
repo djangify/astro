@@ -749,13 +749,14 @@ const metaDescription = product.description
       function makeHeaders(includeAuth = false) {
         const headers = { "Content-Type": "application/json" };
 
+        // Only include JWT for specific auth endpoints (like wishlist)
         if (includeAuth) {
           const authToken = getAuthToken();
           if (authToken) headers.Authorization = `Bearer ${authToken}`;
-        } else {
-          const cartToken = getCartToken();
-          if (cartToken) headers.Authorization = `Bearer ${cartToken}`;
         }
+
+        // Cart operations should NEVER have Authorization header
+        // They rely on session cookies via credentials: "include"
 
         return headers;
       }
@@ -1273,8 +1274,7 @@ const metaDescription = product.description
           stockStatus.classList.add("hidden");
         }
       }
-
-      // Cart Functions (Simplified for Digital Products)
+      // Cart Functions (Fixed for Session-based Cart)
       async function addToCart(product, quantity) {
         const qty = parseInt(quantity) || 1;
         const productId = parseInt(product.id);
@@ -1288,50 +1288,60 @@ const metaDescription = product.description
         if (addBtn) {
           addBtn.disabled = true;
           addBtn.innerHTML = `
-        <svg class="animate-spin w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        Adding...
-      `;
+      <svg class="animate-spin w-5 h-5 inline mr-2" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Adding...
+    `;
         }
 
         try {
-          const response = await fetch(`${API_BASE}/items/`, {
+          // FIXED: Using the correct endpoint and including credentials
+          const response = await fetch(`${API_BASE}/cart/add/`, {
             method: "POST",
-            headers: makeHeaders(),
-            body: JSON.stringify({ product: productId, quantity: qty }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include", // CRITICAL: This was missing!
+            body: JSON.stringify({
+              product: productId, // The API accepts both 'product' and 'product_id'
+              quantity: qty,
+            }),
           });
 
           if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.detail || "Failed to add to cart");
+            throw new Error(
+              error.error || error.detail || "Failed to add to cart",
+            );
           }
 
           const data = await response.json();
 
-          if (data.cart_token) setCartToken(data.cart_token);
+          // Don't need cart tokens anymore - using sessions
+          // if (data.cart_token) setCartToken(data.cart_token);
 
           showNotification(`Added ${qty} ${product.name} to cart!`);
 
           // Update button
           if (addBtn) {
             addBtn.innerHTML = `
-          <svg class="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-          </svg>
-          Added to Cart!
-        `;
+        <svg class="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        Added to Cart!
+      `;
             addBtn.classList.add("bg-green-600", "hover:bg-green-700");
 
             setTimeout(() => {
               addBtn.disabled = false;
               addBtn.innerHTML = `
-            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"></path>
-            </svg>
-            Add to Cart
-          `;
+          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"></path>
+          </svg>
+          Add to Cart
+        `;
               addBtn.classList.remove("bg-green-600", "hover:bg-green-700");
             }, 2000);
           }
@@ -1345,11 +1355,11 @@ const metaDescription = product.description
           if (addBtn) {
             addBtn.disabled = false;
             addBtn.innerHTML = `
-          <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"></path>
-          </svg>
-          Add to Cart
-        `;
+        <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 7m0 0l-1.5-5M7 13l-2-8m0 0h16m-7 4v8a2 2 0 01-2 2H9a2 2 0 01-2-2v-8a2 2 0 012-2h2a2 2 0 012 2z"></path>
+        </svg>
+        Add to Cart
+      `;
           }
         }
       }

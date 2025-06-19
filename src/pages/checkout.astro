@@ -359,526 +359,591 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     data-api-url={apiUrl}
     data-stripe-key={stripeKey}>
   </script>
-  <script is:inline>
-  (function () {
-    // Get environment variables from the config element
-    var configEl = document.getElementById("checkout-config");
-    var API_BASE = configEl
-      ? configEl.getAttribute("data-api-url")
-      : "";
-    var STRIPE_KEY = configEl ? configEl.getAttribute("data-stripe-key") : "";
+
+<script is:inline>
+(function () {
+  // Get environment variables from the config element
+  var configEl = document.getElementById("checkout-config");
+  var API_BASE = configEl
+    ? configEl.getAttribute("data-api-url")
+    : "";
+  var STRIPE_KEY = configEl ? configEl.getAttribute("data-stripe-key") : "";
+  
+  // Check if API_BASE is configured
+  if (!API_BASE) {
+    showError("System configuration error. Please contact support.");
+    return;
+  }
+  
+  var stripe = null;
+  var elements = null;
+  var card = null;
+  var emailChecked = false;
+  var userExists = false;
+
+  console.log("API_BASE:", API_BASE);
+  console.log("STRIPE_KEY configured:", !!STRIPE_KEY);
+
+  function makeHeaders(includeAuth = false) {
+    var headers = {};
+    headers["Content-Type"] = "application/json";
     
-    // Check if API_BASE is configured
-    if (!API_BASE) {
-      showError("System configuration error. Please contact support.");
+    // NEVER use JWT tokens - cart operations use session cookies
+    // Only include auth for specific endpoints that require JWT (like profile)
+    if (includeAuth) {
+      var jwtToken = localStorage.getItem("access_token");
+      if (jwtToken) {
+        headers["Authorization"] = "Bearer " + jwtToken;
+      }
+    }
+    
+    // Cart operations should NEVER have Authorization header
+    // They rely on session cookies via credentials: "include"
+    return headers;
+  }
+
+  function showLoading() {
+    document.getElementById("checkout-loading").classList.remove("hidden");
+    document.getElementById("empty-cart-redirect").classList.add("hidden");
+    document.getElementById("checkout-error").classList.add("hidden");
+    document.getElementById("checkout-content").classList.add("hidden");
+  }
+
+  function showEmpty() {
+    document.getElementById("checkout-loading").classList.add("hidden");
+    document.getElementById("empty-cart-redirect").classList.remove("hidden");
+    document.getElementById("checkout-error").classList.add("hidden");
+    document.getElementById("checkout-content").classList.add("hidden");
+  }
+
+  function showError(message) {
+    document.getElementById("checkout-loading").classList.add("hidden");
+    document.getElementById("empty-cart-redirect").classList.add("hidden");
+    document.getElementById("checkout-error").classList.remove("hidden");
+    document.getElementById("checkout-content").classList.add("hidden");
+    var errorMsg = document.getElementById("error-message");
+    if (errorMsg && message) {
+      errorMsg.textContent = message;
+    }
+  }
+
+  function showContent() {
+    document.getElementById("checkout-loading").classList.add("hidden");
+    document.getElementById("empty-cart-redirect").classList.add("hidden");
+    document.getElementById("checkout-error").classList.add("hidden");
+    document.getElementById("checkout-content").classList.remove("hidden");
+  }
+
+  function showMsg(message, isSuccess) {
+    var messagesDiv = document.getElementById("checkout-messages");
+    if (!messagesDiv) return;
+
+    var alertClass = isSuccess
+      ? "bg-green-50 border-green-200 text-green-800"
+      : "bg-red-50 border-red-200 text-red-800";
+
+    var html = '<div class="rounded-lg border p-4 ' + alertClass + '">';
+    html += "<p>" + message + "</p>";
+    html += "</div>";
+    messagesDiv.innerHTML = html;
+
+    if (isSuccess) {
+      setTimeout(function () {
+        messagesDiv.innerHTML = "";
+      }, 5000);
+    }
+  }
+
+  function updateOrderSummary(cart) {
+    var subtotal = document.getElementById("order-subtotal");
+    var total = document.getElementById("order-total");
+
+    if (subtotal) subtotal.textContent = "$" + cart.subtotal.toFixed(2);
+    if (total) total.textContent = "$" + cart.total.toFixed(2);
+  }
+
+  function renderOrderItems(cart) {
+    var itemsContainer = document.getElementById("order-items");
+    if (!itemsContainer) return;
+
+    console.log("Rendering order items for cart:", cart);
+
+    if (!cart.items || !Array.isArray(cart.items)) {
+      console.error("Cart items not found or not an array:", cart);
+      itemsContainer.innerHTML =
+        '<p class="text-gray-500">No items in cart</p>';
+      return;
+    }
+
+    if (cart.items.length === 0) {
+      itemsContainer.innerHTML =
+        '<p class="text-gray-500">No items in cart</p>';
+      return;
+    }
+
+    var html = "";
+    for (var i = 0; i < cart.items.length; i++) {
+      var item = cart.items[i];
+      console.log("Rendering item:", item);
+
+      var price = item.subtotal || item.total_price || 0;
+      var name = item.product_name || item.course_name || item.name || "Item";
+      var quantity = item.quantity || 1;
+
+      html += '<div class="flex justify-between items-start">';
+      html += '<div class="flex-1">';
+      html += '<h4 class="font-medium text-gray-900">' + name + "</h4>";
+      html += '<p class="text-sm text-gray-500">Qty: ' + quantity + "</p>";
+      html += "</div>";
+      html += '<span class="text-gray-900">$' + price.toFixed(2) + "</span>";
+      html += "</div>";
+    }
+
+    itemsContainer.innerHTML = html;
+  }
+
+  function initStripe() {
+    if (typeof Stripe === "undefined") {
+      console.error("Stripe not loaded");
+      showError("Payment system not available");
+      return false;
+    }
+
+    if (!STRIPE_KEY) {
+      console.error("Stripe publishable key not configured");
+      showError("Payment system not configured");
+      return false;
+    }
+
+    stripe = Stripe(STRIPE_KEY);
+    elements = stripe.elements();
+
+    var cardStyle = {};
+    cardStyle.base = {};
+    cardStyle.base.fontSize = "16px";
+    cardStyle.base.color = "#424770";
+    cardStyle.base["::placeholder"] = {};
+    cardStyle.base["::placeholder"].color = "#aab7c4";
+    cardStyle.invalid = {};
+    cardStyle.invalid.color = "#9e2146";
+
+    var cardOptions = {};
+    cardOptions.style = cardStyle;
+
+    card = elements.create("card", cardOptions);
+
+    var cardElement = document.getElementById("card-element");
+    if (cardElement) {
+      card.mount("#card-element");
+
+      card.on("change", function (event) {
+        var displayError = document.getElementById("card-errors");
+        if (event.error) {
+          displayError.textContent = event.error.message;
+        } else {
+          displayError.textContent = "";
+        }
+      });
+    }
+
+    return true;
+  }
+
+  function checkUserAuthentication() {
+    // Check if user is logged in by looking for JWT token
+    var jwtToken = localStorage.getItem("access_token");
+    
+    if (!jwtToken) {
+      console.log("No JWT token found, user not authenticated");
       return;
     }
     
-    var stripe = null;
-    var elements = null;
-    var card = null;
-    var emailChecked = false;
-    var userExists = false;
-
-    console.log("API_BASE:", API_BASE);
-    console.log("STRIPE_KEY configured:", !!STRIPE_KEY);
-
-    function makeHeaders() {
-      var headers = {};
-      headers["Content-Type"] = "application/json";
-      var cartToken = localStorage.getItem("cart_token");
-      if (cartToken) {
-        headers["Authorization"] = "Bearer " + cartToken;
-      }
-      return headers;
-    }
-
-    function showLoading() {
-      document.getElementById("checkout-loading").classList.remove("hidden");
-      document.getElementById("empty-cart-redirect").classList.add("hidden");
-      document.getElementById("checkout-error").classList.add("hidden");
-      document.getElementById("checkout-content").classList.add("hidden");
-    }
-
-    function showEmpty() {
-      document.getElementById("checkout-loading").classList.add("hidden");
-      document.getElementById("empty-cart-redirect").classList.remove("hidden");
-      document.getElementById("checkout-error").classList.add("hidden");
-      document.getElementById("checkout-content").classList.add("hidden");
-    }
-
-    function showError(message) {
-      document.getElementById("checkout-loading").classList.add("hidden");
-      document.getElementById("empty-cart-redirect").classList.add("hidden");
-      document.getElementById("checkout-error").classList.remove("hidden");
-      document.getElementById("checkout-content").classList.add("hidden");
-      var errorMsg = document.getElementById("error-message");
-      if (errorMsg && message) {
-        errorMsg.textContent = message;
-      }
-    }
-
-    function showContent() {
-      document.getElementById("checkout-loading").classList.add("hidden");
-      document.getElementById("empty-cart-redirect").classList.add("hidden");
-      document.getElementById("checkout-error").classList.add("hidden");
-      document.getElementById("checkout-content").classList.remove("hidden");
-    }
-
-    function showMsg(message, isSuccess) {
-      var messagesDiv = document.getElementById("checkout-messages");
-      if (!messagesDiv) return;
-
-      var alertClass = isSuccess
-        ? "bg-green-50 border-green-200 text-green-800"
-        : "bg-red-50 border-red-200 text-red-800";
-
-      var html = '<div class="rounded-lg border p-4 ' + alertClass + '">';
-      html += "<p>" + message + "</p>";
-      html += "</div>";
-      messagesDiv.innerHTML = html;
-
-      if (isSuccess) {
-        setTimeout(function () {
-          messagesDiv.innerHTML = "";
-        }, 5000);
-      }
-    }
-
-    function updateOrderSummary(cart) {
-      var subtotal = document.getElementById("order-subtotal");
-      var total = document.getElementById("order-total");
-
-      if (subtotal) subtotal.textContent = "$" + cart.subtotal.toFixed(2);
-      if (total) total.textContent = "$" + cart.subtotal.toFixed(2);
-    }
-
-    function renderOrderItems(cart) {
-      var itemsContainer = document.getElementById("order-items");
-      if (!itemsContainer) return;
-
-      console.log("Rendering order items for cart:", cart);
-
-      if (!cart.items || !Array.isArray(cart.items)) {
-        console.error("Cart items not found or not an array:", cart);
-        itemsContainer.innerHTML =
-          '<p class="text-gray-500">No items in cart</p>';
-        return;
-      }
-
-      if (cart.items.length === 0) {
-        itemsContainer.innerHTML =
-          '<p class="text-gray-500">No items in cart</p>';
-        return;
-      }
-
-      var html = "";
-      for (var i = 0; i < cart.items.length; i++) {
-        var item = cart.items[i];
-        console.log("Rendering item:", item);
-
-        var price = item.subtotal || item.total_price || 0;
-        var name = item.product_name || item.course_name || item.name || "Item";
-        var quantity = item.quantity || 1;
-
-        html += '<div class="flex justify-between items-start">';
-        html += '<div class="flex-1">';
-        html += '<h4 class="font-medium text-gray-900">' + name + "</h4>";
-        html += '<p class="text-sm text-gray-500">Qty: ' + quantity + "</p>";
-        html += "</div>";
-        html += '<span class="text-gray-900">$' + price.toFixed(2) + "</span>";
-        html += "</div>";
-      }
-
-      itemsContainer.innerHTML = html;
-    }
-
-    function initStripe() {
-      if (typeof Stripe === "undefined") {
-        console.error("Stripe not loaded");
-        showError("Payment system not available");
-        return false;
-      }
-
-      if (!STRIPE_KEY) {
-        console.error("Stripe publishable key not configured");
-        showError("Payment system not configured");
-        return false;
-      }
-
-      stripe = Stripe(STRIPE_KEY);
-      elements = stripe.elements();
-
-      var cardStyle = {};
-      cardStyle.base = {};
-      cardStyle.base.fontSize = "16px";
-      cardStyle.base.color = "#424770";
-      cardStyle.base["::placeholder"] = {};
-      cardStyle.base["::placeholder"].color = "#aab7c4";
-      cardStyle.invalid = {};
-      cardStyle.invalid.color = "#9e2146";
-
-      var cardOptions = {};
-      cardOptions.style = cardStyle;
-
-      card = elements.create("card", cardOptions);
-
-      var cardElement = document.getElementById("card-element");
-      if (cardElement) {
-        card.mount("#card-element");
-
-        card.on("change", function (event) {
-          var displayError = document.getElementById("card-errors");
-          if (event.error) {
-            displayError.textContent = event.error.message;
-          } else {
-            displayError.textContent = "";
-          }
-        });
-      }
-
-      return true;
-    }
-
-    function checkUserAuthentication() {
-      // Check if user is logged in by calling the profile endpoint
-      var headers = makeHeaders();
-      
-      fetch(API_BASE + "/api/v1/auth/profile/", {
-        method: "GET",
-        headers: headers
+    // Use JWT token ONLY for the profile endpoint
+    var headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + jwtToken
+    };
+    
+    fetch(API_BASE + "/api/v1/auth/profile/", {
+      method: "GET",
+      headers: headers,
+      credentials: "include"
+    })
+      .then(function(r) {
+        if (r.ok) return r.json();
+        throw new Error("Not authenticated");
       })
-        .then(function(r) {
-          if (r.ok) return r.json();
-          throw new Error("Not authenticated");
-        })
-        .then(function(userData) {
-          // User is logged in - pre-populate form
-          console.log("User is authenticated:", userData);
+      .then(function(userData) {
+        // User is logged in - pre-populate form
+        console.log("User is authenticated:", userData);
+        
+        // Pre-populate form fields
+        var firstNameInput = document.getElementById("first-name");
+        var lastNameInput = document.getElementById("last-name");
+        var emailInput = document.getElementById("email");
+        
+        if (firstNameInput && userData.first_name) {
+          firstNameInput.value = userData.first_name;
+        }
+        if (lastNameInput && userData.last_name) {
+          lastNameInput.value = userData.last_name;
+        }
+        if (emailInput && userData.email) {
+          emailInput.value = userData.email;
+          emailInput.readOnly = true; // Make email read-only for logged-in users
           
-          // Pre-populate form fields
-          var firstNameInput = document.getElementById("first-name");
-          var lastNameInput = document.getElementById("last-name");
-          var emailInput = document.getElementById("email");
-          
-          if (firstNameInput && userData.first_name) {
-            firstNameInput.value = userData.first_name;
-          }
-          if (lastNameInput && userData.last_name) {
-            lastNameInput.value = userData.last_name;
-          }
-          if (emailInput && userData.email) {
-            emailInput.value = userData.email;
-            emailInput.readOnly = true; // Make email read-only for logged-in users
-            
-            // Mark email as already checked
-            emailChecked = true;
-            userExists = true;
-            
-            // Hide both password section and login prompt
-            document.getElementById("password-section").classList.add("hidden");
-            document.getElementById("login-prompt").classList.add("hidden");
-            document.getElementById("password").removeAttribute("required");
-            
-            // Update the account notice
-            var accountNotice = document.querySelector('.bg-blue-50.border-blue-200');
-            if (accountNotice) {
-              accountNotice.innerHTML = '<p class="text-sm text-blue-800"><strong>Note:</strong> You are logged in as ' + userData.email + '. Your digital downloads will be available in your account after purchase.</p>';
-            }
-          }
-        })
-        .catch(function(error) {
-          // User not logged in - continue with normal flow
-          console.log("User not authenticated, continuing with guest checkout flow");
-        });
-    }
-
-    function checkEmail(email) {
-      // Skip email check if we already know the user is logged in
-      if (emailChecked && userExists) {
-        return;
-      }
-      
-      // Don't include Authorization header for check-email endpoint
-      var headers = {
-        "Content-Type": "application/json"
-      };
-
-      fetch(API_BASE + "/api/v1/check-email/", {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({ email: email }),
-      })
-        .then(function (r) {
-          if (r.ok) return r.json();
-          throw new Error("Failed to check email");
-        })
-        .then(function (data) {
+          // Mark email as already checked and user exists
           emailChecked = true;
-          userExists = data.exists;
-
+          userExists = true;
+          emailInput.dataset.checkedEmail = userData.email;
+          
+          // Hide both password section and login prompt for authenticated users
           var passwordSection = document.getElementById("password-section");
           var loginPrompt = document.getElementById("login-prompt");
           var passwordInput = document.getElementById("password");
-
-          if (userExists) {
-            // Show login prompt
-            passwordSection.classList.add("hidden");
-            loginPrompt.classList.remove("hidden");
-            passwordInput.removeAttribute("required");
-          } else {
-            // Show password field for new user
-            passwordSection.classList.remove("hidden");
-            loginPrompt.classList.add("hidden");
-            passwordInput.setAttribute("required", "required");
+          
+          if (passwordSection) passwordSection.classList.add("hidden");
+          if (loginPrompt) loginPrompt.classList.add("hidden");
+          if (passwordInput) passwordInput.removeAttribute("required");
+          
+          // Update the account notice to show user is logged in
+          var accountNotice = document.querySelector('.bg-blue-50.border-blue-200');
+          if (accountNotice) {
+            accountNotice.innerHTML = '<p class="text-sm text-blue-800"><strong>Welcome back!</strong> You are logged in as <strong>' + userData.email + '</strong>. Your digital downloads will be available in your account after purchase.</p>';
           }
-        })
-        .catch(function (error) {
-          console.error("Error checking email:", error);
-          // Continue without email check
-        });
-    }
-
-    function loadCart() {
-      console.log("Loading cart for checkout...");
-      showLoading();
-
-      var headers = makeHeaders();
-
-      fetch(API_BASE + "/api/v1/cart/", { headers: headers })
-        .then(function (r) {
-          console.log("Cart API response status:", r.status);
-          if (r.ok) return r.json();
-          throw new Error("Failed to load cart");
-        })
-        .then(function (cart) {
-          console.log("Cart data loaded:", cart);
-
-          if (!cart || cart.total_items === 0) {
-            showEmpty();
-          } else {
-            showContent();
-            updateOrderSummary(cart);
-            renderOrderItems(cart);
-
-            if (!initStripe()) {
-              showError("Payment system not available");
-            }
-          }
-        })
-        .catch(function (error) {
-          console.error("Error loading cart:", error);
-          showError("Failed to load cart data");
-        });
-    }
-
-    function setLoadingState(loading) {
-      var submitButton = document.getElementById("submit-payment");
-      var buttonText = document.getElementById("button-text");
-      var buttonSpinner = document.getElementById("button-spinner");
-
-      if (submitButton) {
-        submitButton.disabled = loading;
-      }
-
-      if (buttonText) {
-        buttonText.textContent = loading ? "Processing..." : "Complete Order";
-      }
-
-      if (buttonSpinner) {
-        if (loading) {
-          buttonSpinner.classList.remove("hidden");
-        } else {
-          buttonSpinner.classList.add("hidden");
         }
-      }
+      })
+      .catch(function(error) {
+        // User not logged in or token expired - continue with normal flow
+        console.log("User not authenticated:", error.message);
+        // Remove expired token if auth fails
+        if (error.message.includes("401") || error.message.includes("403")) {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+        }
+      });
+  }
+
+  function checkEmail(email) {
+    // Get current auth state
+    var jwtToken = localStorage.getItem("access_token");
+    
+    // Skip email check if user is authenticated
+    if (jwtToken && emailChecked && userExists) {
+      console.log("User is authenticated, skipping email check");
+      return;
+    }
+    
+    // Don't include Authorization header for check-email endpoint
+    var headers = {
+      "Content-Type": "application/json"
+    };
+
+    fetch(API_BASE + "/api/v1/check-email/", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({ email: email }),
+      credentials: "include"
+    })
+      .then(function (r) {
+        if (r.ok) return r.json();
+        throw new Error("Failed to check email");
+      })
+      .then(function (data) {
+        emailChecked = true;
+        userExists = data.exists;
+
+        var passwordSection = document.getElementById("password-section");
+        var loginPrompt = document.getElementById("login-prompt");
+        var passwordInput = document.getElementById("password");
+
+        if (userExists) {
+          // Show login prompt
+          passwordSection.classList.add("hidden");
+          loginPrompt.classList.remove("hidden");
+          passwordInput.removeAttribute("required");
+        } else {
+          // Show password field for new user
+          passwordSection.classList.remove("hidden");
+          loginPrompt.classList.add("hidden");
+          passwordInput.setAttribute("required", "required");
+        }
+      })
+      .catch(function (error) {
+        console.error("Error checking email:", error);
+        // Continue without email check
+      });
+  }
+
+  function loadCart() {
+    console.log("Loading cart for checkout...");
+    showLoading();
+
+    // NEVER use auth headers for cart operations
+    // Cart uses session cookies only
+    var headers = {
+      "Content-Type": "application/json"
+    };
+
+    fetch(API_BASE + "/api/v1/cart/", { 
+      headers: headers,
+      credentials: "include" // This ensures session cookies are sent
+    })
+      .then(function (r) {
+        console.log("Cart API response status:", r.status);
+        if (r.ok) return r.json();
+        throw new Error("Failed to load cart");
+      })
+      .then(function (cart) {
+        console.log("Cart data loaded:", cart);
+        console.log("Cart total items:", cart.total_items);
+        console.log("Cart items array:", cart.items);
+
+        if (!cart || cart.total_items === 0) {
+          showEmpty();
+        } else {
+          showContent();
+          updateOrderSummary(cart);
+          renderOrderItems(cart);
+
+          if (!initStripe()) {
+            showError("Payment system not available");
+          }
+        }
+      })
+      .catch(function (error) {
+        console.error("Error loading cart:", error);
+        showError("Failed to load cart data");
+      });
+  }
+
+  function setLoadingState(loading) {
+    var submitButton = document.getElementById("submit-payment");
+    var buttonText = document.getElementById("button-text");
+    var buttonSpinner = document.getElementById("button-spinner");
+
+    if (submitButton) {
+      submitButton.disabled = loading;
     }
 
-    function handleFormSubmit(event) {
-      event.preventDefault();
+    if (buttonText) {
+      buttonText.textContent = loading ? "Processing..." : "Complete Order";
+    }
 
-      if (!stripe || !card) {
-        showMsg("Payment system not ready", false);
-        return;
+    if (buttonSpinner) {
+      if (loading) {
+        buttonSpinner.classList.remove("hidden");
+      } else {
+        buttonSpinner.classList.add("hidden");
       }
+    }
+  }
 
-      // Check if user exists and needs to log in
-      if (userExists && !emailChecked) {
-        showMsg("Please log in to complete your purchase", false);
-        return;
-      }
+  function handleFormSubmit(event) {
+    event.preventDefault();
 
-      setLoadingState(true);
+    if (!stripe || !card) {
+      showMsg("Payment system not ready", false);
+      return;
+    }
 
-      var form = document.getElementById("checkout-form");
-      var formData = new FormData(form);
-      var customerData = {};
-      customerData.email = formData.get("email").trim().toLowerCase();
-      customerData.first_name = formData.get("first_name").trim();
-      customerData.last_name = formData.get("last_name").trim();
-      customerData.password = formData.get("password");
-      customerData.notes = formData.get("notes");
+    // Check if user is authenticated
+    var jwtToken = localStorage.getItem("access_token");
+    var isAuthenticated = !!jwtToken;
 
-      // Add cart token to the request body
-      var cartToken = localStorage.getItem("cart_token");
-      if (cartToken) {
-        customerData.cart_token = cartToken;
-      }
+    // Check if user exists and needs to log in (only for non-authenticated users)
+    if (!isAuthenticated && userExists && !emailChecked) {
+      showMsg("Please log in to complete your purchase", false);
+      return;
+    }
 
-      // Validate required fields
-      if (!customerData.email || !customerData.first_name) {
-        showMsg("Please fill in all required fields", false);
+    setLoadingState(true);
+
+    var form = document.getElementById("checkout-form");
+    var formData = new FormData(form);
+    var customerData = {};
+    customerData.email = formData.get("email").trim().toLowerCase();
+    customerData.first_name = formData.get("first_name").trim();
+    customerData.last_name = formData.get("last_name").trim();
+    customerData.password = formData.get("password");
+    customerData.notes = formData.get("notes");
+
+    // Validate required fields
+    if (!customerData.email || !customerData.first_name) {
+      showMsg("Please fill in all required fields", false);
+      setLoadingState(false);
+      return;
+    }
+
+    // Validate password for new users (only if not logged in and not existing user)
+    if (
+      !isAuthenticated &&
+      !userExists &&
+      (!customerData.password || customerData.password.length < 8)
+    ) {
+      showMsg("Password must be at least 8 characters", false);
+      setLoadingState(false);
+      return;
+    }
+
+    console.log("Processing payment with customer data:", {
+      email: customerData.email,
+      first_name: customerData.first_name,
+      has_password: !!customerData.password,
+      is_authenticated: isAuthenticated
+    });
+
+    // For payment intent creation, use session cookies only
+    var headers = {
+      "Content-Type": "application/json"
+    };
+    fetch(API_BASE + "/api/v1/create-payment-intent/", {
+      method: "POST",
+      headers: headers,
+      credentials: "include",
+      body: JSON.stringify({
+          email: customerData.email,
+          first_name: customerData.first_name,
+          last_name: customerData.last_name,
+          password: customerData.password || null,  // Only if creating account
+          notes: customerData.notes || ""
+          // DO NOT include: token, is_authenticated, or any other fields
+      })
+  })
+      .then(function (r) {
+        if (r.ok) return r.json();
+        return r.json().then(function (data) {
+          throw new Error(data.error || "Failed to create payment intent");
+        });
+      })
+      .then(function (data) {
+        console.log("Payment intent created:", data);
+
+        var billingDetails = {};
+        billingDetails.name = (
+          customerData.first_name +
+          " " +
+          customerData.last_name
+        ).trim();
+        billingDetails.email = customerData.email;
+
+        var paymentMethodData = {};
+        paymentMethodData.card = card;
+        paymentMethodData.billing_details = billingDetails;
+
+        var confirmOptions = {};
+        confirmOptions.payment_method = paymentMethodData;
+
+        return stripe.confirmCardPayment(data.client_secret, confirmOptions);
+      })
+      .then(function (result) {
+        if (result.error) {
+          console.error("Payment failed:", result.error);
+          showMsg(result.error.message, false);
+          setLoadingState(false);
+        } else {
+          console.log("Payment succeeded:", result.paymentIntent);
+
+          // Create the order
+          var orderData = {
+            payment_intent_id: result.paymentIntent.id,
+            notes: customerData.notes,
+          };
+
+          // For order creation, use session cookies only
+          var orderHeaders = {
+            "Content-Type": "application/json"
+          };
+
+          return fetch(API_BASE + "/api/v1/create-order/", {
+            method: "POST",
+            headers: orderHeaders,
+            credentials: "include",
+            body: JSON.stringify(orderData),
+          })
+            .then(function (r) {
+              if (r.ok) return r.json();
+              return r.json().then(function (data) {
+                throw new Error(data.error || "Failed to create order");
+              });
+            })
+            .then(function (orderResponse) {
+              console.log("Order created:", orderResponse);
+
+              showMsg("Payment successful! Redirecting...", true);
+
+              // Clear cart-related items from localStorage
+              localStorage.removeItem("cart_token");
+              window.dispatchEvent(new CustomEvent("cartUpdated"));
+
+              // Redirect to success page
+              setTimeout(function () {
+                var redirectUrl =
+                  "/order-success?payment_intent=" + result.paymentIntent.id;
+                if (orderResponse.verification_required) {
+                  redirectUrl += "&verify=1";
+                }
+                window.location.href = redirectUrl;
+              }, 1500);
+            });
+        }
+      })
+      .catch(function (error) {
+        console.error("Checkout error:", error);
+        showMsg(error.message || "Payment failed. Please try again.", false);
         setLoadingState(false);
-        return;
-      }
+      });
+  }
 
-      // Validate password for new users (only if not logged in)
-      if (
-        !userExists &&
-        (!customerData.password || customerData.password.length < 8)
-      ) {
-        showMsg("Password must be at least 8 characters", false);
-        setLoadingState(false);
-        return;
-      }
+  document.addEventListener("DOMContentLoaded", function () {
+    // Remove any cart tokens on page load to ensure clean session-based cart
+    console.log("Checkout page loaded");
+    console.log("Session-based cart system active");
+    
+    loadCart();
+    checkUserAuthentication(); // Check if user is logged in
 
-      console.log("Processing payment with customer data:", {
-        email: customerData.email,
-        first_name: customerData.first_name,
-        has_password: !!customerData.password,
+    var form = document.getElementById("checkout-form");
+    if (form) {
+      form.addEventListener("submit", handleFormSubmit);
+    }
+
+    // Add email blur event to check if user exists
+    var emailInput = document.getElementById("email");
+    if (emailInput) {
+      emailInput.addEventListener("blur", function () {
+        var email = emailInput.value.trim().toLowerCase();
+        if (email && email.includes("@") && !emailChecked) {
+          checkEmail(email);
+        }
       });
 
-      var headers = makeHeaders();
-      var body = JSON.stringify(customerData);
+      // Reset email check if email changes
+      emailInput.addEventListener("input", function () {
+        var email = emailInput.value.trim().toLowerCase();
+        var currentCheckedEmail = emailChecked
+          ? emailInput.dataset.checkedEmail
+          : null;
+        if (email !== currentCheckedEmail) {
+          emailChecked = false;
+          userExists = false;
+          emailInput.dataset.checkedEmail = email;
 
-      fetch(API_BASE + "/api/v1/create-payment-intent/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: body,
-      })
-        .then(function (r) {
-          if (r.ok) return r.json();
-          return r.json().then(function (data) {
-            throw new Error(data.error || "Failed to create payment intent");
-          });
-        })
-        .then(function (data) {
-          console.log("Payment intent created:", data);
-
-          var billingDetails = {};
-          billingDetails.name = (
-            customerData.first_name +
-            " " +
-            customerData.last_name
-          ).trim();
-          billingDetails.email = customerData.email;
-
-          var paymentMethodData = {};
-          paymentMethodData.card = card;
-          paymentMethodData.billing_details = billingDetails;
-
-          var confirmOptions = {};
-          confirmOptions.payment_method = paymentMethodData;
-
-          return stripe.confirmCardPayment(data.client_secret, confirmOptions);
-        })
-        .then(function (result) {
-          if (result.error) {
-            console.error("Payment failed:", result.error);
-            showMsg(result.error.message, false);
-            setLoadingState(false);
-          } else {
-            console.log("Payment succeeded:", result.paymentIntent);
-
-            // Create the order
-            var orderData = {
-              payment_intent_id: result.paymentIntent.id,
-              notes: customerData.notes,
-            };
-
-            return fetch(API_BASE + "/api/v1/create-order/", {
-              method: "POST",
-              headers: headers,
-              body: JSON.stringify(orderData),
-            })
-              .then(function (r) {
-                if (r.ok) return r.json();
-                return r.json().then(function (data) {
-                  throw new Error(data.error || "Failed to create order");
-                });
-              })
-              .then(function (orderResponse) {
-                console.log("Order created:", orderResponse);
-
-                showMsg("Payment successful! Redirecting...", true);
-
-                // Clear cart
-                localStorage.removeItem("cart_token");
-                window.dispatchEvent(new CustomEvent("cartUpdated"));
-
-                // Redirect to success page
-                setTimeout(function () {
-                  var redirectUrl =
-                    "/order-success?payment_intent=" + result.paymentIntent.id;
-                  if (orderResponse.verification_required) {
-                    redirectUrl += "&verify=1";
-                  }
-                  window.location.href = redirectUrl;
-                }, 1500);
-              });
-          }
-        })
-        .catch(function (error) {
-          console.error("Checkout error:", error);
-          showMsg(error.message || "Payment failed. Please try again.", false);
-          setLoadingState(false);
-        });
+          // Hide both password and login prompt until checked again
+          document.getElementById("password-section").classList.add("hidden");
+          document.getElementById("login-prompt").classList.add("hidden");
+          document.getElementById("password").removeAttribute("required");
+        }
+      });
     }
+  });
 
-    document.addEventListener("DOMContentLoaded", function () {
-      loadCart();
-      checkUserAuthentication(); // Check if user is logged in
-
-      var form = document.getElementById("checkout-form");
-      if (form) {
-        form.addEventListener("submit", handleFormSubmit);
-      }
-
-      // Add email blur event to check if user exists
-      var emailInput = document.getElementById("email");
-      if (emailInput) {
-        emailInput.addEventListener("blur", function () {
-          var email = emailInput.value.trim().toLowerCase();
-          if (email && email.includes("@") && !emailChecked) {
-            checkEmail(email);
-          }
-        });
-
-        // Reset email check if email changes
-        emailInput.addEventListener("input", function () {
-          var email = emailInput.value.trim().toLowerCase();
-          var currentCheckedEmail = emailChecked
-            ? emailInput.dataset.checkedEmail
-            : null;
-          if (email !== currentCheckedEmail) {
-            emailChecked = false;
-            userExists = false;
-            emailInput.dataset.checkedEmail = email;
-
-            // Hide both password and login prompt until checked again
-            document.getElementById("password-section").classList.add("hidden");
-            document.getElementById("login-prompt").classList.add("hidden");
-            document.getElementById("password").removeAttribute("required");
-          }
-        });
-      }
-    });
-
-    window.addEventListener("cartUpdated", function () {
-      console.log("Cart updated event received in checkout");
-    });
-  })();
+  window.addEventListener("cartUpdated", function () {
+    console.log("Cart updated event received in checkout");
+    // Reload cart when cart is updated
+    loadCart();
+  });
+})();
 </script>
+
 </BaseLayout>

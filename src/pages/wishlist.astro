@@ -57,6 +57,34 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
           </a>
         </div>
 
+        <!-- Error State -->
+        <div id="error-state" class="hidden text-center py-12">
+          <svg
+            class="mx-auto h-24 w-24 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <h3 class="mt-4 text-lg font-medium text-gray-900">
+            Unable to load wishlist
+          </h3>
+          <p class="mt-2 text-gray-600" id="error-message">
+            Please try again or contact support if the problem persists.
+          </p>
+          <button
+            onclick="location.reload()"
+            class="mt-6 inline-block bg-teal-700 text-white px-6 py-3 rounded-lg hover:bg-teal-800 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+
         <!-- Wishlist Grid -->
         <div
           id="wishlist-grid"
@@ -67,6 +95,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       </div>
     </main>
   </div>
+
   <script is:inline>
     (function () {
       "use strict";
@@ -77,6 +106,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       // Get elements
       var loadingState = document.getElementById("loading-state");
       var emptyState = document.getElementById("empty-state");
+      var errorState = document.getElementById("error-state");
       var wishlistGrid = document.getElementById("wishlist-grid");
 
       // Get auth token
@@ -92,33 +122,59 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
         }
       }
 
-      // Hide loading state
-      function hideLoading() {
-        if (loadingState) {
-          loadingState.classList.add("hidden");
-        }
+      // Show notification
+      function showNotification(message, isSuccess) {
+        var notification = document.createElement("div");
+        notification.className =
+          "fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white shadow-lg transition-all duration-300 z-50";
+        notification.style.backgroundColor = isSuccess ? "#10b981" : "#ef4444";
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(function () {
+          notification.style.opacity = "0";
+          setTimeout(function () {
+            notification.remove();
+          }, 300);
+        }, 3000);
+      }
+
+      // Hide all states
+      function hideAllStates() {
+        if (loadingState) loadingState.classList.add("hidden");
+        if (emptyState) emptyState.classList.add("hidden");
+        if (errorState) errorState.classList.add("hidden");
+        if (wishlistGrid) wishlistGrid.classList.add("hidden");
+      }
+
+      // Show loading state
+      function showLoading() {
+        hideAllStates();
+        if (loadingState) loadingState.classList.remove("hidden");
       }
 
       // Show empty state
       function showEmpty() {
-        hideLoading();
-        if (emptyState) {
-          emptyState.classList.remove("hidden");
-        }
-        if (wishlistGrid) {
-          wishlistGrid.classList.add("hidden");
+        hideAllStates();
+        if (emptyState) emptyState.classList.remove("hidden");
+      }
+
+      // Show error state
+      function showError(message) {
+        hideAllStates();
+        if (errorState) {
+          errorState.classList.remove("hidden");
+          var errorMessage = document.getElementById("error-message");
+          if (errorMessage && message) {
+            errorMessage.textContent = message;
+          }
         }
       }
 
       // Show wishlist grid
       function showGrid() {
-        hideLoading();
-        if (emptyState) {
-          emptyState.classList.add("hidden");
-        }
-        if (wishlistGrid) {
-          wishlistGrid.classList.remove("hidden");
-        }
+        hideAllStates();
+        if (wishlistGrid) wishlistGrid.classList.remove("hidden");
       }
 
       // Render wishlist items
@@ -223,11 +279,9 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       function loadWishlist() {
         var token = getAuthToken();
 
-        if (!token) {
-          console.error("No auth token found");
-          showEmpty();
-          return;
-        }
+        // Just load the wishlist without auth verification
+        // We trust that users are logged in since they accessed from dropdown
+        showLoading();
 
         fetch(API_BASE + "/api/v1/wishlist/", {
           method: "GET",
@@ -244,6 +298,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
           })
           .then(function (data) {
             var items = data.results || data || [];
+            console.log("Wishlist items loaded:", items.length);
 
             if (items.length === 0) {
               showEmpty();
@@ -254,11 +309,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
           })
           .catch(function (error) {
             console.error("Error loading wishlist:", error);
-            showEmpty();
-            // Use the global showNotification
-            if (window.showNotification) {
-              window.showNotification("Failed to load wishlist", false);
-            }
+            showError("Failed to load wishlist. Please try again.");
           });
       }
 
@@ -266,11 +317,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
       window.removeFromWishlist = function (itemId) {
         var token = getAuthToken();
 
-        if (!token) {
-          // Use the global showNotification
-          if (window.showNotification) {
-            window.showNotification("Please login to manage wishlist", false);
-          }
+        if (!confirm("Remove this item from your wishlist?")) {
           return;
         }
 
@@ -308,20 +355,14 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
                 showEmpty();
               }
 
-              // Use the global showNotification
-              if (window.showNotification) {
-                window.showNotification("Item removed from wishlist", true);
-              }
+              showNotification("Item removed from wishlist", true);
             } else {
               throw new Error("Failed to remove item");
             }
           })
           .catch(function (error) {
             console.error("Error removing item:", error);
-            // Use the global showNotification
-            if (window.showNotification) {
-              window.showNotification("Failed to remove item", false);
-            }
+            showNotification("Failed to remove item", false);
           });
       };
 
@@ -332,7 +373,7 @@ import DashboardNav from "../components/dashboard/DashboardNav.astro";
         }
       });
 
-      // Initialize function
+      // Initialize - Just load the wishlist directly
       function init() {
         loadWishlist();
       }
