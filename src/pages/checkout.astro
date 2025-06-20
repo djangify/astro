@@ -631,14 +631,15 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
   }
 
   function checkEmail(email) {
-    // Get current auth state
-    var jwtToken = localStorage.getItem("access_token");
-    
-    // Skip email check if user is authenticated
-    if (jwtToken && emailChecked && userExists) {
-      console.log("User is authenticated, skipping email check");
-      return;
-    }
+  // Get current auth state
+  var jwtToken = localStorage.getItem("access_token");
+  var emailInput = document.getElementById("email");
+  
+  // Skip email check if user is authenticated OR email field is readonly
+  if (jwtToken || (emailInput && emailInput.readOnly)) {
+    console.log("User is authenticated, skipping email check");
+    return;
+  }
     
     // Don't include Authorization header for check-email endpoint
     var headers = {
@@ -931,13 +932,14 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     if (emailInput) {
       // Add email blur event to check if user exists
       emailInput.addEventListener("blur", function () {
-        var email = emailInput.value.trim().toLowerCase();
-        // Skip email check if user is logged in
-        var jwtToken = localStorage.getItem("access_token");
-        if (email && email.includes("@") && !emailChecked && !jwtToken) {
-          checkEmail(email);
-        }
-      });
+      var email = emailInput.value.trim().toLowerCase();
+      var jwtToken = localStorage.getItem("access_token");
+      
+      // Skip email check completely if user is authenticated OR if email is readonly
+      if (email && email.includes("@") && !emailChecked && !jwtToken && !emailInput.readOnly) {
+        checkEmail(email);
+      }
+    });
 
       // Reset email check if email changes
       emailInput.addEventListener("input", function () {

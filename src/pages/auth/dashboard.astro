@@ -1259,7 +1259,7 @@ interface AuthState {
         }
 
         const response = await fetch(
-          "https://corrison.corrisonapi.com/api/v1/my-appointments/",
+          "https://corrison.corrisonapi.com/api/v1/my-appointments/?ordering=-created_at",
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -1278,16 +1278,50 @@ interface AuthState {
           return;
         }
 
+        // Handle paginated response - get the actual appointments array
         const appointments = await response.json();
-        console.log("Loaded appointments:", appointments);
+        console.log("Raw appointments response:", appointments);
+
+        // Handle paginated response - get the actual appointments array
+        const appointmentsList = appointments.results || appointments;
+        console.log("Appointments list:", appointmentsList);
+        console.log("Is array?", Array.isArray(appointmentsList));
 
         // Filter for upcoming appointments only
         const now = new Date();
-        const upcomingAppointments = appointments.filter((apt: any) => {
-          const startTime = new Date(apt.start_time);
-          return startTime > now && apt.status !== "cancelled";
+        console.log("Current time:", now);
+
+        const upcomingAppointments = appointmentsList.filter((apt: any) => {
+          // Check if we have the required fields
+          if (!apt.date || !apt.start_time) {
+            console.log(`Appointment ${apt.id} missing date or start_time`);
+            return false;
+          }
+
+          // Combine date and start_time fields
+          const startDateTime = new Date(`${apt.date}T${apt.start_time}`);
+
+          // Check if date is valid
+          if (isNaN(startDateTime.getTime())) {
+            console.log(
+              `Invalid date for appointment ${apt.id}: ${apt.date} ${apt.start_time}`,
+            );
+            return false;
+          }
+
+          console.log(
+            `Appointment ${apt.id}: date=${apt.date}, start_time=${apt.start_time}, combined=${startDateTime}, status=${apt.status}`,
+          );
+
+          const isUpcoming = startDateTime > now && apt.status !== "cancelled";
+          console.log(`Is upcoming? ${isUpcoming}`);
+          return isUpcoming;
         });
-        console.log("Upcoming appointments:", upcomingAppointments.length);
+
+        console.log("Filtered upcoming appointments:", upcomingAppointments);
+        console.log("Count:", upcomingAppointments.length);
+
+        // Update the count in the UI - THIS WAS MISSING!
         safeSetTextContent(
           upcomingAppointmentsCount,
           upcomingAppointments.length.toString(),
@@ -1480,7 +1514,7 @@ interface AuthState {
 
           try {
             const appointmentsResponse = await fetch(
-              "https://corrison.corrisonapi.com/api/v1/appointments/appointments/?ordering=-created_at",
+              "https://corrison.corrisonapi.com/api/v1/my-appointments/?ordering=-created_at",
 
               {
                 headers: {
@@ -1498,18 +1532,14 @@ interface AuthState {
                 activities.push({
                   type: "appointment",
 
-                  title: `Booked: ${apt.appointment_type.name}`,
+                  title: `Booked: ${apt.appointment_type?.name || "Appointment"}`,
 
                   description:
-                    new Date(apt.start_time).toLocaleDateString() +
-                    " at " +
-                    new Date(apt.start_time).toLocaleTimeString(),
-
-                  timestamp: new Date(apt.created_at),
-
+                    apt.service_name || "View details for more information",
+                  timestamp: new Date(apt.start_time),
                   icon: "calendar",
 
-                  link: `/calendar/appointment/${apt.id}`,
+                  link: `/calendar/appointment/?id=${apt.id}`,
                 });
               });
             }
