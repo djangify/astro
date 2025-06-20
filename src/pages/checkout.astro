@@ -360,6 +360,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     data-stripe-key={stripeKey}>
   </script>
 
+
 <script is:inline>
 (function () {
   // Get environment variables from the config element
@@ -516,7 +517,9 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     }
 
     stripe = Stripe(STRIPE_KEY);
-    elements = stripe.elements();
+      elements = stripe.elements({
+        locale: 'auto'
+      });
 
     var cardStyle = {};
     cardStyle.base = {};
@@ -532,7 +535,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
 
     card = elements.create("card", {
       style: cardStyle,
-      hidePostalCode: false  // This enables postal code field with international support
+      hidePostalCode: false,  // postalcode field/international support
     });
 
     var cardElement = document.getElementById("card-element");
@@ -768,8 +771,12 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     customerData.email = formData.get("email").trim().toLowerCase();
     customerData.first_name = formData.get("first_name").trim();
     customerData.last_name = formData.get("last_name").trim();
-    customerData.password = formData.get("password");
     customerData.notes = formData.get("notes");
+
+    // Only include password for new users who are not authenticated
+    if (!isAuthenticated && !userExists) {
+      customerData.password = formData.get("password");
+    }
 
     // Validate required fields
     if (!customerData.email || !customerData.first_name) {
@@ -800,19 +807,26 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     var headers = {
       "Content-Type": "application/json"
     };
+    
+    // Build request body - only include fields that are needed
+    var requestBody = {
+      email: customerData.email,
+      first_name: customerData.first_name,
+      last_name: customerData.last_name,
+      notes: customerData.notes || ""
+    };
+    
+    // Only add password if it exists (for new users)
+    if (customerData.password) {
+      requestBody.password = customerData.password;
+    }
+    
     fetch(API_BASE + "/api/v1/create-payment-intent/", {
       method: "POST",
       headers: headers,
       credentials: "include",
-      body: JSON.stringify({
-          email: customerData.email,
-          first_name: customerData.first_name,
-          last_name: customerData.last_name,
-          password: customerData.password || null,  // Only if creating account
-          notes: customerData.notes || ""
-          // DO NOT include: token, is_authenticated, or any other fields
-      })
-  })
+      body: JSON.stringify(requestBody)
+    })
       .then(function (r) {
         if (r.ok) return r.json();
         return r.json().then(function (data) {
@@ -910,13 +924,17 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
     if (form) {
       form.addEventListener("submit", handleFormSubmit);
     }
-
-    // Add email blur event to check if user exists
+    
+    // Get email input element
     var emailInput = document.getElementById("email");
+    
     if (emailInput) {
+      // Add email blur event to check if user exists
       emailInput.addEventListener("blur", function () {
         var email = emailInput.value.trim().toLowerCase();
-        if (email && email.includes("@") && !emailChecked) {
+        // Skip email check if user is logged in
+        var jwtToken = localStorage.getItem("access_token");
+        if (email && email.includes("@") && !emailChecked && !jwtToken) {
           checkEmail(email);
         }
       });
@@ -939,12 +957,12 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
         }
       });
     }
-  });
 
-  window.addEventListener("cartUpdated", function () {
-    console.log("Cart updated event received in checkout");
-    // Reload cart when cart is updated
-    loadCart();
+    window.addEventListener("cartUpdated", function () {
+      console.log("Cart updated event received in checkout");
+      // Reload cart when cart is updated
+      loadCart();
+    });
   });
 })();
 </script>

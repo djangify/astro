@@ -90,6 +90,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
   const response = await fetch(`${API_BASE}/api/v1/auth/login/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(credentials)
   });
 
