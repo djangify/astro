@@ -37,15 +37,6 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
       <!-- Main Content -->
       <main class="container mx-auto px-4 py-12">
-        <!-- Loading State -->
-        <div id="loading-state" class="text-center py-16">
-          <div
-            class="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-700 mx-auto mb-4"
-          >
-          </div>
-          <p class="text-gray-600">Loading your profile...</p>
-        </div>
-
         <!-- Profile Content (Hidden initially) -->
         <div id="profile-content" class="hidden max-w-4xl mx-auto">
           <!-- Email Verification Alert -->
@@ -83,7 +74,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
           <!-- Profile Form -->
           <div class="bg-white shadow-sm rounded-lg">
-            <div class="px-6 py-4 border-b border-gray-200">
+            <div class="px-6 py-4 mb-4 border-b border-gray-200">
               <h2 class="text-lg font-semibold text-gray-900">
                 Personal Information
               </h2>
@@ -96,11 +87,8 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
               <!-- Success/Error Messages -->
               <div id="profile-message" class="hidden"></div>
 
-              <!-- Profile Picture -->
+              <!-- Profile Name -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Profile Picture
-                </label>
                 <div class="flex items-center space-x-4">
                   <div
                     id="profile-avatar"
@@ -117,644 +105,640 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                         clip-rule="evenodd"></path>
                     </svg>
                   </div>
-                  <div>
-                    <button
-                      type="button"
-                      class="bg-white border border-gray-300 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    >
-                      Change Picture
-                    </button>
-                    <p class="text-xs text-gray-500 mt-1">
-                      JPG, GIF or PNG. 1MB max.
-                    </p>
-                  </div>
+                  <div></div>
+                </div>
+
+                <!-- First Name -->
+                <div>
+                  <label
+                    for="first_name"
+                    class="block text-sm font-medium text-gray-700 mt-4 mb-2"
+                  >
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    id="first_name"
+                    name="first_name"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Enter your first name"
+                  />
+                </div>
+
+                <!-- Last Name -->
+                <div>
+                  <label
+                    for="last_name"
+                    class="block text-sm font-medium text-gray-700 mt-4 mb-2"
+                  >
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    id="last_name"
+                    name="last_name"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Enter your last name"
+                  />
+                </div>
+
+                <!-- Email -->
+                <div>
+                  <label
+                    for="email"
+                    class="block text-sm font-medium text-gray-700 mt-4 mb-2"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Enter your email"
+                  />
+                  <p class="text-xs text-gray-500 mt-1">
+                    We'll send important updates to this email.
+                  </p>
+                </div>
+
+                <!-- Username -->
+                <div>
+                  <label
+                    for="username"
+                    class="block text-sm font-medium text-gray-700 mt-4 mb-2"
+                  >
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Enter your username"
+                  />
+                </div>
+
+                <!-- Bio -->
+                <div>
+                  <label
+                    for="bio"
+                    class="block text-sm font-medium text-gray-700 mt-4 mb-2"
+                  >
+                    Bio
+                  </label>
+                  <textarea
+                    id="bio"
+                    name="bio"
+                    rows="4"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Tell us about yourself..."></textarea>
+                </div>
+
+                <!-- Website -->
+                <div>
+                  <label
+                    for="website"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    id="website"
+                    name="website"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="https://yourwebsite.com"
+                  />
+                </div>
+
+                <!-- Action Buttons -->
+                <div
+                  class="flex justify-end space-x-3 pt-6 border-t border-gray-200"
+                >
+                  <button
+                    type="button"
+                    id="cancel-btn"
+                    class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    id="save-btn"
+                    class="px-4 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    Save Changes
+                  </button>
                 </div>
               </div>
+            </form>
 
-              <!-- First Name -->
-              <div>
-                <label
-                  for="first_name"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  id="first_name"
-                  name="first_name"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Enter your first name"
-                />
-              </div>
-
-              <!-- Last Name -->
-              <div>
-                <label
-                  for="last_name"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  id="last_name"
-                  name="last_name"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Enter your last name"
-                />
-              </div>
-
-              <!-- Email -->
-              <div>
-                <label
-                  for="email"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Enter your email"
-                />
-                <p class="text-xs text-gray-500 mt-1">
-                  We'll send important updates to this email.
+            <!-- Change Password Section -->
+            <div class="bg-white shadow-sm rounded-lg mt-8">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">
+                  Change Password
+                </h2>
+                <p class="text-sm text-gray-600">
+                  Update your password to keep your account secure.
                 </p>
               </div>
 
-              <!-- Username -->
-              <div>
-                <label
-                  for="username"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Username
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Enter your username"
-                />
-              </div>
+              <form id="password-form" class="p-6 space-y-6">
+                <!-- Password Message -->
+                <div id="password-message" class="hidden"></div>
 
-              <!-- Bio -->
-              <div>
-                <label
-                  for="bio"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  rows="4"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Tell us about yourself..."></textarea>
-              </div>
+                <!-- Current Password -->
+                <div>
+                  <label
+                    for="current_password"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    id="current_password"
+                    name="current_password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Enter your current password"
+                  />
+                </div>
 
-              <!-- Website -->
-              <div>
-                <label
-                  for="website"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Website
-                </label>
-                <input
-                  type="url"
-                  id="website"
-                  name="website"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="https://yourwebsite.com"
-                />
-              </div>
+                <!-- New Password -->
+                <div>
+                  <label
+                    for="new_password"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    id="new_password"
+                    name="new_password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Enter your new password"
+                  />
+                </div>
 
-              <!-- Action Buttons -->
-              <div
-                class="flex justify-end space-x-3 pt-6 border-t border-gray-200"
-              >
-                <button
-                  type="button"
-                  id="cancel-btn"
-                  class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  id="save-btn"
-                  class="px-4 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
+                <!-- Confirm Password -->
+                <div>
+                  <label
+                    for="confirm_password"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    id="confirm_password"
+                    name="confirm_password"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    placeholder="Confirm your new password"
+                  />
+                </div>
 
-          <!-- Change Password Section -->
-          <div class="bg-white shadow-sm rounded-lg mt-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-              <h2 class="text-lg font-semibold text-gray-900">
-                Change Password
-              </h2>
-              <p class="text-sm text-gray-600">
-                Update your password to keep your account secure.
-              </p>
+                <!-- Password Requirements -->
+                <div class="bg-gray-50 rounded-md p-4">
+                  <h4 class="text-sm font-medium text-gray-900 mb-2">
+                    Password Requirements:
+                  </h4>
+                  <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• At least 8 characters long</li>
+                    <li>• Contains at least one uppercase letter</li>
+                    <li>• Contains at least one lowercase letter</li>
+                    <li>• Contains at least one number</li>
+                  </ul>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end pt-6 border-t border-gray-200">
+                  <button
+                    type="submit"
+                    id="change-password-btn"
+                    class="px-4 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    Change Password
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form id="password-form" class="p-6 space-y-6">
-              <!-- Password Message -->
-              <div id="password-message" class="hidden"></div>
-
-              <!-- Current Password -->
-              <div>
-                <label
-                  for="current_password"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Current Password
-                </label>
-                <input
-                  type="password"
-                  id="current_password"
-                  name="current_password"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Enter your current password"
-                />
-              </div>
-
-              <!-- New Password -->
-              <div>
-                <label
-                  for="new_password"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  id="new_password"
-                  name="new_password"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Enter your new password"
-                />
-              </div>
-
-              <!-- Confirm Password -->
-              <div>
-                <label
-                  for="confirm_password"
-                  class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  id="confirm_password"
-                  name="confirm_password"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Confirm your new password"
-                />
-              </div>
-
-              <!-- Password Requirements -->
-              <div class="bg-gray-50 rounded-md p-4">
-                <h4 class="text-sm font-medium text-gray-900 mb-2">
-                  Password Requirements:
-                </h4>
-                <ul class="text-sm text-gray-600 space-y-1">
-                  <li>• At least 8 characters long</li>
-                  <li>• Contains at least one uppercase letter</li>
-                  <li>• Contains at least one lowercase letter</li>
-                  <li>• Contains at least one number</li>
-                </ul>
-              </div>
-
-              <!-- Action Buttons -->
-              <div class="flex justify-end pt-6 border-t border-gray-200">
-                <button
-                  type="submit"
-                  id="change-password-btn"
-                  class="px-4 py-2 bg-teal-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  Change Password
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       </main>
     </div>
   </div>
-</BaseLayout>
 
-<script>
-  import { authStore } from "../../stores/authStore";
+  <script>
+    import { authStore } from "../../stores/authStore";
 
-  interface User {
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    username?: string;
-    profile?: {
-      bio?: string;
-      website?: string;
-      email_verified?: boolean;
-    };
-  }
+    interface User {
+      first_name?: string;
+      last_name?: string;
+      email?: string;
+      username?: string;
+      profile?: {
+        bio?: string;
+        website?: string;
+        email_verified?: boolean;
+      };
+    }
 
-  interface ProfileData {
-    first_name: string;
-    last_name: string;
-    email: string;
-    username: string;
-    bio: string;
-    website: string;
-  }
+    interface ProfileData {
+      first_name: string;
+      last_name: string;
+      email: string;
+      username: string;
+      bio: string;
+      website: string;
+    }
 
-  interface PasswordData {
-    old_password: string;
-    new_password: string;
-  }
+    interface PasswordData {
+      old_password: string;
+      new_password: string;
+    }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    console.log("🔍 Initializing Profile page...");
+    document.addEventListener("DOMContentLoaded", function () {
+      console.log("🔍 Initializing Profile page...");
 
-    // Initialise the page
-    initializePage();
+      // Initialise the page
+      initializePage();
 
-    async function initializePage(): Promise<void> {
-      try {
-        // Check authentication using proper method
-        const authState = authStore.getState();
-        console.log("🔐 Auth state:", {
-          isAuthenticated: authState.isAuthenticated,
-          user: authState.user,
+      async function initializePage(): Promise<void> {
+        try {
+          // Check authentication using proper method
+          const authState = authStore.getState();
+          console.log("🔐 Auth state:", {
+            isAuthenticated: authState.isAuthenticated,
+            user: authState.user,
+          });
+
+          if (!authState.isAuthenticated || !authState.user) {
+            console.log("❌ User not authenticated, showing login prompt");
+            showNotAuthenticatedState();
+            return;
+          }
+
+          console.log("✅ User authenticated, loading profile...");
+          loadProfile(authState.user);
+          showProfileContent();
+          setupEventListeners();
+        } catch (error) {
+          console.error("❌ Error loading profile:", error);
+          showNotAuthenticatedState();
+        } finally {
+          hideLoadingState();
+        }
+      }
+
+      function hideLoadingState(): void {
+        const loadingElement = document.getElementById("loading-state");
+        loadingElement?.classList.add("hidden");
+      }
+
+      function showNotAuthenticatedState(): void {
+        const notAuthElement = document.getElementById("not-authenticated");
+        notAuthElement?.classList.remove("hidden");
+      }
+
+      function showProfileContent(): void {
+        const profileElement = document.getElementById("profile-content");
+        profileElement?.classList.remove("hidden");
+      }
+
+      function loadProfile(user: User): void {
+        // Populate form fields with user data with null checks
+        const firstNameInput = document.getElementById(
+          "first_name",
+        ) as HTMLInputElement | null;
+        const lastNameInput = document.getElementById(
+          "last_name",
+        ) as HTMLInputElement | null;
+        const emailInput = document.getElementById(
+          "email",
+        ) as HTMLInputElement | null;
+        const usernameInput = document.getElementById(
+          "username",
+        ) as HTMLInputElement | null;
+        const bioTextarea = document.getElementById(
+          "bio",
+        ) as HTMLTextAreaElement | null;
+        const websiteInput = document.getElementById(
+          "website",
+        ) as HTMLInputElement | null;
+
+        if (firstNameInput) firstNameInput.value = user.first_name || "";
+        if (lastNameInput) lastNameInput.value = user.last_name || "";
+        if (emailInput) emailInput.value = user.email || "";
+        if (usernameInput) usernameInput.value = user.username || "";
+
+        // Populate profile fields if they exist
+        if (user.profile) {
+          if (bioTextarea) bioTextarea.value = user.profile.bio || "";
+          if (websiteInput) websiteInput.value = user.profile.website || "";
+        }
+
+        // Show email verification alert if needed
+        if (!authStore.isEmailVerified()) {
+          const alertElement = document.getElementById(
+            "email-verification-alert",
+          );
+          alertElement?.classList.remove("hidden");
+        }
+
+        // Update profile avatar with initials if no image
+        updateProfileAvatar(user);
+      }
+
+      function updateProfileAvatar(user: User): void {
+        const avatar = document.getElementById("profile-avatar");
+        if (!avatar) return;
+
+        const fullName = authStore.getUserFullName();
+        const initials = fullName
+          .split(" ")
+          .map((name) => name.charAt(0))
+          .join("")
+          .toUpperCase()
+          .slice(0, 2);
+
+        if (initials) {
+          avatar.innerHTML = `<span class="text-teal-600 font-medium">${initials}</span>`;
+        }
+      }
+
+      function setupEventListeners(): void {
+        // Profile form submission
+        const profileForm = document.getElementById(
+          "profile-form",
+        ) as HTMLFormElement | null;
+        profileForm?.addEventListener("submit", handleProfileSubmit);
+
+        // Password form submission
+        const passwordForm = document.getElementById(
+          "password-form",
+        ) as HTMLFormElement | null;
+        passwordForm?.addEventListener("submit", handlePasswordSubmit);
+
+        // Cancel button
+        const cancelBtn = document.getElementById(
+          "cancel-btn",
+        ) as HTMLButtonElement | null;
+        cancelBtn?.addEventListener("click", () => {
+          const authState = authStore.getState();
+          if (authState.user) {
+            loadProfile(authState.user);
+            showMessage("profile-message", "Changes cancelled", "info");
+          }
         });
 
-        if (!authState.isAuthenticated || !authState.user) {
-          console.log("❌ User not authenticated, showing login prompt");
-          showNotAuthenticatedState();
-          return;
+        // Resend verification
+        const resendBtn = document.getElementById(
+          "resend-verification",
+        ) as HTMLButtonElement | null;
+        resendBtn?.addEventListener("click", handleResendVerification);
+      }
+
+      async function handleProfileSubmit(e: Event): Promise<void> {
+        e.preventDefault();
+        const saveBtn = document.getElementById(
+          "save-btn",
+        ) as HTMLButtonElement | null;
+        if (!saveBtn) return;
+
+        const originalText = saveBtn.textContent || "Save Changes";
+
+        try {
+          saveBtn.textContent = "Saving...";
+          saveBtn.disabled = true;
+
+          const form = e.target as HTMLFormElement;
+          const formData = new FormData(form);
+          const profileData: ProfileData = {
+            first_name: (formData.get("first_name") as string) || "",
+            last_name: (formData.get("last_name") as string) || "",
+            email: (formData.get("email") as string) || "",
+            username: (formData.get("username") as string) || "",
+            bio: (formData.get("bio") as string) || "",
+            website: (formData.get("website") as string) || "",
+          };
+
+          await updateProfile(profileData);
+
+          // Update auth store with new user data
+          await authStore.refreshUser();
+
+          showMessage(
+            "profile-message",
+            "Profile updated successfully!",
+            "success",
+          );
+        } catch (error) {
+          console.error("Profile update error:", error);
+          const errorMessage =
+            error instanceof Error ? error.message : "Failed to update profile";
+          showMessage("profile-message", errorMessage, "error");
+        } finally {
+          saveBtn.textContent = originalText;
+          saveBtn.disabled = false;
         }
-
-        console.log("✅ User authenticated, loading profile...");
-        loadProfile(authState.user);
-        showProfileContent();
-        setupEventListeners();
-      } catch (error) {
-        console.error("❌ Error loading profile:", error);
-        showNotAuthenticatedState();
-      } finally {
-        hideLoadingState();
-      }
-    }
-
-    function hideLoadingState(): void {
-      const loadingElement = document.getElementById("loading-state");
-      loadingElement?.classList.add("hidden");
-    }
-
-    function showNotAuthenticatedState(): void {
-      const notAuthElement = document.getElementById("not-authenticated");
-      notAuthElement?.classList.remove("hidden");
-    }
-
-    function showProfileContent(): void {
-      const profileElement = document.getElementById("profile-content");
-      profileElement?.classList.remove("hidden");
-    }
-
-    function loadProfile(user: User): void {
-      // Populate form fields with user data with null checks
-      const firstNameInput = document.getElementById(
-        "first_name",
-      ) as HTMLInputElement | null;
-      const lastNameInput = document.getElementById(
-        "last_name",
-      ) as HTMLInputElement | null;
-      const emailInput = document.getElementById(
-        "email",
-      ) as HTMLInputElement | null;
-      const usernameInput = document.getElementById(
-        "username",
-      ) as HTMLInputElement | null;
-      const bioTextarea = document.getElementById(
-        "bio",
-      ) as HTMLTextAreaElement | null;
-      const websiteInput = document.getElementById(
-        "website",
-      ) as HTMLInputElement | null;
-
-      if (firstNameInput) firstNameInput.value = user.first_name || "";
-      if (lastNameInput) lastNameInput.value = user.last_name || "";
-      if (emailInput) emailInput.value = user.email || "";
-      if (usernameInput) usernameInput.value = user.username || "";
-
-      // Populate profile fields if they exist
-      if (user.profile) {
-        if (bioTextarea) bioTextarea.value = user.profile.bio || "";
-        if (websiteInput) websiteInput.value = user.profile.website || "";
       }
 
-      // Show email verification alert if needed
-      if (!authStore.isEmailVerified()) {
-        const alertElement = document.getElementById(
-          "email-verification-alert",
-        );
-        alertElement?.classList.remove("hidden");
-      }
+      async function handlePasswordSubmit(e: Event): Promise<void> {
+        e.preventDefault();
+        const changeBtn = document.getElementById(
+          "change-password-btn",
+        ) as HTMLButtonElement | null;
+        if (!changeBtn) return;
 
-      // Update profile avatar with initials if no image
-      updateProfileAvatar(user);
-    }
+        const originalText = changeBtn.textContent || "Change Password";
 
-    function updateProfileAvatar(user: User): void {
-      const avatar = document.getElementById("profile-avatar");
-      if (!avatar) return;
+        try {
+          changeBtn.textContent = "Changing...";
+          changeBtn.disabled = true;
 
-      const fullName = authStore.getUserFullName();
-      const initials = fullName
-        .split(" ")
-        .map((name) => name.charAt(0))
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
+          const form = e.target as HTMLFormElement;
+          const formData = new FormData(form);
+          const currentPassword =
+            (formData.get("current_password") as string) || "";
+          const newPassword = (formData.get("new_password") as string) || "";
+          const confirmPassword =
+            (formData.get("confirm_password") as string) || "";
 
-      if (initials) {
-        avatar.innerHTML = `<span class="text-teal-600 font-medium">${initials}</span>`;
-      }
-    }
+          if (newPassword !== confirmPassword) {
+            throw new Error("New passwords do not match");
+          }
 
-    function setupEventListeners(): void {
-      // Profile form submission
-      const profileForm = document.getElementById(
-        "profile-form",
-      ) as HTMLFormElement | null;
-      profileForm?.addEventListener("submit", handleProfileSubmit);
+          const passwordData: PasswordData = {
+            old_password: currentPassword,
+            new_password: newPassword,
+          };
 
-      // Password form submission
-      const passwordForm = document.getElementById(
-        "password-form",
-      ) as HTMLFormElement | null;
-      passwordForm?.addEventListener("submit", handlePasswordSubmit);
+          await changePassword(passwordData);
 
-      // Cancel button
-      const cancelBtn = document.getElementById(
-        "cancel-btn",
-      ) as HTMLButtonElement | null;
-      cancelBtn?.addEventListener("click", () => {
-        const authState = authStore.getState();
-        if (authState.user) {
-          loadProfile(authState.user);
-          showMessage("profile-message", "Changes cancelled", "info");
+          // Clear form
+          form.reset();
+
+          showMessage(
+            "password-message",
+            "Password changed successfully!",
+            "success",
+          );
+        } catch (error) {
+          console.error("Password change error:", error);
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to change password";
+          showMessage("password-message", errorMessage, "error");
+        } finally {
+          changeBtn.textContent = originalText;
+          changeBtn.disabled = false;
         }
-      });
+      }
 
-      // Resend verification
-      const resendBtn = document.getElementById(
-        "resend-verification",
-      ) as HTMLButtonElement | null;
-      resendBtn?.addEventListener("click", handleResendVerification);
-    }
+      async function handleResendVerification(): Promise<void> {
+        const resendBtn = document.getElementById(
+          "resend-verification",
+        ) as HTMLButtonElement | null;
+        if (!resendBtn) return;
 
-    async function handleProfileSubmit(e: Event): Promise<void> {
-      e.preventDefault();
-      const saveBtn = document.getElementById(
-        "save-btn",
-      ) as HTMLButtonElement | null;
-      if (!saveBtn) return;
+        const originalText =
+          resendBtn.textContent || "Resend verification email";
 
-      const originalText = saveBtn.textContent || "Save Changes";
+        try {
+          resendBtn.textContent = "Sending...";
+          resendBtn.disabled = true;
 
-      try {
-        saveBtn.textContent = "Saving...";
-        saveBtn.disabled = true;
+          const authState = authStore.getState();
+          if (!authState.user?.email) return;
 
-        const form = e.target as HTMLFormElement;
-        const formData = new FormData(form);
-        const profileData: ProfileData = {
-          first_name: (formData.get("first_name") as string) || "",
-          last_name: (formData.get("last_name") as string) || "",
-          email: (formData.get("email") as string) || "",
-          username: (formData.get("username") as string) || "",
-          bio: (formData.get("bio") as string) || "",
-          website: (formData.get("website") as string) || "",
+          await resendVerification(authState.user.email);
+
+          resendBtn.textContent = "Email sent!";
+
+          setTimeout(() => {
+            resendBtn.textContent = originalText;
+            resendBtn.disabled = false;
+          }, 3000);
+        } catch (error) {
+          console.error("Resend verification error:", error);
+          resendBtn.textContent = "Failed to send";
+
+          setTimeout(() => {
+            resendBtn.textContent = originalText;
+            resendBtn.disabled = false;
+          }, 3000);
+        }
+      }
+
+      function showMessage(
+        elementId: string,
+        message: string,
+        type: "success" | "error" | "info",
+      ): void {
+        const messageEl = document.getElementById(elementId);
+        if (!messageEl) return;
+
+        const typeClasses = {
+          success: "bg-green-50 text-green-700 border-green-200",
+          error: "bg-red-50 text-red-700 border-red-200",
+          info: "bg-blue-50 text-blue-700 border-blue-200",
         };
 
-        await updateProfile(profileData);
+        messageEl.className = `p-4 rounded-md border ${typeClasses[type]} mb-4`;
+        messageEl.textContent = message;
+        messageEl.classList.remove("hidden");
 
-        // Update auth store with new user data
-        await authStore.refreshUser();
-
-        showMessage(
-          "profile-message",
-          "Profile updated successfully!",
-          "success",
-        );
-      } catch (error) {
-        console.error("Profile update error:", error);
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to update profile";
-        showMessage("profile-message", errorMessage, "error");
-      } finally {
-        saveBtn.textContent = originalText;
-        saveBtn.disabled = false;
+        // Auto-hide success/info messages
+        if (type !== "error") {
+          setTimeout(() => {
+            messageEl.classList.add("hidden");
+          }, 5000);
+        }
       }
-    }
 
-    async function handlePasswordSubmit(e: Event): Promise<void> {
-      e.preventDefault();
-      const changeBtn = document.getElementById(
-        "change-password-btn",
-      ) as HTMLButtonElement | null;
-      if (!changeBtn) return;
-
-      const originalText = changeBtn.textContent || "Change Password";
-
-      try {
-        changeBtn.textContent = "Changing...";
-        changeBtn.disabled = true;
-
-        const form = e.target as HTMLFormElement;
-        const formData = new FormData(form);
-        const currentPassword =
-          (formData.get("current_password") as string) || "";
-        const newPassword = (formData.get("new_password") as string) || "";
-        const confirmPassword =
-          (formData.get("confirm_password") as string) || "";
-
-        if (newPassword !== confirmPassword) {
-          throw new Error("New passwords do not match");
+      // API functions with proper error handling
+      async function updateProfile(profileData: ProfileData): Promise<User> {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("No access token");
         }
 
-        const passwordData: PasswordData = {
-          old_password: currentPassword,
-          new_password: newPassword,
-        };
+        const response = await fetch("/api/v1/auth/profile/", {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(profileData),
+        });
 
-        await changePassword(passwordData);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.detail ||
+              `HTTP ${response.status}: ${response.statusText}`,
+          );
+        }
 
-        // Clear form
-        form.reset();
-
-        showMessage(
-          "password-message",
-          "Password changed successfully!",
-          "success",
-        );
-      } catch (error) {
-        console.error("Password change error:", error);
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to change password";
-        showMessage("password-message", errorMessage, "error");
-      } finally {
-        changeBtn.textContent = originalText;
-        changeBtn.disabled = false;
-      }
-    }
-
-    async function handleResendVerification(): Promise<void> {
-      const resendBtn = document.getElementById(
-        "resend-verification",
-      ) as HTMLButtonElement | null;
-      if (!resendBtn) return;
-
-      const originalText = resendBtn.textContent || "Resend verification email";
-
-      try {
-        resendBtn.textContent = "Sending...";
-        resendBtn.disabled = true;
-
-        const authState = authStore.getState();
-        if (!authState.user?.email) return;
-
-        await resendVerification(authState.user.email);
-
-        resendBtn.textContent = "Email sent!";
-
-        setTimeout(() => {
-          resendBtn.textContent = originalText;
-          resendBtn.disabled = false;
-        }, 3000);
-      } catch (error) {
-        console.error("Resend verification error:", error);
-        resendBtn.textContent = "Failed to send";
-
-        setTimeout(() => {
-          resendBtn.textContent = originalText;
-          resendBtn.disabled = false;
-        }, 3000);
-      }
-    }
-
-    function showMessage(
-      elementId: string,
-      message: string,
-      type: "success" | "error" | "info",
-    ): void {
-      const messageEl = document.getElementById(elementId);
-      if (!messageEl) return;
-
-      const typeClasses = {
-        success: "bg-green-50 text-green-700 border-green-200",
-        error: "bg-red-50 text-red-700 border-red-200",
-        info: "bg-blue-50 text-blue-700 border-blue-200",
-      };
-
-      messageEl.className = `p-4 rounded-md border ${typeClasses[type]} mb-4`;
-      messageEl.textContent = message;
-      messageEl.classList.remove("hidden");
-
-      // Auto-hide success/info messages
-      if (type !== "error") {
-        setTimeout(() => {
-          messageEl.classList.add("hidden");
-        }, 5000);
-      }
-    }
-
-    // API functions with proper error handling
-    async function updateProfile(profileData: ProfileData): Promise<User> {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        throw new Error("No access token");
+        return response.json();
       }
 
-      const response = await fetch("/api/v1/auth/profile/", {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(profileData),
+      async function changePassword(passwordData: PasswordData): Promise<void> {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          throw new Error("No access token");
+        }
+
+        const response = await fetch("/api/v1/auth/change-password/", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(passwordData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.detail ||
+              `HTTP ${response.status}: ${response.statusText}`,
+          );
+        }
+      }
+
+      async function resendVerification(email: string): Promise<void> {
+        const response = await fetch("/api/v1/auth/resend-verification/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.detail ||
+              `HTTP ${response.status}: ${response.statusText}`,
+          );
+        }
+      }
+
+      // Subscribe to auth changes
+      authStore.subscribe(() => {
+        const newAuthState = authStore.getState();
+        if (!newAuthState.isAuthenticated) {
+          // User logged out, redirect to login
+          window.location.href =
+            "/auth/login?redirect=" +
+            encodeURIComponent(window.location.pathname);
+        }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || `HTTP ${response.status}: ${response.statusText}`,
-        );
-      }
-
-      return response.json();
-    }
-
-    async function changePassword(passwordData: PasswordData): Promise<void> {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        throw new Error("No access token");
-      }
-
-      const response = await fetch("/api/v1/auth/change-password/", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(passwordData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || `HTTP ${response.status}: ${response.statusText}`,
-        );
-      }
-    }
-
-    async function resendVerification(email: string): Promise<void> {
-      const response = await fetch("/api/v1/auth/resend-verification/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || `HTTP ${response.status}: ${response.statusText}`,
-        );
-      }
-    }
-
-    // Subscribe to auth changes
-    authStore.subscribe(() => {
-      const newAuthState = authStore.getState();
-      if (!newAuthState.isAuthenticated) {
-        // User logged out, redirect to login
-        window.location.href =
-          "/auth/login?redirect=" +
-          encodeURIComponent(window.location.pathname);
-      }
     });
-  });
-</script>
+  </script>
+</BaseLayout>

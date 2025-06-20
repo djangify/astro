@@ -253,28 +253,7 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                       </div>
                     </div>
 
-                    <div class="flex items-start">
-                      <div class="flex items-center h-5">
-                        <input
-                          id="course_notifications"
-                          name="course_notifications"
-                          type="checkbox"
-                          class="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
-                        />
-                      </div>
-                      <div class="ml-3">
-                        <label
-                          for="course_notifications"
-                          class="text-sm font-medium text-gray-700"
-                        >
-                          Course Notifications
-                        </label>
-                        <p class="text-sm text-gray-500">
-                          Receive reminders about course progress and new
-                          lessons.
-                        </p>
-                      </div>
-                    </div>
+                    <div class="flex items-start"></div>
                   </div>
 
                   <div class="flex justify-end pt-4 border-t border-gray-200">
@@ -304,27 +283,27 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                   <div>
                     <label class="text-sm text-gray-600">Username</label>
                     <p id="account-username" class="font-medium text-gray-900">
-                      Loading...
+                      -
                     </p>
                   </div>
 
                   <div>
                     <label class="text-sm text-gray-600">Email</label>
                     <p id="account-email" class="font-medium text-gray-900">
-                      Loading...
+                      -
                     </p>
                   </div>
 
                   <div>
                     <label class="text-sm text-gray-600">Member Since</label>
                     <p id="account-joined" class="font-medium text-gray-900">
-                      Loading...
+                      -
                     </p>
                   </div>
 
                   <div>
                     <label class="text-sm text-gray-600">Email Status</label>
-                    <p id="account-verified" class="font-medium">Loading...</p>
+                    <p id="account-verified" class="font-medium">-</p>
                   </div>
                 </div>
 
@@ -335,38 +314,6 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                   >
                     Edit Profile
                   </a>
-                </div>
-              </div>
-
-              <!-- Security Settings -->
-              <div
-                class="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
-              >
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Security</h3>
-
-                <div class="space-y-4">
-                  <div>
-                    <label class="text-sm text-gray-600"
-                      >Last Password Change</label
-                    >
-                    <p class="font-medium text-gray-900">Recently</p>
-                  </div>
-
-                  <div>
-                    <label class="text-sm text-gray-600"
-                      >Two-Factor Authentication</label
-                    >
-                    <p class="font-medium text-gray-500">Not enabled</p>
-                  </div>
-                </div>
-
-                <div class="mt-6 pt-4 border-t border-gray-200">
-                  <button
-                    disabled
-                    class="block w-full text-center bg-gray-100 text-gray-500 font-medium py-2 px-4 rounded-lg text-sm cursor-not-allowed"
-                  >
-                    Enable 2FA (Coming Soon)
-                  </button>
                 </div>
               </div>
 
@@ -387,10 +334,11 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
                       Download a copy of your account data.
                     </p>
                     <button
-                      id="export-data"
-                      class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                      disabled
+                      class="w-full bg-gray-100 text-gray-400 font-medium py-2 px-4 rounded-lg cursor-not-allowed text-sm"
+                      title="Coming soon"
                     >
-                      Request Data Export
+                      Request Data Export (Coming Soon)
                     </button>
                   </div>
 
@@ -444,34 +392,16 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
     const successText = document.getElementById("success-text");
     const errorText = document.getElementById("error-text");
 
-    // Initialize page
-    initializePage();
-
-    async function initializePage(): Promise<void> {
-      try {
-        // Check authentication using proper method
-        const authState = authStore.getState();
-        console.log("🔐 Auth state:", {
-          isAuthenticated: authState.isAuthenticated,
-          user: authState.user,
-        });
-
-        if (!authState.isAuthenticated || !authState.user) {
-          console.log("❌ User not authenticated, showing login prompt");
-          showNotAuthenticatedState();
-          return;
-        }
-
-        console.log("✅ User authenticated, loading settings...");
-        loadAccountData(authState.user);
-        showSettingsContent();
-      } catch (error) {
-        console.error("❌ Error loading settings:", error);
-        showNotAuthenticatedState();
-      } finally {
-        hideLoadingState();
-      }
+    // Simple initialization - use cached auth data
+    const authState = authStore.getState();
+    if (authState.isAuthenticated && authState.user) {
+      console.log("User data:", authState.user);
+      loadAccountData(authState.user);
+      showSettingsContent();
+    } else {
+      showNotAuthenticatedState();
     }
+    hideLoadingState();
 
     function loadAccountData(user: any): void {
       try {
@@ -483,18 +413,32 @@ import DashboardNav from "../../components/dashboard/DashboardNav.astro";
 
         if (accountUsername) accountUsername.textContent = user.username;
         if (accountEmail) accountEmail.textContent = user.email;
-        if (accountJoined)
-          accountJoined.textContent = new Date(
-            user.date_joined,
-          ).toLocaleDateString();
+        // Fix the date - use a field that actually exists
+        if (accountJoined) {
+          // Try different date fields that might exist
+          const joinDate = user.date_joined || user.created_at || user.created;
+          if (joinDate) {
+            accountJoined.textContent = new Date(joinDate).toLocaleDateString();
+          } else {
+            accountJoined.textContent = "N/A";
+          }
+        }
 
+        // Fix email verification status to match dashboard
         if (verifiedElement) {
-          if (user.profile?.email_verified) {
+          // Check if email is verified (same logic as dashboard)
+          const isVerified =
+            user.email_verified ||
+            (user.profile && user.profile.email_verified);
+
+          if (isVerified) {
             verifiedElement.innerHTML =
               '<span class="text-green-600">✓ Verified</span>';
+            verifiedElement.className = "font-medium text-green-600";
           } else {
             verifiedElement.innerHTML =
               '<span class="text-yellow-600">⚠ Pending</span>';
+            verifiedElement.className = "font-medium text-yellow-600";
           }
         }
 
