@@ -225,6 +225,15 @@ const links = [
       updateAuthUI();
     });
 
+    // Listen for cart updates after login
+    window.addEventListener("cartUpdated", function (event) {
+      // The cart has been merged, update any cart displays
+      console.log("Cart updated after login:", event.detail);
+      // You could update the cart count here instead of reloading
+      // Or if you really need to reload:
+      window.location.reload();
+    });
+
     // Mobile logout functionality
     mobileLogoutButton?.addEventListener("click", async function () {
       mobileLogoutText!.textContent = "Signing Out...";

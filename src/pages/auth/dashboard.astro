@@ -1196,10 +1196,10 @@ interface AuthState {
                     ${thumbnailHtml}
                   </div>
                   <div class="flex-1 min-w-0">
-                    <h4 class="font-medium text-gray-900 truncate">${product.name}</h4>
+                    <h4 class="font-medium text-gray-900 truncate">${product.name || "Your Order"}</h4>
                     <p class="text-sm text-gray-500">Order #${order.order_number}</p>
                   </div>
-                  <a href="/auth/orders/${order.id}" class="text-teal-600 hover:text-teal-700 text-sm font-medium">Download</a>
+                  <a href="/downloads" class="text-teal-600 hover:text-teal-700 text-sm font-medium">Download</a>
                 </div>
               `;
 

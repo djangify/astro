@@ -11,6 +11,9 @@ const {
   showTitle = true,
   className = "",
 } = Astro.props;
+
+// Get API URL from environment
+const apiUrl = import.meta.env.PUBLIC_API_BASE_URL || "";
 ---
 
 <div class={`login-form ${className}`}>
@@ -186,10 +189,18 @@ const {
   </form>
 </div>
 
+<!-- Pass API URL to script -->
+<script type="application/json" id="login-config" data-api-url={apiUrl}
+></script>
+
 <script>
   import { authStore } from "../../stores/authStore";
 
   document.addEventListener("DOMContentLoaded", function () {
+    // Get API URL from config
+    const configEl = document.getElementById("login-config");
+    const API_BASE = configEl ? configEl.getAttribute("data-api-url") : "";
+
     const form = document.getElementById("login-form") as HTMLFormElement;
     const errorDiv = document.getElementById("login-error") as HTMLElement;
     const errorMessage = document.getElementById(
@@ -243,12 +254,48 @@ const {
       };
 
       try {
+        // Login through authStore
         await authStore.login(credentials);
+
+        // After successful login, merge the cart
+        try {
+          console.log("Merging cart after login...");
+
+          const mergeResponse = await fetch(API_BASE + "/api/v1/cart/merge/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include", // Important: include session cookies
+          });
+
+          if (mergeResponse.ok) {
+            const mergedCart = await mergeResponse.json();
+            console.log("Cart merged successfully:", mergedCart);
+
+            // Dispatch cart updated event to update any cart displays
+            window.dispatchEvent(
+              new CustomEvent("cartUpdated", {
+                detail: { cart: mergedCart },
+              }),
+            );
+          } else {
+            console.error("Failed to merge cart:", await mergeResponse.text());
+            // Don't fail the login if cart merge fails
+          }
+        } catch (cartError) {
+          console.error("Error merging cart:", cartError);
+          // Don't fail the login if cart merge fails
+        }
 
         // Success - redirect
         const urlParams = new URLSearchParams(window.location.search);
         const redirectTo = urlParams.get("redirect") || "/auth/dashboard";
-        window.location.href = redirectTo;
+
+        // Small delay to ensure cart merge completes
+        setTimeout(() => {
+          window.location.href = redirectTo;
+        }, 100);
       } catch (error: any) {
         console.error("Login error:", error);
 

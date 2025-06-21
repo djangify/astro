@@ -602,6 +602,7 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
           emailChecked = true;
           userExists = true;
           emailInput.dataset.checkedEmail = userData.email;
+
           
           // Hide both password section and login prompt for authenticated users
           var passwordSection = document.getElementById("password-section");
@@ -745,38 +746,52 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
       }
     }
   }
-
   function handleFormSubmit(event) {
-    event.preventDefault();
+  event.preventDefault();
+    
+  if (!stripe || !card) {
+    showMsg("Payment system not ready", false);
+    return;
+  }
 
-    if (!stripe || !card) {
-      showMsg("Payment system not ready", false);
+  // Check if user is authenticated
+  var jwtToken = localStorage.getItem("access_token");
+  var isAuthenticated = !!jwtToken;
+
+  // Check if user exists and needs to log in (only for non-authenticated users)
+  if (!isAuthenticated && userExists && emailChecked) {
+    showMsg("Please log in to complete your purchase", false);
+    return;
+  }
+
+  setLoadingState(true);
+
+  var form = document.getElementById("checkout-form");
+  var formData = new FormData(form);
+  var customerData = {};
+  customerData.email = formData.get("email").trim().toLowerCase();
+  customerData.first_name = formData.get("first_name").trim();
+  customerData.last_name = formData.get("last_name").trim();
+  customerData.notes = formData.get("notes");
+
+  // Skip ALL validation for authenticated users
+  if (isAuthenticated) {
+    console.log("Authenticated user, skipping all validation");
+    
+    // Validate only basic required fields for authenticated users
+    if (!customerData.email || !customerData.first_name) {
+      showMsg("Please fill in all required fields", false);
+      setLoadingState(false);
       return;
     }
-
-    // Check if user is authenticated
-    var jwtToken = localStorage.getItem("access_token");
-    var isAuthenticated = !!jwtToken;
-
-    // Check if user exists and needs to log in (only for non-authenticated users)
-    if (!isAuthenticated && userExists && emailChecked) {
+  } else {
+    // Only do these checks for non-authenticated users
+    
+    // Check if existing user needs to log in
+    if (userExists && emailChecked) {
       showMsg("Please log in to complete your purchase", false);
+      setLoadingState(false);
       return;
-    }
-
-    setLoadingState(true);
-
-    var form = document.getElementById("checkout-form");
-    var formData = new FormData(form);
-    var customerData = {};
-    customerData.email = formData.get("email").trim().toLowerCase();
-    customerData.first_name = formData.get("first_name").trim();
-    customerData.last_name = formData.get("last_name").trim();
-    customerData.notes = formData.get("notes");
-
-    // Only include password for new users who are not authenticated
-    if (!isAuthenticated && !userExists) {
-      customerData.password = formData.get("password");
     }
 
     // Validate required fields
@@ -786,28 +801,34 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
       return;
     }
 
-    // Validate password for new users (only if not logged in and not existing user)
-    if (
-      !isAuthenticated &&
-      !userExists &&
-      (!customerData.password || customerData.password.length < 8)
-    ) {
-      showMsg("Password must be at least 8 characters", false);
-      setLoadingState(false);
-      return;
+    // Only include password for new users
+    if (!userExists) {
+      customerData.password = formData.get("password");
+      
+      // Validate password for new users
+      if (!customerData.password || customerData.password.length < 8) {
+        showMsg("Password must be at least 8 characters", false);
+        setLoadingState(false);
+        return;
+      }
     }
+  }
 
-    console.log("Processing payment with customer data:", {
-      email: customerData.email,
-      first_name: customerData.first_name,
-      has_password: !!customerData.password,
-      is_authenticated: isAuthenticated
-    });
-
-    // For payment intent creation, use session cookies only
+  console.log("Processing payment with customer data:", {
+    email: customerData.email,
+    first_name: customerData.first_name,
+    has_password: !!customerData.password,
+    is_authenticated: isAuthenticated
+  });
+    // For payment intent creation, include JWT for authenticated users
     var headers = {
       "Content-Type": "application/json"
     };
+
+    // Add JWT token if user is authenticated
+    if (isAuthenticated && jwtToken) {
+      headers["Authorization"] = "Bearer " + jwtToken;
+    }
     
     // Build request body - only include fields that are needed
     var requestBody = {
@@ -895,16 +916,22 @@ const stripeKey = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
               window.dispatchEvent(new CustomEvent("cartUpdated"));
 
               // Redirect to success page
-              setTimeout(function () {
-                var redirectUrl =
-                  "/order-success?payment_intent=" + result.paymentIntent.id;
-                if (orderResponse.verification_required) {
-                  redirectUrl += "&verify=1";
-                }
-                window.location.href = redirectUrl;
-              }, 1500);
-            });
-        }
+              // Show a full-screen success message
+              setTimeout(function() {
+                document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f3f4f6"><div style="text-align:center"><div style="color:#10b981;font-size:48px">✓</div><h1 style="font-size:24px;margin:20px 0">Payment Successful!</h1><p>Redirecting to your order details...</p></div></div>';
+                
+                // Then redirect after showing the success screen
+                setTimeout(function () {
+                  var redirectUrl =
+                    "/order-success?payment_intent=" + result.paymentIntent.id;
+                  if (orderResponse.verification_required) {
+                    redirectUrl += "&verify=1";
+                  }
+                  window.location.href = redirectUrl;
+                }, 2000);
+              }, 500); // Small delay to ensure the first message shows
+                          });
+                      }
       })
       .catch(function (error) {
         console.error("Checkout error:", error);
