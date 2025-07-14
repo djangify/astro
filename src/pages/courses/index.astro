@@ -398,7 +398,7 @@ const featuredCourses = courses.filter((course) => course.is_featured);
     async function loadCourseSettings() {
       try {
         const response = await fetch(
-          `https://corrison.corrisonapi.com/api/v1/courses-settings/`,
+          `https://corrison.corrisonapi.com/api/v1/course-settings/`,
           {
             method: "GET",
             headers: {

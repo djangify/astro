@@ -1,0 +1,43 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+const url = new URL(Astro.request.url);
+const paymentIntent = url.searchParams.get("payment_intent");
+
+let orderData = null;
+let success = false;
+
+if (paymentIntent) {
+  const res = await fetch(
+    `https://corrison.corrisonapi.com/api/checkout/check-payment-status/?payment_intent=${paymentIntent}`,
+  );
+  const json = await res.json();
+  orderData = json.order;
+  success = json.success;
+}
+---
+
+<BaseLayout>
+  {
+    success ? (
+      <>
+        <h1 class="text-2xl font-bold text-green-600">
+          ✅ Your order is complete!
+        </h1>
+        <p class="mt-4">
+          Order number: <strong>{orderData?.order_number}</strong>
+        </p>
+        <p class="mt-2">
+          You can download your product in your{" "}
+          <a href="/dashboard" class="text-blue-600 underline">
+            dashboard
+          </a>
+          .
+        </p>
+      </>
+    ) : (
+      <h1 class="text-red-600">
+        ❌ We couldn't confirm your payment. Please try again.
+      </h1>
+    )
+  }
+</BaseLayout>
